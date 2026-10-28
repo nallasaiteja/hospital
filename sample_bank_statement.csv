@@ -1,0 +1,5 @@
+Date,Description,Reference,Debit,Credit,Balance
+2026-10-20,Patient Deposit Counter,REF-DEP-001,,25000.00,275000.00
+2026-10-21,Medical Supplier Payment,REF-SUP-102,12000.00,,263000.00
+2026-10-22,Bank Service Charges,CHG-OCT-01,350.00,,262650.00
+2026-10-23,Direct Insurance Settlement,NEFT-INS-992,,18000.00,280650.00
