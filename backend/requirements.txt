@@ -17,6 +17,10 @@ cryptography>=43.0.1
 requests>=2.32.3
 supabase>=2.7.4
 
+# Production Web Server & Static Files (Render / Cloud)
+gunicorn>=22.0.0
+whitenoise>=6.7.0
+
 # Testing
 pytest>=8.3.2
 pytest-django>=4.8.0
