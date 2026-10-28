@@ -38,7 +38,7 @@ export const Input: React.FC<InputProps> = ({
         <input
           id={inputId}
           className={clsx(
-            'w-full py-2.5 rounded-xl bg-slate-950 border text-xs text-white placeholder-slate-500 transition focus:outline-none',
+            'w-full py-2.5 rounded-xl bg-slate-950 border text-sm sm:text-xs text-white placeholder-slate-500 transition focus:outline-none min-h-[42px]',
             Icon ? 'pl-9 pr-3.5' : 'px-3.5',
             error
               ? 'border-rose-500/80 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'

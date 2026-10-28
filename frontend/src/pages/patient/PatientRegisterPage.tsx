@@ -105,7 +105,7 @@ export const PatientRegisterPage: React.FC = () => {
           <span>Back to HMS Home</span>
         </Link>
 
-        <div className="p-8 rounded-2xl bg-slate-800/80 border border-slate-700/80 shadow-2xl backdrop-blur-xl">
+        <div className="p-5 sm:p-8 rounded-2xl bg-slate-800/80 border border-slate-700/80 shadow-2xl backdrop-blur-xl">
           <div className="text-center mb-8">
             <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mx-auto mb-4">
               <UserCheck className="w-6 h-6" />

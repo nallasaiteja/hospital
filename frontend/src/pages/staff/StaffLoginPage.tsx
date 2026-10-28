@@ -102,7 +102,7 @@ export const StaffLoginPage: React.FC = () => {
           <span>Back to HMS Home</span>
         </Link>
 
-        <div className="p-8 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
+        <div className="p-5 sm:p-8 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
           <div className="text-center mb-6">
             <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto mb-4">
               <Hospital className="w-6 h-6" />

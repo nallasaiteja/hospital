@@ -52,34 +52,38 @@ export const StatCard: React.FC<StatCardProps> = ({
     <div
       onClick={onClick}
       className={clsx(
-        'p-5 rounded-2xl bg-slate-900 border border-slate-800 transition-all duration-200 relative overflow-hidden',
+        'p-3.5 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 transition-all duration-200 relative overflow-hidden flex flex-col justify-between w-full min-w-0',
         onClick && 'cursor-pointer hover:shadow-lg',
         accentBorder[accent],
         className
       )}
     >
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-slate-400">{title}</span>
-        <div className={clsx('w-9 h-9 rounded-xl flex items-center justify-center border', accentIconBg[accent])}>
-          <Icon className="w-5 h-5" />
+      <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+        <span className="text-xs font-medium text-slate-400 truncate">{title}</span>
+        <div className={clsx('w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center border shrink-0', accentIconBg[accent])}>
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
       </div>
 
-      <div className="flex items-baseline gap-2 mb-1">
-        <span className="text-2xl font-bold tracking-tight text-white">{value}</span>
-        {trend && (
-          <span
-            className={clsx(
-              'text-xs font-semibold px-1.5 py-0.5 rounded',
-              trend.isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
-            )}
-          >
-            {trend.value}
+      <div>
+        <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 mb-1">
+          <span className="text-xl sm:text-2xl font-bold tracking-tight text-white truncate max-w-full">
+            {value}
           </span>
-        )}
-      </div>
+          {trend && (
+            <span
+              className={clsx(
+                'text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded shrink-0',
+                trend.isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+              )}
+            >
+              {trend.value}
+            </span>
+          )}
+        </div>
 
-      {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
+        {subtitle && <p className="text-[11px] sm:text-xs text-slate-400 line-clamp-1 sm:line-clamp-none">{subtitle}</p>}
+      </div>
     </div>
   );
 };

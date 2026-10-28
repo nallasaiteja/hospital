@@ -76,26 +76,28 @@ export function DataTable<T extends Record<string, any>>({
   }, [filteredData, validPage, pageSize]);
 
   return (
-    <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-sm">
+    <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-sm w-full">
       {/* Table Toolbar */}
-      <div className="p-4 border-b border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder={searchPlaceholder}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
-          />
-        </div>
+      <div className="p-3 sm:p-4 border-b border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {searchable && (
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder={searchPlaceholder}
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition min-h-[38px]"
+            />
+          </div>
+        )}
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          {actions}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 sm:gap-3 w-full sm:w-auto">
+          {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 ml-auto sm:ml-0 shrink-0">
             <span>Show</span>
             <select
               value={pageSize}
@@ -110,20 +112,21 @@ export function DataTable<T extends Record<string, any>>({
               <option value={15}>15</option>
               <option value={25}>25</option>
             </select>
+            <span className="hidden xs:inline">rows</span>
           </div>
         </div>
       </div>
 
-      {/* Table Element */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+      {/* Table Container with smooth horizontal touch scroll */}
+      <div className="overflow-x-auto custom-scrollbar relative">
+        <table className="w-full text-left text-xs min-w-full">
+          <thead className="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 whitespace-nowrap">
             <tr>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
                   className={clsx(
-                    'py-3.5 px-4 font-semibold',
+                    'py-3 px-3 sm:py-3.5 sm:px-4 font-semibold',
                     col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left',
                     col.className
                   )}
@@ -136,7 +139,7 @@ export function DataTable<T extends Record<string, any>>({
           <tbody className="divide-y divide-slate-800/80 text-slate-300">
             {error ? (
               <tr>
-                <td colSpan={columns.length} className="py-12 text-center">
+                <td colSpan={columns.length} className="py-12 px-4 text-center">
                   <AlertCircle className="w-8 h-8 mx-auto text-rose-500 mb-2 stroke-1" />
                   <p className="text-xs font-semibold text-rose-400 mb-1">Failed to load table data</p>
                   <p className="text-xs text-slate-400 max-w-md mx-auto">{error}</p>
@@ -155,7 +158,7 @@ export function DataTable<T extends Record<string, any>>({
               Array.from({ length: 4 }).map((_, rIdx) => (
                 <tr key={rIdx} className="animate-pulse">
                   {columns.map((_, cIdx) => (
-                    <td key={cIdx} className="py-4 px-4">
+                    <td key={cIdx} className="py-3.5 px-3 sm:px-4">
                       <div className="h-4 bg-slate-800 rounded w-3/4" />
                     </td>
                   ))}
@@ -163,7 +166,7 @@ export function DataTable<T extends Record<string, any>>({
               ))
             ) : paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="py-12 text-center text-slate-500">
+                <td colSpan={columns.length} className="py-12 px-4 text-center text-slate-500">
                   <Inbox className="w-8 h-8 mx-auto text-slate-600 mb-2 stroke-1" />
                   <p className="text-xs">{emptyMessage}</p>
                 </td>
@@ -175,7 +178,7 @@ export function DataTable<T extends Record<string, any>>({
                     <td
                       key={cIdx}
                       className={clsx(
-                        'py-3.5 px-4',
+                        'py-3 px-3 sm:py-3.5 sm:px-4',
                         col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left',
                         col.className
                       )}
@@ -195,8 +198,8 @@ export function DataTable<T extends Record<string, any>>({
       </div>
 
       {/* Pagination Footer */}
-      <div className="p-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-        <div>
+      <div className="p-3 sm:p-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+        <div className="text-center sm:text-left text-[11px] sm:text-xs">
           Showing{' '}
           <strong className="text-white">
             {totalItems === 0 ? 0 : (validPage - 1) * pageSize + 1}
@@ -208,21 +211,23 @@ export function DataTable<T extends Record<string, any>>({
           of <strong className="text-white">{totalItems}</strong> entries
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={validPage <= 1}
-            className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition"
+            className="p-2 sm:p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition touch-target flex items-center justify-center sm:min-h-0 sm:min-w-0"
+            aria-label="Previous page"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="px-3 py-1 font-mono text-xs text-slate-300">
-            Page {validPage} of {totalPages}
+          <span className="px-2.5 sm:px-3 py-1 font-mono text-xs text-slate-300">
+            {validPage} / {totalPages}
           </span>
           <button
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={validPage >= totalPages}
-            className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition"
+            className="p-2 sm:p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition touch-target flex items-center justify-center sm:min-h-0 sm:min-w-0"
+            aria-label="Next page"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

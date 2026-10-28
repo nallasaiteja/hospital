@@ -523,7 +523,7 @@ export const TransactionsPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto custom-scrollbar whitespace-nowrap">
         <button
           onClick={() => setActiveTab('ALL')}
           className={`py-2 px-3.5 rounded-lg text-xs font-medium transition flex items-center gap-2 ${

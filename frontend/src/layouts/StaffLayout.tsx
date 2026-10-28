@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
@@ -13,6 +13,7 @@ import {
   Bell,
   ChevronDown,
   Menu,
+  X,
   FileText,
   Clock,
   Layers,
@@ -57,11 +58,32 @@ export const StaffLayout: React.FC = () => {
   const navigate = useNavigate();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [showBranchMenu, setShowBranchMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isOnDuty, setIsOnDuty] = useState(true);
   const [notifications, setNotifications] = useState<any[]>([]);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setIsMobileDrawerOpen(false);
+    setShowBranchMenu(false);
+    setShowNotifications(false);
+    setShowUserMenu(false);
+  }, [location.pathname]);
+
+  // Lock background scroll when mobile drawer is open
+  useEffect(() => {
+    if (isMobileDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileDrawerOpen]);
 
   // All 27 Hospital Management Modules organized into 4 logical groups with strict RBAC scoping
   const navGroups: NavGroup[] = [
@@ -130,21 +152,37 @@ export const StaffLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
-      {/* Sidebar */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col lg:flex-row relative">
+      {/* Mobile Backdrop Overlay */}
+      {isMobileDrawerOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-200"
+          onClick={() => setIsMobileDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar (Drawer on mobile, Collapsible on desktop) */}
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-40 bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col',
-          isSidebarOpen ? 'w-64' : 'w-20'
+          'fixed inset-y-0 left-0 z-50 bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col',
+          // Mobile state: off-canvas drawer
+          isMobileDrawerOpen ? 'translate-x-0 w-72 max-w-[85vw]' : '-translate-x-full lg:translate-x-0',
+          // Desktop state: collapsible sidebar
+          isSidebarOpen ? 'lg:w-64' : 'lg:w-20'
         )}
       >
         {/* Brand Header */}
         <div className="h-16 border-b border-slate-800 flex items-center justify-between px-4 shrink-0">
-          <Link to="/staff/dashboard" className="flex items-center gap-3 overflow-hidden">
+          <Link
+            to="/staff/dashboard"
+            onClick={() => setIsMobileDrawerOpen(false)}
+            className="flex items-center gap-3 overflow-hidden"
+          >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-500 text-slate-950 flex items-center justify-center font-bold shrink-0 shadow-lg shadow-cyan-500/20">
               <Activity className="w-5 h-5 stroke-[2.5]" />
             </div>
-            {isSidebarOpen && (
+            {(isSidebarOpen || isMobileDrawerOpen) && (
               <div className="leading-tight">
                 <span className="font-extrabold tracking-tight text-white block">AURA HMS</span>
                 <span className="text-[10px] uppercase font-semibold tracking-wider text-cyan-400">
@@ -154,9 +192,20 @@ export const StaffLayout: React.FC = () => {
             )}
           </Link>
 
+          {/* Mobile Close Button */}
+          <button
+            onClick={() => setIsMobileDrawerOpen(false)}
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition lg:hidden"
+            title="Close Menu"
+            aria-label="Close Menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Desktop Toggle Button */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition hidden lg:block"
             title="Toggle Sidebar"
           >
             <Menu className="w-4 h-4" />
@@ -167,7 +216,7 @@ export const StaffLayout: React.FC = () => {
         <div className="flex-1 py-3 px-3 overflow-y-auto space-y-5 custom-scrollbar">
           {visibleNavGroups.map((group, gIdx) => (
             <div key={gIdx} className="space-y-1">
-              {isSidebarOpen && (
+              {(isSidebarOpen || isMobileDrawerOpen) && (
                 <div className="px-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                   {group.title}
                 </div>
@@ -180,6 +229,7 @@ export const StaffLayout: React.FC = () => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onClick={() => setIsMobileDrawerOpen(false)}
                     className={clsx(
                       'flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all group relative',
                       isActive
@@ -193,11 +243,13 @@ export const StaffLayout: React.FC = () => {
                         isActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'
                       )}
                     />
-                    {isSidebarOpen && <span className="truncate">{item.label}</span>}
+                    {(isSidebarOpen || isMobileDrawerOpen) && (
+                      <span className="truncate">{item.label}</span>
+                    )}
 
-                    {/* Tooltip when collapsed */}
-                    {!isSidebarOpen && (
-                      <div className="absolute left-full ml-2 px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition z-50 shadow-xl">
+                    {/* Tooltip when collapsed on desktop */}
+                    {!isSidebarOpen && !isMobileDrawerOpen && (
+                      <div className="absolute left-full ml-2 px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition z-50 shadow-xl hidden lg:block">
                         {item.label}
                       </div>
                     )}
@@ -209,7 +261,7 @@ export const StaffLayout: React.FC = () => {
         </div>
 
         {/* Clinician Duty Status Badge */}
-        {isSidebarOpen && (
+        {(isSidebarOpen || isMobileDrawerOpen) && (
           <div className="p-3 border-t border-slate-800 bg-slate-950/40 m-3 rounded-xl border shrink-0">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-semibold text-slate-400">Clinical Shift</span>
@@ -235,29 +287,39 @@ export const StaffLayout: React.FC = () => {
       {/* Main Content Area */}
       <div
         className={clsx(
-          'flex-1 flex flex-col min-w-0 transition-all duration-300',
-          isSidebarOpen ? 'pl-64' : 'pl-20'
+          'flex-1 flex flex-col min-w-0 transition-all duration-300 w-full',
+          'pl-0', // default mobile
+          isSidebarOpen ? 'lg:pl-64' : 'lg:pl-20' // desktop offset
         )}
       >
         {/* Top Header */}
-        <header className="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6 shrink-0">
-          {/* Left: Branch Switcher & Shift Badge */}
-          <div className="flex items-center gap-4">
+        <header className="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-3 sm:px-6 shrink-0">
+          {/* Left: Mobile Drawer Trigger + Branch Switcher */}
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            {/* Mobile Hamburger Button */}
+            <button
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="p-2 -ml-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 lg:hidden flex items-center justify-center shrink-0"
+              aria-label="Open Navigation Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
             {/* Branch Switcher Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowBranchMenu(!showBranchMenu)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 hover:border-cyan-500/40 transition"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 hover:border-cyan-500/40 transition max-w-[170px] sm:max-w-xs"
               >
-                <Building2 className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="font-semibold text-white">
+                <Building2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <span className="font-semibold text-white truncate text-xs">
                   {currentBranch?.name || 'AURA Central Multi-Specialty'}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </button>
 
               {showBranchMenu && (
-                <div className="absolute top-full left-0 mt-2 w-72 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute top-full left-0 mt-2 w-72 max-w-[90vw] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                   <div className="px-3 py-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                     Switch Hospital Branch
                   </div>
@@ -275,12 +337,12 @@ export const StaffLayout: React.FC = () => {
                           : 'text-slate-300 hover:bg-slate-800'
                       )}
                     >
-                      <div>
-                        <div className="text-white text-xs font-medium">{b.name}</div>
-                        <div className="text-[10px] text-slate-500">{b.city}, {b.state}</div>
+                      <div className="truncate mr-2">
+                        <div className="text-white text-xs font-medium truncate">{b.name}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{b.city}, {b.state}</div>
                       </div>
                       {b.is_main_branch && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono shrink-0">
                           HQ
                         </span>
                       )}
@@ -290,21 +352,22 @@ export const StaffLayout: React.FC = () => {
               )}
             </div>
 
-            {/* Shift Indicator */}
-            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-slate-700/60 text-[11px] text-slate-300">
+            {/* Shift Indicator (Tablet and Desktop) */}
+            <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-slate-700/60 text-[11px] text-slate-300 shrink-0">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Shift: <strong>Live Clinical Roster</strong></span>
             </div>
           </div>
 
           {/* Right: Notifications & Clinician Profile */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Notifications Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition relative"
                 title="Notifications"
+                aria-label="Notifications"
               >
                 <Bell className="w-4 h-4" />
                 {notifications.length > 0 && (
@@ -313,7 +376,7 @@ export const StaffLayout: React.FC = () => {
               </button>
 
               {showNotifications && (
-                <div className="absolute top-full right-0 mt-2 w-80 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-3 z-50">
+                <div className="absolute top-full right-0 mt-2 w-72 sm:w-80 max-w-[90vw] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-3 z-50">
                   <div className="flex items-center justify-between px-2 py-1 mb-2 border-b border-slate-800 pb-2">
                     <span className="text-xs font-bold text-white">Live Clinical Alerts</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
@@ -329,7 +392,7 @@ export const StaffLayout: React.FC = () => {
                       <p className="text-[10px] text-slate-500 mt-0.5">All department logs and critical orders are normal.</p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
                       {notifications.map((n) => (
                         <div
                           key={n.id}
@@ -352,29 +415,32 @@ export const StaffLayout: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2.5 p-1.5 pl-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 transition border border-slate-700/60"
+                className="flex items-center gap-2 p-1.5 sm:pl-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 transition border border-slate-700/60"
               >
-                <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">
+                <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0">
                   {userProfile?.first_name ? userProfile.first_name[0] : 'S'}
                 </div>
-                <div className="text-left hidden sm:block">
-                  <div className="text-xs font-semibold text-white leading-tight">
+                <div className="text-left hidden sm:block max-w-[120px] md:max-w-[160px] truncate">
+                  <div className="text-xs font-semibold text-white leading-tight truncate">
                     {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name}` : 'Staff Member'}
                   </div>
-                  <div className="text-[10px] text-cyan-400 font-medium leading-tight">
+                  <div className="text-[10px] text-cyan-400 font-medium leading-tight truncate">
                     {role || 'Staff Specialist'}
                   </div>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </button>
 
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50">
+                <div className="absolute top-full right-0 mt-2 w-56 sm:w-64 max-w-[90vw] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50">
                   <div className="px-3 py-2 border-b border-slate-800 mb-1">
-                    <p className="text-xs font-bold text-white">
+                    <p className="text-xs font-bold text-white truncate">
                       {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name}` : 'Staff Member'}
                     </p>
                     <p className="text-[10px] text-slate-400 truncate">{userProfile?.email}</p>
+                    <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-semibold border border-cyan-500/20">
+                      Role: {role || 'Staff'}
+                    </span>
                   </div>
 
                   <button
@@ -391,16 +457,16 @@ export const StaffLayout: React.FC = () => {
         </header>
 
         {/* Dynamic Breadcrumbs */}
-        <div className="px-8 pt-4 flex items-center gap-2 text-xs text-slate-500 shrink-0">
-          <Link to="/staff/dashboard" className="hover:text-slate-300 transition">HMS Multi-Specialty</Link>
+        <div className="px-3 sm:px-6 pt-3 flex items-center gap-2 text-xs text-slate-500 shrink-0 overflow-x-auto whitespace-nowrap custom-scrollbar">
+          <Link to="/staff/dashboard" className="hover:text-slate-300 transition shrink-0">HMS Multi-Specialty</Link>
           <span>/</span>
-          <span className="text-slate-300 font-medium capitalize">
+          <span className="text-slate-300 font-medium capitalize truncate">
             {location.pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}
           </span>
         </div>
 
         {/* Page Canvas */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-5 lg:p-6 pb-12 overflow-x-hidden w-full max-w-full">
           <Outlet />
         </main>
       </div>

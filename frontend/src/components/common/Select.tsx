@@ -35,7 +35,7 @@ export const Select: React.FC<SelectProps> = ({
       <select
         id={selectId}
         className={clsx(
-          'w-full py-2.5 px-3 rounded-xl bg-slate-950 border text-xs text-white transition focus:outline-none',
+          'w-full py-2.5 px-3 rounded-xl bg-slate-950 border text-sm sm:text-xs text-white transition focus:outline-none min-h-[42px]',
           error
             ? 'border-rose-500/80 focus:border-rose-500'
             : 'border-slate-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30',
