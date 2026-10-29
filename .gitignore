@@ -45,6 +45,7 @@ frontend/dist-ssr/
 !.env.example
 *.pem
 *.key
+*.zip
 
 # IDE & OS
 .vscode/
