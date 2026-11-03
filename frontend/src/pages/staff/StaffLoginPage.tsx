@@ -39,7 +39,7 @@ export const StaffLoginPage: React.FC = () => {
 
       try {
         await supabase.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo: `${window.location.origin}/staff/login`,
+          redirectTo: `${window.location.origin}/reset-password`,
         });
       } catch (sbErr) {
         console.warn('Supabase password reset warning:', sbErr);

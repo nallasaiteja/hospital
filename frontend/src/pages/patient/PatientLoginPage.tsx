@@ -17,10 +17,16 @@ export const PatientLoginPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    // If user arrived from Supabase password recovery email
+    if (window.location.hash && (window.location.hash.includes('type=recovery') || window.location.hash.includes('access_token'))) {
+      navigate(`/reset-password${window.location.hash}`, { replace: true });
+      return;
+    }
+
     // Explicitly reset fields on mount to prevent stale autofill
     setEmail('');
     setPassword('');
-  }, []);
+  }, [navigate]);
 
   // Recovery State
   const [isRecoveryOpen, setIsRecoveryOpen] = useState(false);
@@ -44,7 +50,7 @@ export const PatientLoginPage: React.FC = () => {
 
       try {
         await supabase.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo: `${window.location.origin}/patient/login`,
+          redirectTo: `${window.location.origin}/reset-password`,
         });
       } catch (sbErr) {
         console.warn('Supabase password reset warning:', sbErr);

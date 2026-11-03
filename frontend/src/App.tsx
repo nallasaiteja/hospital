@@ -16,6 +16,7 @@ import { PatientPrescriptionsPage } from './pages/patient/PatientPrescriptionsPa
 import { PatientLabReportsPage } from './pages/patient/PatientLabReportsPage';
 import { PatientBillingPage } from './pages/patient/PatientBillingPage';
 import { StaffLoginPage } from './pages/staff/StaffLoginPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 // All 27 Hospital Modules
 import { StaffDashboard } from './pages/staff/StaffDashboard'; // 1. Dashboard
@@ -60,6 +61,7 @@ export const App: React.FC = () => {
             <Route path="/patient/login" element={<PatientLoginPage />} />
             <Route path="/patient/register" element={<PatientRegisterPage />} />
             <Route path="/staff/login" element={<StaffLoginPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Patient Portal Routes (Module 24: Guarded & Isolated) */}
             <Route
