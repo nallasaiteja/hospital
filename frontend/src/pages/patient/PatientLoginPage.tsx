@@ -5,8 +5,11 @@ import { supabase } from '../../services/supabase';
 import { authService, rbacService } from '../../services/api';
 import { Modal } from '../../components/common/Modal';
 import { parseApiError } from '../../utils/errorHandler';
+import { useTranslation } from 'react-i18next';
+import { LanguageSelector } from '../../components/common/LanguageSelector';
 
 export const PatientLoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -81,22 +84,25 @@ export const PatientLoginPage: React.FC = () => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-white transition mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to HMS Home</span>
-        </Link>
+        <div className="flex items-center justify-between mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-white transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{t('common.back', 'Back to HMS Home')}</span>
+          </Link>
+          <LanguageSelector variant="compact" />
+        </div>
 
         <div className="p-5 sm:p-8 rounded-2xl bg-slate-800/80 border border-slate-700/80 shadow-2xl backdrop-blur-xl">
           <div className="text-center mb-8">
             <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mx-auto mb-4">
               <UserCheck className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Patient Portal Login</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">{t('navigation.patientPortal', 'Patient Portal Login')}</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Access your medical records, appointment schedules, and digital prescriptions
+              {t('common.patientPortalDesc', 'Access your medical records, appointment schedules, and digital prescriptions')}
             </p>
           </div>
 
@@ -114,7 +120,7 @@ export const PatientLoginPage: React.FC = () => {
 
             <div>
               <label htmlFor="patient-login-email" className="block text-xs font-medium text-slate-300 mb-1">
-                Email Address
+                {t('auth.email', 'Email Address')}
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
@@ -135,14 +141,14 @@ export const PatientLoginPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label htmlFor="patient-login-password" className="block text-xs font-medium text-slate-300">
-                  Password
+                  {t('auth.password', 'Password')}
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsRecoveryOpen(true)}
                   className="text-xs text-teal-400 hover:text-teal-300 transition"
                 >
-                  Forgot?
+                  {t('auth.forgotPassword', 'Forgot?')}
                 </button>
               </div>
               <div className="relative">
@@ -169,10 +175,10 @@ export const PatientLoginPage: React.FC = () => {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Signing in...</span>
+                  <span>{t('auth.signingIn', 'Signing in...')}</span>
                 </>
               ) : (
-                <span>Sign In as Patient</span>
+                <span>{t('auth.login', 'Sign In as Patient')}</span>
               )}
             </button>
           </form>

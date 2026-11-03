@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.pharmacy_inventory.apps.PharmacyInventoryConfig',
     'apps.billing_finance.apps.BillingFinanceConfig',
     'apps.operations_hr.apps.OperationsHrConfig',
+    'apps.voice_translation.apps.VoiceTranslationConfig',
 ]
 
 MIDDLEWARE = [
@@ -161,6 +162,7 @@ REST_FRAMEWORK = {
         'user': '300/minute',
         'auth_sensitive': '10/minute',
         'reports': '30/minute',
+        'translation': '60/minute',
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_RENDERER_CLASSES': [
@@ -228,3 +230,8 @@ SUPABASE_SECRET_KEY = os.getenv('SUPABASE_SECRET_KEY', '')
 
 # Healthcare & Financial Defaults
 DEFAULT_CURRENCY = os.getenv('DEFAULT_CURRENCY', 'INR')
+
+# Google Gemini AI Integration (Voice Translation)
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
+VOICE_TRANSLATION_MAX_CHARS = int(os.getenv('VOICE_TRANSLATION_MAX_CHARS', '5000'))

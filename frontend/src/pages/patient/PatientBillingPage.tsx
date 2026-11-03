@@ -5,8 +5,10 @@ import { Badge } from '../../components/common/Badge';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { Modal } from '../../components/common/Modal';
 import { parseApiError } from '../../utils/errorHandler';
+import { useTranslation } from 'react-i18next';
 
 export const PatientBillingPage: React.FC = () => {
+  const { t } = useTranslation();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [, setReceipts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,10 +107,10 @@ export const PatientBillingPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
             <CreditCard className="w-7 h-7 text-emerald-400" />
-            Billing & Invoices
+            {t('navigation.billingTab', 'Billing & Invoices')}
           </h1>
           <p className="text-sm text-slate-400">
-            Itemized hospital bills, cashier payment receipts, and secure online settlement.
+            {t('patient.itemizedBills', 'Itemized hospital bills, cashier payment receipts, and secure online settlement.')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -116,7 +118,7 @@ export const PatientBillingPage: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
             <input
               type="text"
-              placeholder="Search invoice number..."
+              placeholder={t('billing.invoiceNumber', 'Search invoice number...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
@@ -125,7 +127,7 @@ export const PatientBillingPage: React.FC = () => {
           <button
             onClick={loadData}
             className="p-2 border border-slate-700 hover:bg-slate-800 rounded-lg text-slate-300 transition-colors"
-            title="Refresh Invoices"
+            title={t('common.refresh', 'Refresh Invoices')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -137,14 +139,14 @@ export const PatientBillingPage: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Amount Paid</span>
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('billing.paidAmount', 'Total Amount Paid')}</span>
           <p className="text-2xl font-bold text-emerald-400 mt-1">₹{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
-          <span className="text-xs text-slate-500">Cleared through cashier counter & online gateway</span>
+          <span className="text-xs text-slate-500">{t('billing.paymentMethod', 'Cleared through cashier counter & online gateway')}</span>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Outstanding Balance Due</span>
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('billing.balanceDue', 'Outstanding Balance Due')}</span>
           <p className="text-2xl font-bold text-amber-400 mt-1">₹{totalOutstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
-          <span className="text-xs text-slate-500">Payable online via UPI / Card or at Cashier Counter</span>
+          <span className="text-xs text-slate-500">{t('patient.paymentPendingCashier', 'Payable online via UPI / Card or at Cashier Counter')}</span>
         </div>
       </div>
 
@@ -152,14 +154,14 @@ export const PatientBillingPage: React.FC = () => {
         {loading ? (
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-400">
             <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-400 mb-2" />
-            Loading your hospital invoices...
+            {t('common.loading', 'Loading your hospital invoices...')}
           </div>
         ) : filtered.length === 0 ? (
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-500">
             <CreditCard className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-base font-semibold text-slate-300">No invoices on file</p>
+            <p className="text-base font-semibold text-slate-300">{t('common.noData', 'No invoices on file')}</p>
             <p className="text-xs text-slate-500 mt-1">
-              You do not have any pending or past hospital billing statements.
+              {t('patient.allBillsCleared', 'You do not have any pending or past hospital billing statements.')}
             </p>
           </div>
         ) : (

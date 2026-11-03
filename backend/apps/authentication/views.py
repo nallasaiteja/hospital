@@ -364,3 +364,73 @@ class RoleListView(APIView):
     def get(self, request):
         roles = Role.objects.filter(is_active=True).prefetch_related('permissions')
         return Response(RoleSerializer(roles, many=True).data, status=status.HTTP_200_OK)
+
+
+class UserPreferencesView(APIView):
+    """
+    Retrieves and updates individual user preferences, including preferred language.
+    Available to ALL authenticated users (staff, doctors, nurses, admins, patients).
+    """
+    permission_classes = [IsAuthenticated]
+
+    SUPPORTED_LANGUAGES = ['en', 'te', 'hi', 'ta', 'kn']
+
+    def get_user_profile(self, request):
+        claims = getattr(request, 'supabase_claims', {})
+        sub = claims.get('sub') or request.user.username
+        try:
+            return UserProfile.objects.get(supabase_user_id=sub)
+        except (UserProfile.DoesNotExist, ValueError):
+            email = getattr(request.user, 'email', '') or claims.get('email', '')
+            if email:
+                return UserProfile.objects.filter(email=email).first()
+            return None
+
+    def get(self, request):
+        profile = self.get_user_profile(request)
+        if not profile:
+            return Response({
+                'status': 'error',
+                'error': 'UserProfile not found for current session.',
+                'preferred_language': 'en',
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'status': 'success',
+            'preferred_language': profile.preferred_language or 'en',
+            'supported_languages': self.SUPPORTED_LANGUAGES,
+        }, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        profile = self.get_user_profile(request)
+        if not profile:
+            return Response({
+                'status': 'error',
+                'error': 'UserProfile not found for current session.',
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        lang = request.data.get('preferred_language') or request.data.get('language')
+        if not lang or not isinstance(lang, str):
+            return Response({
+                'status': 'error',
+                'error': 'preferred_language field is required.',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        clean_lang = lang.lower().strip()
+        if clean_lang not in self.SUPPORTED_LANGUAGES:
+            return Response({
+                'status': 'error',
+                'error': f"Unsupported language '{lang}'. Supported codes: {', '.join(self.SUPPORTED_LANGUAGES)}",
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        profile.preferred_language = clean_lang
+        profile.save(update_fields=['preferred_language', 'updated_at'])
+
+        return Response({
+            'status': 'success',
+            'preferred_language': profile.preferred_language,
+            'message': 'Language preference saved successfully.',
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        return self.patch(request)

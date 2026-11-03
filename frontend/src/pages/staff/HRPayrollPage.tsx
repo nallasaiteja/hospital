@@ -21,7 +21,8 @@ import {
   TrendingUp,
   FileCheck,
   Send,
-  Download
+  Download,
+  Loader2
 } from 'lucide-react';
 import { operationsHrService, authService } from '../../services/api';
 import { useBranch } from '../../context/BranchContext';
@@ -65,6 +66,15 @@ export const HRPayrollPage: React.FC = () => {
   const [selectedPayslip, setSelectedPayslip] = useState<any>(null);
   const [selectedStaffProfile, setSelectedStaffProfile] = useState<any>(null);
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
+  const [isAssignShiftModalOpen, setIsAssignShiftModalOpen] = useState(false);
+  const [assignShiftLoading, setAssignShiftLoading] = useState(false);
+  const [assignShiftForm, setAssignShiftForm] = useState({
+    staff: '',
+    shift: '',
+    roster_date: new Date().toISOString().split('T')[0],
+    status: 'CONFIRMED',
+    notes: 'Assigned General Day Shift schedule',
+  });
   const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
 
   // Form States
@@ -286,6 +296,41 @@ export const HRPayrollPage: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to fetch payslips.');
+    }
+  };
+
+  const handleAssignShift = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignShiftForm.staff || !assignShiftForm.shift) {
+      setError('Please select both a staff member and a shift schedule.');
+      return;
+    }
+    try {
+      setAssignShiftLoading(true);
+      setError(null);
+      await operationsHrService.assignRoster({
+        staff: assignShiftForm.staff,
+        shift: assignShiftForm.shift,
+        roster_date: assignShiftForm.roster_date,
+        status: assignShiftForm.status,
+        notes: assignShiftForm.notes,
+        branch: currentBranch?.id,
+      });
+      setSuccessMsg('Shift roster successfully assigned!');
+      setIsAssignShiftModalOpen(false);
+      setAssignShiftForm({
+        staff: '',
+        shift: '',
+        roster_date: new Date().toISOString().split('T')[0],
+        status: 'CONFIRMED',
+        notes: 'Assigned General Day Shift schedule',
+      });
+      const updatedRosters = await operationsHrService.getRosters({ branch_id: currentBranch?.id });
+      setRosters(updatedRosters?.results || updatedRosters || []);
+    } catch (err: any) {
+      setError(parseApiError(err).message);
+    } finally {
+      setAssignShiftLoading(false);
     }
   };
 
@@ -601,20 +646,75 @@ export const HRPayrollPage: React.FC = () => {
             </div>
 
             <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
-              <h2 className="text-base font-semibold text-slate-200 mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-indigo-400" />
-                Active Shift Roster Assignments
-              </h2>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {rosters.map((r) => (
-                  <div key={r.id} className="p-3 bg-slate-800/40 rounded-lg border border-slate-700/50 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-slate-200">{r.staff_name} ({r.employee_id})</div>
-                      <div className="text-xs text-slate-400">{r.shift_name} on {r.roster_date}</div>
-                    </div>
-                    <Badge variant="success">{r.status || 'CONFIRMED'}</Badge>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-200 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-indigo-400" />
+                    Active Shift Roster Assignments
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Live database roster schedules across hospital staff</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAssignShiftForm({
+                      staff: staffMembers[0]?.id || '',
+                      shift: shifts.find((s: any) => s.shift_code === 'GS')?.id || shifts[0]?.id || '',
+                      roster_date: new Date().toISOString().split('T')[0],
+                      status: 'CONFIRMED',
+                      notes: 'Assigned General Day Shift schedule',
+                    });
+                    setIsAssignShiftModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Assign Shift</span>
+                </button>
+              </div>
+              <div className="space-y-2.5 max-h-[30rem] overflow-y-auto pr-1 custom-scrollbar">
+                {rosters.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-xs">
+                    No active shift assignments logged. Click &quot;Assign Shift&quot; above to schedule.
                   </div>
-                ))}
+                ) : (
+                  rosters.map((r) => {
+                    const isDay = r.shift_name?.toLowerCase().includes('general') || r.shift_name?.toLowerCase().includes('day');
+                    const isMorning = r.shift_name?.toLowerCase().includes('morning');
+                    const isEvening = r.shift_name?.toLowerCase().includes('evening');
+                    const isNight = r.shift_name?.toLowerCase().includes('night');
+                    const badgeVariant = isNight ? 'danger' : isEvening ? 'purple' : isMorning ? 'warning' : 'cyan';
+
+                    return (
+                      <div key={r.id} className="p-3 bg-slate-800/40 hover:bg-slate-800/70 rounded-xl border border-slate-700/50 flex items-center justify-between gap-3 transition">
+                        <div className="min-w-0">
+                          <div className="font-medium text-slate-200 text-sm truncate">
+                            {r.staff_name || 'Staff Member'} <span className="text-xs font-mono text-slate-400">({r.employee_id})</span>
+                          </div>
+                          <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                            <span className="font-medium text-slate-300">{r.shift_name}</span>
+                            <span>&bull;</span>
+                            <span className="font-mono text-indigo-300">{r.roster_date}</span>
+                            {r.shift_start && r.shift_end && (
+                              <>
+                                <span>&bull;</span>
+                                <span className="text-[11px] text-slate-400">{String(r.shift_start).slice(0, 5)} - {String(r.shift_end).slice(0, 5)}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="shrink-0 flex items-center gap-2">
+                          <Badge variant={badgeVariant as any}>
+                            {isDay ? '☀️ General Day' : isMorning ? '🌅 Morning' : isEvening ? '🌇 Evening' : '🌙 Night ICU'}
+                          </Badge>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950/60 border border-emerald-800 text-emerald-400">
+                            {r.status || 'CONFIRMED'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -1178,6 +1278,115 @@ export const HRPayrollPage: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      {/* Assign Shift Roster Modal */}
+      <Modal
+        isOpen={isAssignShiftModalOpen}
+        onClose={() => setIsAssignShiftModalOpen(false)}
+        title="Assign Staff Shift Roster"
+        subtitle="Schedule General Day Shift, Clinical Morning, Evening, or Night ICU shifts"
+        size="md"
+      >
+        <form onSubmit={handleAssignShift} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              Staff Member *
+            </label>
+            <select
+              value={assignShiftForm.staff}
+              onChange={(e) => setAssignShiftForm({ ...assignShiftForm, staff: e.target.value })}
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+              required
+            >
+              <option value="">Select Staff Member</option>
+              {staffMembers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.full_name} ({s.employee_id}) — {s.designation || s.role_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              Shift Schedule *
+            </label>
+            <select
+              value={assignShiftForm.shift}
+              onChange={(e) => setAssignShiftForm({ ...assignShiftForm, shift: e.target.value })}
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+              required
+            >
+              <option value="">Select Shift</option>
+              {shifts.map((sh) => (
+                <option key={sh.id} value={sh.id}>
+                  {sh.shift_code} - {sh.name} ({String(sh.start_time).slice(0, 5)} - {String(sh.end_time).slice(0, 5)})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                Roster Date *
+              </label>
+              <input
+                type="date"
+                value={assignShiftForm.roster_date}
+                onChange={(e) => setAssignShiftForm({ ...assignShiftForm, roster_date: e.target.value })}
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                Status
+              </label>
+              <select
+                value={assignShiftForm.status}
+                onChange={(e) => setAssignShiftForm({ ...assignShiftForm, status: e.target.value })}
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+              >
+                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="SCHEDULED">SCHEDULED</option>
+                <option value="TENTATIVE">TENTATIVE</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              Roster Notes / Instructions
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Assigned General Day Shift schedule"
+              value={assignShiftForm.notes}
+              onChange={(e) => setAssignShiftForm({ ...assignShiftForm, notes: e.target.value })}
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={() => setIsAssignShiftModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={assignShiftLoading}
+              className="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center gap-2"
+            >
+              {assignShiftLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>{assignShiftLoading ? "Assigning..." : "Confirm Assignment"}</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

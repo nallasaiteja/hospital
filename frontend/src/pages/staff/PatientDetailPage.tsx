@@ -37,8 +37,10 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
+import { useTranslation } from 'react-i18next';
 
 export const PatientDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -187,7 +189,7 @@ export const PatientDetailPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
-        <p className="text-slate-400 text-sm">Aggregating comprehensive electronic medical records...</p>
+        <p className="text-slate-400 text-sm">{t('emr.aggregating', 'Aggregating comprehensive electronic medical records...')}</p>
       </div>
     );
   }
@@ -196,9 +198,9 @@ export const PatientDetailPage: React.FC = () => {
     return (
       <div className="p-8 max-w-4xl mx-auto space-y-4">
         <Link to="/staff/patients" className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-white">
-          <ArrowLeft className="w-4 h-4" /> Back to Patient Directory
+          <ArrowLeft className="w-4 h-4" /> {t('emr.backToPatients', 'Back to Patient Directory')}
         </Link>
-        <AlertBanner title="Electronic Medical Record Error" message={error || 'Patient record could not be loaded.'} variant="error" />
+        <AlertBanner title={t('emr.errorTitle', 'Electronic Medical Record Error')} message={error || t('emr.errorMessage', 'Patient record could not be loaded.')} variant="error" />
       </div>
     );
   }
@@ -206,23 +208,23 @@ export const PatientDetailPage: React.FC = () => {
   const { patient, overview, demographics, emergency_contacts, medical_history } = emr;
 
   const tabs = [
-    { id: 'overview', label: 'Overview & Vitals', icon: Activity, count: null },
-    { id: 'demographics', label: 'Demographics & Address', icon: MapPin, count: null },
-    { id: 'emergency', label: 'Emergency Contacts', icon: Phone, count: null },
-    { id: 'history', label: 'Medical History', icon: Heart, count: (medical_history.chronic_conditions?.length || 0) + (medical_history.past_medical_history?.length || 0) },
-    { id: 'allergies', label: 'Allergies & Alerts', icon: AlertTriangle, count: emr.allergies?.length || 0 },
-    { id: 'consents', label: 'Consents & Legal', icon: FileCheck, count: emr.consents?.length || 0 },
-    { id: 'documents', label: 'Documents & IDs', icon: Upload, count: emr.documents?.length || 0 },
-    { id: 'appointments', label: 'Appointments', icon: Calendar, count: emr.appointments?.length || 0 },
-    { id: 'consultations', label: 'Consultations', icon: ClipboardList, count: emr.consultations?.length || 0 },
-    { id: 'diagnoses', label: 'Diagnoses & Plans', icon: FileText, count: emr.diagnoses_and_plans?.length || 0 },
-    { id: 'prescriptions', label: 'Prescriptions', icon: Pill, count: emr.prescriptions?.length || 0 },
-    { id: 'admissions', label: 'Admissions & Inpatient', icon: Bed, count: emr.admissions?.length || 0 },
-    { id: 'lab', label: 'Lab Reports', icon: TestTube, count: emr.lab_reports?.length || 0 },
-    { id: 'radiology', label: 'Radiology & Imaging', icon: Radio, count: emr.radiology_reports?.length || 0 },
-    { id: 'billing', label: 'Billing & Invoices', icon: CreditCard, count: emr.billing_history?.length || 0 },
-    { id: 'notes', label: 'Clinical Notes', icon: FileText, count: emr.clinical_notes?.length || 0 },
-    { id: 'audit', label: 'Audit Trail', icon: Clock, count: emr.audit_trail?.length || 0 },
+    { id: 'overview', label: t('emr.tabOverview', 'Overview & Vitals'), icon: Activity, count: null },
+    { id: 'demographics', label: t('emr.tabDemographics', 'Demographics & Address'), icon: MapPin, count: null },
+    { id: 'emergency', label: t('emr.tabEmergency', 'Emergency Contacts'), icon: Phone, count: null },
+    { id: 'history', label: t('emr.tabHistory', 'Medical History'), icon: Heart, count: (medical_history.chronic_conditions?.length || 0) + (medical_history.past_medical_history?.length || 0) },
+    { id: 'allergies', label: t('emr.tabAllergies', 'Allergies & Alerts'), icon: AlertTriangle, count: emr.allergies?.length || 0 },
+    { id: 'consents', label: t('emr.tabConsents', 'Consents & Legal'), icon: FileCheck, count: emr.consents?.length || 0 },
+    { id: 'documents', label: t('emr.tabDocuments', 'Documents & IDs'), icon: Upload, count: emr.documents?.length || 0 },
+    { id: 'appointments', label: t('emr.tabAppointments', 'Appointments'), icon: Calendar, count: emr.appointments?.length || 0 },
+    { id: 'consultations', label: t('emr.tabConsultations', 'Consultations'), icon: ClipboardList, count: emr.consultations?.length || 0 },
+    { id: 'diagnoses', label: t('emr.tabDiagnoses', 'Diagnoses & Plans'), icon: FileText, count: emr.diagnoses_and_plans?.length || 0 },
+    { id: 'prescriptions', label: t('emr.tabPrescriptions', 'Prescriptions'), icon: Pill, count: emr.prescriptions?.length || 0 },
+    { id: 'admissions', label: t('emr.tabAdmissions', 'Admissions & Inpatient'), icon: Bed, count: emr.admissions?.length || 0 },
+    { id: 'lab', label: t('emr.tabLab', 'Lab Reports'), icon: TestTube, count: emr.lab_reports?.length || 0 },
+    { id: 'radiology', label: t('emr.tabRadiology', 'Radiology & Imaging'), icon: Radio, count: emr.radiology_reports?.length || 0 },
+    { id: 'billing', label: t('emr.tabBilling', 'Billing & Invoices'), icon: CreditCard, count: emr.billing_history?.length || 0 },
+    { id: 'notes', label: t('emr.tabNotes', 'Clinical Notes'), icon: FileText, count: emr.clinical_notes?.length || 0 },
+    { id: 'audit', label: t('emr.tabAudit', 'Audit Trail'), icon: Clock, count: emr.audit_trail?.length || 0 },
   ];
 
   return (
@@ -233,7 +235,7 @@ export const PatientDetailPage: React.FC = () => {
           to="/staff/patients"
           className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-cyan-400 transition"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Patient Directory
+          <ArrowLeft className="w-4 h-4" /> {t('emr.backToPatients', 'Back to Patient Directory')}
         </Link>
       </div>
 
@@ -254,18 +256,18 @@ export const PatientDetailPage: React.FC = () => {
                   {patient.status || 'ACTIVE'}
                 </Badge>
                 {patient.blood_group && (
-                  <Badge variant="warning">Blood: {patient.blood_group}</Badge>
+                  <Badge variant="warning">{t('emr.bloodLabel', 'Blood')}: {patient.blood_group}</Badge>
                 )}
                 {patient.age !== undefined && patient.age !== null && (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">
-                    {patient.age} Yrs ({patient.gender})
+                    {patient.age} {t('emr.yearsLabel', 'Yrs')} ({patient.gender})
                   </span>
                 )}
               </div>
               <p className="text-xs text-slate-400 mt-1 font-mono flex items-center gap-3">
-                <span>MRN: <strong className="text-cyan-400">{patient.medical_record_number}</strong></span>
-                <span>• Primary Facility: {patient.primary_branch_name}</span>
-                <span>• DOB: {patient.date_of_birth || 'Not recorded'}</span>
+                <span>{t('emr.mrnLabel', 'MRN')}: <strong className="text-cyan-400">{patient.medical_record_number}</strong></span>
+                <span>• {t('emr.facilityLabel', 'Primary Facility')}: {patient.primary_branch_name}</span>
+                <span>• {t('emr.dobLabel', 'DOB')}: {patient.date_of_birth || t('emr.notRecorded', 'Not recorded')}</span>
               </p>
             </div>
           </div>
@@ -276,19 +278,19 @@ export const PatientDetailPage: React.FC = () => {
               onClick={() => setShowHistoryModal(true)}
               className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700 transition flex items-center gap-1.5 border border-slate-700"
             >
-              <Heart className="w-3.5 h-3.5" /> Update Allergies/History
+              <Heart className="w-3.5 h-3.5" /> {t('emr.btnUpdateHistory', 'Update Allergies/History')}
             </button>
             <button
               onClick={() => setShowConsentModal(true)}
               className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-emerald-400 hover:bg-slate-700 transition flex items-center gap-1.5 border border-slate-700"
             >
-              <FileCheck className="w-3.5 h-3.5" /> Record Consent
+              <FileCheck className="w-3.5 h-3.5" /> {t('emr.btnRecordConsent', 'Record Consent')}
             </button>
             <button
               onClick={() => setShowDocModal(true)}
               className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-violet-400 hover:bg-slate-700 transition flex items-center gap-1.5 border border-slate-700"
             >
-              <Upload className="w-3.5 h-3.5" /> Attach Document
+              <Upload className="w-3.5 h-3.5" /> {t('emr.btnAttachDoc', 'Attach Document')}
             </button>
           </div>
         </div>
@@ -297,7 +299,7 @@ export const PatientDetailPage: React.FC = () => {
         {emr.allergies && emr.allergies.length > 0 && (
           <div className="mt-4 p-3 rounded-xl bg-rose-950/40 border border-rose-800/50 flex items-center gap-3 text-rose-200 text-xs">
             <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span className="font-semibold text-rose-300">CLINICAL ALLERGY ALERT:</span>
+            <span className="font-semibold text-rose-300">{t('emr.allergyAlert', 'CLINICAL ALLERGY ALERT')}:</span>
             <div className="flex items-center gap-1.5 flex-wrap">
               {emr.allergies.map((allergen, idx) => (
                 <span key={idx} className="px-2 py-0.5 rounded-md bg-rose-900/60 border border-rose-700 text-rose-200 font-medium">

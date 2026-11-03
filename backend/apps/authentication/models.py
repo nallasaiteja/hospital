@@ -79,6 +79,12 @@ class UserProfile(BaseUUIDModel):
     phone_number = models.CharField(max_length=25, blank=True)
     role = models.ForeignKey(Role, on_delete=models.PROTECT, related_name='users')
     avatar_url = models.URLField(max_length=500, blank=True)
+    preferred_language = models.CharField(
+        max_length=10,
+        default='en',
+        blank=True,
+        help_text="User's preferred UI language code (e.g. en, te, hi, ta, kn)"
+    )
     is_verified = models.BooleanField(default=False)
     last_login_at = models.DateTimeField(null=True, blank=True)
 

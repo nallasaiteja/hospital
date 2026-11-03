@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, ChevronLeft, ChevronRight, Inbox, AlertCircle, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 
 export interface Column<T> {
@@ -30,19 +31,23 @@ export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   searchable = true,
-  searchPlaceholder = 'Search records...',
+  searchPlaceholder,
   searchFilterKeys,
   pageSize: propPageSize,
   pageSizeDefault = 8,
   loading = false,
   error = null,
   onRetry,
-  emptyMessage = 'No records found matching your query.',
+  emptyMessage,
   actions,
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(propPageSize || pageSizeDefault);
+
+  const effectiveSearchPlaceholder = searchPlaceholder || t('common.searchRecords', 'Search records...');
+  const effectiveEmptyMessage = emptyMessage || t('common.noRecordsFound', 'No records found matching your query.');
 
   // Search filter
   const filteredData = useMemo(() => {
@@ -89,7 +94,7 @@ export function DataTable<T extends Record<string, any>>({
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder={searchPlaceholder}
+              placeholder={effectiveSearchPlaceholder}
               className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition min-h-[38px]"
             />
           </div>
@@ -98,7 +103,7 @@ export function DataTable<T extends Record<string, any>>({
         <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 sm:gap-3 w-full sm:w-auto">
           {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
           <div className="flex items-center gap-1.5 text-xs text-slate-400 ml-auto sm:ml-0 shrink-0">
-            <span>Show</span>
+            <span>{t('common.show', 'Show')}</span>
             <select
               value={pageSize}
               onChange={(e) => {
@@ -112,7 +117,7 @@ export function DataTable<T extends Record<string, any>>({
               <option value={15}>15</option>
               <option value={25}>25</option>
             </select>
-            <span className="hidden xs:inline">rows</span>
+            <span className="hidden xs:inline">{t('common.rows', 'rows')}</span>
           </div>
         </div>
       </div>
@@ -141,7 +146,7 @@ export function DataTable<T extends Record<string, any>>({
               <tr>
                 <td colSpan={columns.length} className="py-12 px-4 text-center">
                   <AlertCircle className="w-8 h-8 mx-auto text-rose-500 mb-2 stroke-1" />
-                  <p className="text-xs font-semibold text-rose-400 mb-1">Failed to load table data</p>
+                  <p className="text-xs font-semibold text-rose-400 mb-1">{t('common.failedLoadData', 'Failed to load table data')}</p>
                   <p className="text-xs text-slate-400 max-w-md mx-auto">{error}</p>
                   {onRetry && (
                     <button
@@ -149,7 +154,7 @@ export function DataTable<T extends Record<string, any>>({
                       className="mt-3 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium inline-flex items-center gap-1.5 transition border border-slate-700"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Retry Loading</span>
+                      <span>{t('common.retryLoading', 'Retry Loading')}</span>
                     </button>
                   )}
                 </td>
@@ -168,7 +173,7 @@ export function DataTable<T extends Record<string, any>>({
               <tr>
                 <td colSpan={columns.length} className="py-12 px-4 text-center text-slate-500">
                   <Inbox className="w-8 h-8 mx-auto text-slate-600 mb-2 stroke-1" />
-                  <p className="text-xs">{emptyMessage}</p>
+                  <p className="text-xs">{effectiveEmptyMessage}</p>
                 </td>
               </tr>
             ) : (
@@ -200,15 +205,15 @@ export function DataTable<T extends Record<string, any>>({
       {/* Pagination Footer */}
       <div className="p-3 sm:p-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
         <div className="text-center sm:text-left text-[11px] sm:text-xs">
-          Showing{' '}
+          {t('common.showing', 'Showing')}{' '}
           <strong className="text-white">
             {totalItems === 0 ? 0 : (validPage - 1) * pageSize + 1}
           </strong>{' '}
-          to{' '}
+          {t('common.to', 'to')}{' '}
           <strong className="text-white">
             {Math.min(validPage * pageSize, totalItems)}
           </strong>{' '}
-          of <strong className="text-white">{totalItems}</strong> entries
+          {t('common.of', 'of')} <strong className="text-white">{totalItems}</strong> {t('common.entries', 'entries')}
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
@@ -216,7 +221,7 @@ export function DataTable<T extends Record<string, any>>({
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={validPage <= 1}
             className="p-2 sm:p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition touch-target flex items-center justify-center sm:min-h-0 sm:min-w-0"
-            aria-label="Previous page"
+            aria-label={t('common.previousPage', 'Previous page')}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -227,7 +232,7 @@ export function DataTable<T extends Record<string, any>>({
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={validPage >= totalPages}
             className="p-2 sm:p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition touch-target flex items-center justify-center sm:min-h-0 sm:min-w-0"
-            aria-label="Next page"
+            aria-label={t('common.nextPage', 'Next page')}
           >
             <ChevronRight className="w-4 h-4" />
           </button>

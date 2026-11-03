@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { billingFinanceService, patientService, clinicalService } from '../../services/api';
 import { useBranch } from '../../context/BranchContext';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
@@ -52,6 +53,7 @@ type TabType =
   | 'gateway';
 
 export const BillingPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [loading, setLoading] = useState(false);
@@ -398,10 +400,10 @@ export const BillingPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             <DollarSign className="w-7 h-7 text-emerald-400" />
-            Billing & Payment Gateway Management
+            {t('billing.title', 'Billing & Payment Gateway Management')}
           </h1>
           <p className="text-sm text-slate-400">
-            Section 11: Centralized Hospital Invoicing, Service Tariffs, Deposits, Shifts & Online Gateway.
+            {t('dashboard.billingCardDesc', 'Section 11: Centralized Hospital Invoicing, Service Tariffs, Deposits, Shifts & Online Gateway.')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -409,24 +411,24 @@ export const BillingPage: React.FC = () => {
             onClick={() => setIsOpenShiftOpen(true)}
             className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
           >
-            <Clock className="w-4 h-4" /> Open Shift
+            <Clock className="w-4 h-4" /> {t('common.clinicalShift', 'Open Shift')}
           </button>
           <button
             onClick={() => setIsCreateDepositOpen(true)}
             className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
           >
-            <Wallet className="w-4 h-4" /> Collect Deposit
+            <Wallet className="w-4 h-4" /> {t('billing.settleBill', 'Collect Deposit')}
           </button>
           <button
             onClick={() => setIsCreateInvoiceOpen(true)}
             className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
           >
-            <Plus className="w-4 h-4" /> New Bill
+            <Plus className="w-4 h-4" /> {t('dashboard.createBill', 'New Bill')}
           </button>
           <button
             onClick={loadData}
             className="p-2 border border-slate-700 hover:bg-slate-800 rounded-lg text-slate-300 transition-colors"
-            title="Refresh Datasets"
+            title={t('common.refresh', 'Refresh Datasets')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -439,18 +441,18 @@ export const BillingPage: React.FC = () => {
       {/* Navigation Tabs */}
       <div className="flex flex-wrap border-b border-slate-800 gap-1 text-sm font-medium">
         {[
-          { key: 'dashboard', label: 'Overview', icon: TrendingUp },
-          { key: 'invoices', label: 'Bills & Invoices', icon: FileText },
-          { key: 'ipd_billing', label: 'IPD Discharge Billing', icon: Building2 },
-          { key: 'services', label: 'Service Catalogue', icon: Tag },
-          { key: 'tariffs', label: 'Tariff Plans', icon: Layers },
-          { key: 'packages', label: 'Care Bundles', icon: Package },
-          { key: 'deposits', label: 'Advance Deposits', icon: Wallet },
-          { key: 'receipts', label: 'Official Receipts', icon: Receipt },
-          { key: 'discounts', label: 'Discounts & Approvals', icon: ShieldCheck },
-          { key: 'credit_notes', label: 'Credit Notes & Refunds', icon: ArrowDownLeft },
-          { key: 'cashier_shifts', label: 'Cashier Shifts', icon: Clock },
-          { key: 'gateway', label: 'Gateway & Settlements', icon: CreditCard }
+          { key: 'dashboard', label: t('navigation.dashboard', 'Overview'), icon: TrendingUp },
+          { key: 'invoices', label: t('navigation.billing', 'Bills & Invoices'), icon: FileText },
+          { key: 'ipd_billing', label: t('navigation.admissions', 'IPD Discharge Billing'), icon: Building2 },
+          { key: 'services', label: t('common.category', 'Service Catalogue'), icon: Tag },
+          { key: 'tariffs', label: t('navigation.financialManagement', 'Tariff Plans'), icon: Layers },
+          { key: 'packages', label: t('navigation.coreOperations', 'Care Bundles'), icon: Package },
+          { key: 'deposits', label: t('billing.paidAmount', 'Advance Deposits'), icon: Wallet },
+          { key: 'receipts', label: t('navigation.transactions', 'Official Receipts'), icon: Receipt },
+          { key: 'discounts', label: t('billing.discount', 'Discounts & Approvals'), icon: ShieldCheck },
+          { key: 'credit_notes', label: t('common.notes', 'Credit Notes & Refunds'), icon: ArrowDownLeft },
+          { key: 'cashier_shifts', label: t('roles.cashier', 'Cashier Shifts'), icon: Clock },
+          { key: 'gateway', label: t('billing.settleBill', 'Gateway & Settlements'), icon: CreditCard }
         ].map(tab => {
           const Icon = tab.icon;
           return (
@@ -475,24 +477,24 @@ export const BillingPage: React.FC = () => {
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gross Billed</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('billing.totalAmount', 'Gross Billed')}</span>
               <p className="text-2xl font-bold text-white mt-1">₹{dashboardStats?.total_billed || '0.00'}</p>
-              <span className="text-xs text-slate-500">Total hospital patient billings</span>
+              <span className="text-xs text-slate-500">{t('patient.itemizedBills', 'Total hospital patient billings')}</span>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Collected</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('billing.paidAmount', 'Total Collected')}</span>
               <p className="text-2xl font-bold text-emerald-400 mt-1">₹{dashboardStats?.total_collected || '0.00'}</p>
-              <span className="text-xs text-slate-500">Cleared through cash, cards, UPI & gateway</span>
+              <span className="text-xs text-slate-500">{t('billing.paymentMethod', 'Cleared through cash, cards, UPI & gateway')}</span>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Outstanding Dues</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('billing.balanceDue', 'Outstanding Dues')}</span>
               <p className="text-2xl font-bold text-amber-400 mt-1">₹{dashboardStats?.total_outstanding || '0.00'}</p>
-              <span className="text-xs text-slate-500">Unsettled patient balances</span>
+              <span className="text-xs text-slate-500">{t('patient.outstandingDue', 'Unsettled patient balances')}</span>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Available Deposits</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('dashboard.revenueToday', 'Available Deposits')}</span>
               <p className="text-2xl font-bold text-cyan-400 mt-1">₹{dashboardStats?.total_deposits_available || '0.00'}</p>
-              <span className="text-xs text-slate-500">Advance balances ready for bill allocation</span>
+              <span className="text-xs text-slate-500">{t('common.details', 'Advance balances ready for bill allocation')}</span>
             </div>
           </div>
 

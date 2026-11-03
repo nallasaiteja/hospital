@@ -398,6 +398,83 @@ class TestStage3AuthenticationAndProvisioning(TestCase):
         req.refresh_from_db()
         assert req.status == ApprovalRequestStatus.APPROVED
         assert req.reviewed_by == fin_staff
-        assert req.status == ApprovalRequestStatus.APPROVED
-        assert req.reviewed_by == fin_staff
+
+
+class TestUserPreferencesMultilingual(TestCase):
+    """
+    Automated unit tests for website-wide multilingual preference management:
+    - Get current preference (defaults to 'en')
+    - Update preference to supported languages ('te', 'hi', 'ta', 'kn')
+    - Reject or handle invalid language codes
+    - Verify strict user isolation (User A's preference never modifies User B's)
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.doc_role, _ = Role.objects.get_or_create(name='DOCTOR', defaults={'display_name': 'Doctor'})
+
+        # User A
+        self.user_a_id = uuid.uuid4()
+        self.user_a = User.objects.create_user(username=str(self.user_a_id), email='user.a@aurahms.org')
+        self.profile_a = UserProfile.objects.create(
+            supabase_user_id=self.user_a_id,
+            email='user.a@aurahms.org',
+            first_name='Rao',
+            last_name='Sharma',
+            role=self.doc_role,
+            preferred_language='en'
+        )
+
+        # User B
+        self.user_b_id = uuid.uuid4()
+        self.user_b = User.objects.create_user(username=str(self.user_b_id), email='user.b@aurahms.org')
+        self.profile_b = UserProfile.objects.create(
+            supabase_user_id=self.user_b_id,
+            email='user.b@aurahms.org',
+            first_name='Ananya',
+            last_name='Iyer',
+            role=self.doc_role,
+            preferred_language='en'
+        )
+
+    def test_get_preferences_default(self):
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.get('/api/v1/auth/preferences/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['preferred_language'], 'en')
+        self.assertIn('supported_languages', data)
+        self.assertEqual(len(data['supported_languages']), 5)
+
+    def test_update_preference_telugu(self):
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.patch('/api/v1/auth/preferences/', {'preferred_language': 'te'}, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['preferred_language'], 'te')
+
+        self.profile_a.refresh_from_db()
+        self.assertEqual(self.profile_a.preferred_language, 'te')
+
+    def test_user_preference_isolation(self):
+        # User A sets language to Tamil
+        self.client.force_authenticate(user=self.user_a)
+        res_a = self.client.patch('/api/v1/auth/preferences/', {'preferred_language': 'ta'}, format='json')
+        self.assertEqual(res_a.status_code, 200)
+
+        # User B sets language to Kannada
+        self.client.force_authenticate(user=self.user_b)
+        res_b = self.client.patch('/api/v1/auth/preferences/', {'preferred_language': 'kn'}, format='json')
+        self.assertEqual(res_b.status_code, 200)
+
+        # Verify DB values are strictly isolated
+        self.profile_a.refresh_from_db()
+        self.profile_b.refresh_from_db()
+        self.assertEqual(self.profile_a.preferred_language, 'ta')
+        self.assertEqual(self.profile_b.preferred_language, 'kn')
+
+    def test_unsupported_language_code(self):
+        self.client.force_authenticate(user=self.user_a)
+        res = self.client.patch('/api/v1/auth/preferences/', {'preferred_language': 'fr'}, format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('Unsupported language', res.json()['error'])
 

@@ -690,14 +690,14 @@ export const InvestmentsPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 p-5 sm:p-6 rounded-2xl border border-slate-800 shadow-xl backdrop-blur-xl">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
+            <div className="p-2.5 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20">
               <Landmark className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Investment Portfolio Management</h1>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Investment Portfolio Management</h1>
               <p className="text-sm text-slate-500 mt-0.5">
                 Section 15 — Real-time hospital treasury portfolio, yield calculations, fixed deposits & ledger integration
               </p>
@@ -709,21 +709,21 @@ export const InvestmentsPage: React.FC = () => {
           <button
             onClick={loadData}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 rounded-xl border border-slate-700/80 transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 rounded-xl border border-slate-700/80 shadow-sm transition-colors"
           >
             <Download className="w-4 h-4" />
             Export Register
           </button>
           <button
             onClick={() => setShowNewModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 rounded-xl shadow-lg shadow-indigo-600/30 transition-all"
           >
             <Plus className="w-4 h-4" />
             New Investment
@@ -750,12 +750,12 @@ export const InvestmentsPage: React.FC = () => {
       {/* Metric Cards Ribbon (Real database records) */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
         {/* Card 1: Total Invested Principal */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:border-indigo-200 transition-all">
+        <div className="bg-slate-900/90 p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xl hover:border-indigo-500/40 transition-all group">
           <div className="flex items-center justify-between text-slate-500 mb-1">
             <span className="text-xs font-medium uppercase tracking-wider">Invested Principal</span>
             <DollarSign className="w-4 h-4 text-indigo-500" />
           </div>
-          <div className="text-xl font-bold text-slate-900">
+          <div className="text-xl sm:text-2xl font-bold text-white">
             {formatINR(stats?.total_invested_principal)}
           </div>
           <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
@@ -764,12 +764,12 @@ export const InvestmentsPage: React.FC = () => {
         </div>
 
         {/* Card 2: Current Portfolio Valuation */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:border-emerald-200 transition-all">
+        <div className="bg-slate-900/90 p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xl hover:border-emerald-500/40 transition-all group">
           <div className="flex items-center justify-between text-slate-500 mb-1">
             <span className="text-xs font-medium uppercase tracking-wider">Current Valuation</span>
             <TrendingUp className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="text-xl font-bold text-emerald-600">
+          <div className="text-xl sm:text-2xl font-bold text-emerald-400">
             {formatINR(stats?.current_portfolio_valuation)}
           </div>
           <div className="text-xs text-slate-500 mt-1">
@@ -778,12 +778,12 @@ export const InvestmentsPage: React.FC = () => {
         </div>
 
         {/* Card 3: Total Income Received */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:border-blue-200 transition-all">
+        <div className="bg-slate-900/90 p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xl hover:border-cyan-500/40 transition-all group">
           <div className="flex items-center justify-between text-slate-500 mb-1">
             <span className="text-xs font-medium uppercase tracking-wider">Total Income</span>
             <Coins className="w-4 h-4 text-blue-500" />
           </div>
-          <div className="text-xl font-bold text-blue-600">
+          <div className="text-xl sm:text-2xl font-bold text-cyan-400">
             {formatINR(stats?.total_income_received)}
           </div>
           <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
@@ -793,7 +793,7 @@ export const InvestmentsPage: React.FC = () => {
         </div>
 
         {/* Card 4: Realized & Unrealized Gains */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:border-amber-200 transition-all">
+        <div className="bg-slate-900/90 p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xl hover:border-amber-500/40 transition-all group">
           <div className="flex items-center justify-between text-slate-500 mb-1">
             <span className="text-xs font-medium uppercase tracking-wider">Unrealized G/L</span>
             <BarChart3 className="w-4 h-4 text-amber-500" />
@@ -807,12 +807,12 @@ export const InvestmentsPage: React.FC = () => {
         </div>
 
         {/* Card 5: Maturing Soon & Awaiting Settlement */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:border-purple-200 transition-all">
+        <div className="bg-slate-900/90 p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xl hover:border-purple-500/40 transition-all group">
           <div className="flex items-center justify-between text-slate-500 mb-1">
             <span className="text-xs font-medium uppercase tracking-wider">Maturing (≤30d)</span>
             <Calendar className="w-4 h-4 text-purple-500" />
           </div>
-          <div className="text-xl font-bold text-purple-700">
+          <div className="text-xl sm:text-2xl font-bold text-purple-400">
             {stats?.maturing_soon_count || 0}
           </div>
           <div className="text-xs text-amber-600 font-medium mt-1">
@@ -821,12 +821,12 @@ export const InvestmentsPage: React.FC = () => {
         </div>
 
         {/* Card 6: Approval Queue & Unreconciled */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:border-rose-200 transition-all">
+        <div className="bg-slate-900/90 p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xl hover:border-rose-500/40 transition-all group">
           <div className="flex items-center justify-between text-slate-500 mb-1">
             <span className="text-xs font-medium uppercase tracking-wider">Pending Approval</span>
             <Clock className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-xl font-bold text-amber-600">
+          <div className="text-xl sm:text-2xl font-bold text-amber-400">
             {stats?.pending_approval_count || 0}
           </div>
           <div className="text-xs text-slate-500 mt-1">
@@ -837,17 +837,17 @@ export const InvestmentsPage: React.FC = () => {
 
       {/* Portfolio Allocation Summary Bar */}
       {stats?.category_allocation && stats.category_allocation.length > 0 && (
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
+        <div className="bg-slate-900/90 p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xl">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <PieChart className="w-4 h-4 text-indigo-600" />
-              <span className="text-sm font-semibold text-slate-900">Portfolio Category Allocation</span>
+              <span className="text-sm font-bold text-white">Portfolio Category Allocation</span>
             </div>
             <span className="text-xs text-slate-500">
               Active Investments: {stats.active_count}
             </span>
           </div>
-          <div className="flex h-3 rounded-full overflow-hidden bg-slate-100 gap-0.5">
+          <div className="flex h-3 rounded-full overflow-hidden bg-slate-950/80 border border-slate-800 gap-0.5">
             {stats.category_allocation.map((cat, idx) => {
               const colors = ['bg-indigo-500', 'bg-teal-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500', 'bg-slate-400'];
               return (
@@ -860,13 +860,13 @@ export const InvestmentsPage: React.FC = () => {
               );
             })}
           </div>
-          <div className="flex flex-wrap items-center gap-4 mt-3 pt-2 border-t border-slate-100 text-xs text-slate-600">
+          <div className="flex flex-wrap items-center gap-4 mt-3 pt-2 border-t border-slate-800 text-xs text-slate-400">
             {stats.category_allocation.map((cat, idx) => {
               const dotColors = ['bg-indigo-500', 'bg-teal-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500', 'bg-slate-400'];
               return (
                 <div key={cat.category} className="flex items-center gap-1.5">
                   <span className={`w-2.5 h-2.5 rounded-full ${dotColors[idx % dotColors.length]}`} />
-                  <span className="font-medium text-slate-800">{cat.category_display}:</span>
+                  <span className="font-medium text-slate-200">{cat.category_display}:</span>
                   <span>{formatINR(cat.principal)}</span>
                   <span className="text-slate-400">({cat.percentage}%)</span>
                 </div>
@@ -877,13 +877,13 @@ export const InvestmentsPage: React.FC = () => {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-1">
         <button
           onClick={() => setActiveTab('ALL')}
           className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
             activeTab === 'ALL'
-              ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600 font-semibold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-indigo-500/20 text-indigo-300 border-b-2 border-indigo-500 font-semibold shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
           All Investments ({investments.length})
@@ -892,8 +892,8 @@ export const InvestmentsPage: React.FC = () => {
           onClick={() => setActiveTab('FIXED_DEPOSIT')}
           className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
             activeTab === 'FIXED_DEPOSIT'
-              ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600 font-semibold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-indigo-500/20 text-indigo-300 border-b-2 border-indigo-500 font-semibold shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
           Fixed Deposits ({investments.filter(i => i.category === 'FIXED_DEPOSIT').length})
@@ -902,8 +902,8 @@ export const InvestmentsPage: React.FC = () => {
           onClick={() => setActiveTab('GOVERNMENT_SECURITIES')}
           className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
             activeTab === 'GOVERNMENT_SECURITIES'
-              ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600 font-semibold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-indigo-500/20 text-indigo-300 border-b-2 border-indigo-500 font-semibold shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
           Govt Securities & Bonds
@@ -912,8 +912,8 @@ export const InvestmentsPage: React.FC = () => {
           onClick={() => setActiveTab('MUTUAL_FUNDS')}
           className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
             activeTab === 'MUTUAL_FUNDS'
-              ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600 font-semibold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-indigo-500/20 text-indigo-300 border-b-2 border-indigo-500 font-semibold shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
           Mutual Funds & Equities
@@ -922,8 +922,8 @@ export const InvestmentsPage: React.FC = () => {
           onClick={() => setActiveTab('APPROVAL_QUEUE')}
           className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5 ${
             activeTab === 'APPROVAL_QUEUE'
-              ? 'bg-amber-50 text-amber-700 border-b-2 border-amber-600 font-semibold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-amber-500/20 text-amber-300 border-b-2 border-amber-500 font-semibold shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
           <span>Approval Queue</span>
@@ -937,8 +937,8 @@ export const InvestmentsPage: React.FC = () => {
           onClick={() => setActiveTab('CALENDAR')}
           className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5 ${
             activeTab === 'CALENDAR'
-              ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600 font-semibold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-indigo-500/20 text-indigo-300 border-b-2 border-indigo-500 font-semibold shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
         >
           <Calendar className="w-4 h-4" />
@@ -956,76 +956,76 @@ export const InvestmentsPage: React.FC = () => {
         /* Section 7: Maturity Calendar & Alerts View */
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-purple-50/60 p-4 rounded-xl border border-purple-200">
-              <div className="flex items-center justify-between text-purple-700 mb-1">
+            <div className="bg-purple-950/30 p-4 rounded-2xl border border-purple-800/40">
+              <div className="flex items-center justify-between text-purple-400 mb-1">
                 <span className="text-xs font-bold uppercase">Maturing Within 30 Days</span>
                 <Clock className="w-4 h-4" />
               </div>
-              <div className="text-2xl font-bold text-purple-900">
+              <div className="text-2xl font-bold text-purple-200">
                 {calendar?.summary?.maturing_soon_count || 0}
               </div>
-              <p className="text-xs text-purple-600 mt-1">Requires renewal or redemption instructions</p>
+              <p className="text-xs text-purple-400/80 mt-1">Requires renewal or redemption instructions</p>
             </div>
 
-            <div className="bg-amber-50/60 p-4 rounded-xl border border-amber-200">
-              <div className="flex items-center justify-between text-amber-700 mb-1">
+            <div className="bg-amber-950/30 p-4 rounded-2xl border border-amber-800/40">
+              <div className="flex items-center justify-between text-amber-400 mb-1">
                 <span className="text-xs font-bold uppercase">Awaiting Settlement</span>
                 <AlertCircle className="w-4 h-4" />
               </div>
-              <div className="text-2xl font-bold text-amber-900">
+              <div className="text-2xl font-bold text-amber-200">
                 {calendar?.summary?.matured_awaiting_settlement_count || 0}
               </div>
-              <p className="text-xs text-amber-600 mt-1">Matured deposits awaiting bank funds receipt</p>
+              <p className="text-xs text-amber-400/80 mt-1">Matured deposits awaiting bank funds receipt</p>
             </div>
 
-            <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-200">
-              <div className="flex items-center justify-between text-blue-700 mb-1">
+            <div className="bg-blue-950/30 p-4 rounded-2xl border border-blue-800/40">
+              <div className="flex items-center justify-between text-blue-400 mb-1">
                 <span className="text-xs font-bold uppercase">Pending Approval</span>
                 <ShieldCheck className="w-4 h-4" />
               </div>
-              <div className="text-2xl font-bold text-blue-900">
+              <div className="text-2xl font-bold text-blue-200">
                 {calendar?.summary?.pending_approval_count || 0}
               </div>
-              <p className="text-xs text-blue-600 mt-1">Requires management sign-off</p>
+              <p className="text-xs text-blue-400/80 mt-1">Requires management sign-off</p>
             </div>
 
-            <div className="bg-rose-50/60 p-4 rounded-xl border border-rose-200">
-              <div className="flex items-center justify-between text-rose-700 mb-1">
+            <div className="bg-rose-950/30 p-4 rounded-2xl border border-rose-800/40">
+              <div className="flex items-center justify-between text-rose-400 mb-1">
                 <span className="text-xs font-bold uppercase">Missing Valuation (&gt;90d)</span>
                 <AlertTriangle className="w-4 h-4" />
               </div>
-              <div className="text-2xl font-bold text-rose-900">
+              <div className="text-2xl font-bold text-rose-200">
                 {calendar?.summary?.missing_valuation_count || 0}
               </div>
-              <p className="text-xs text-rose-600 mt-1">Market-linked assets needing NAV update</p>
+              <p className="text-xs text-rose-400/80 mt-1">Market-linked assets needing NAV update</p>
             </div>
           </div>
 
           {/* Maturing Soon List */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <div className="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+            <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-purple-600" />
-                <h3 className="font-semibold text-slate-900">Upcoming Maturities (Next 30 Days)</h3>
+                <h3 className="font-semibold text-white">Upcoming Maturities (Next 30 Days)</h3>
               </div>
               <span className="text-xs font-medium text-slate-500">
                 {calendar?.maturing_soon?.length || 0} deposits found
               </span>
             </div>
             {calendar?.maturing_soon && calendar.maturing_soon.length > 0 ? (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-800/60">
                 {calendar.maturing_soon.map((inv) => (
-                  <div key={inv.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/50">
+                  <div key={inv.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-800/40">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900">{inv.investment_name}</span>
+                        <span className="font-semibold text-white">{inv.investment_name}</span>
                         {getCategoryBadge(inv.category)}
                         <span className="text-xs font-mono text-slate-500">{inv.investment_id}</span>
                       </div>
                       <div className="text-xs text-slate-500 mt-1 flex items-center gap-4">
-                        <span>Institution: <b className="text-slate-700">{inv.issuing_institution}</b></span>
-                        <span>Principal: <b className="text-slate-900">{formatINR(inv.principal_amount)}</b></span>
-                        <span>Rate: <b className="text-slate-900">{inv.interest_rate}%</b></span>
+                        <span>Institution: <b className="text-slate-300">{inv.issuing_institution}</b></span>
+                        <span>Principal: <b className="text-white">{formatINR(inv.principal_amount)}</b></span>
+                        <span>Rate: <b className="text-white">{inv.interest_rate}%</b></span>
                         <span>Maturity Date: <b className="text-purple-700">{inv.maturity_date}</b></span>
                       </div>
                     </div>
@@ -1035,7 +1035,7 @@ export const InvestmentsPage: React.FC = () => {
                       </span>
                       <button
                         onClick={() => handleOpenDetail(inv)}
-                        className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                        className="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700"
                       >
                         View Terms
                       </button>
@@ -1062,29 +1062,29 @@ export const InvestmentsPage: React.FC = () => {
           </div>
 
           {/* Matured Awaiting Settlement */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div className="p-4 bg-amber-50/50 border-b border-amber-200 flex items-center justify-between">
+          <div className="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+            <div className="p-4 bg-amber-950/40 border-b border-amber-800/50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-amber-600" />
-                <h3 className="font-semibold text-slate-900">Matured Investments Awaiting Bank Settlement</h3>
+                <h3 className="font-semibold text-white">Matured Investments Awaiting Bank Settlement</h3>
               </div>
               <span className="text-xs font-medium text-amber-700">
                 {calendar?.matured_awaiting_settlement?.length || 0} pending
               </span>
             </div>
             {calendar?.matured_awaiting_settlement && calendar.matured_awaiting_settlement.length > 0 ? (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-800/60">
                 {calendar.matured_awaiting_settlement.map((inv) => (
-                  <div key={inv.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/50">
+                  <div key={inv.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-800/40">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900">{inv.investment_name}</span>
+                        <span className="font-semibold text-white">{inv.investment_name}</span>
                         {getStatusBadge(inv.lifecycle_status)}
                         <span className="text-xs font-mono text-slate-500">{inv.investment_id}</span>
                       </div>
                       <div className="text-xs text-slate-500 mt-1 flex items-center gap-4">
-                        <span>Institution: <b className="text-slate-700">{inv.issuing_institution}</b></span>
-                        <span>Carrying Cost: <b className="text-slate-900">{formatINR(inv.principal_amount)}</b></span>
+                        <span>Institution: <b className="text-slate-300">{inv.issuing_institution}</b></span>
+                        <span>Carrying Cost: <b className="text-white">{formatINR(inv.principal_amount)}</b></span>
                         <span>Matured On: <b className="text-amber-700">{inv.maturity_date}</b></span>
                       </div>
                     </div>
@@ -1113,7 +1113,7 @@ export const InvestmentsPage: React.FC = () => {
         /* Section 3 & 4: Investment Register Table */
         <div className="space-y-4">
           {/* Search & Filters */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 shadow-xl">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -1121,7 +1121,7 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="Search by ID, instrument name, bank, folio or certificate number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
               />
             </div>
 
@@ -1129,7 +1129,7 @@ export const InvestmentsPage: React.FC = () => {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-indigo-500"
+                className="px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark] transition"
               >
                 <option value="">All Categories</option>
                 <option value="FIXED_DEPOSIT">Fixed Deposits</option>
@@ -1143,7 +1143,7 @@ export const InvestmentsPage: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-indigo-500"
+                className="px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark] transition"
               >
                 <option value="">All Statuses</option>
                 <option value="DRAFT">Draft</option>
@@ -1159,10 +1159,10 @@ export const InvestmentsPage: React.FC = () => {
           </div>
 
           {/* Investment Table */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50/80 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="bg-slate-950/80 text-[11px] uppercase font-semibold text-slate-400 border-b border-slate-800 tracking-wider">
                   <tr>
                     <th className="px-4 py-3.5">Investment / ID</th>
                     <th className="px-4 py-3.5">Category</th>
@@ -1176,7 +1176,7 @@ export const InvestmentsPage: React.FC = () => {
                     <th className="px-4 py-3.5 text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-800/60">
                   {loading ? (
                     <tr>
                       <td colSpan={10} className="px-4 py-12 text-center text-slate-400">
@@ -1193,9 +1193,9 @@ export const InvestmentsPage: React.FC = () => {
                     </tr>
                   ) : (
                     filteredInvestments.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-slate-50/70 transition-colors">
+                      <tr key={inv.id} className="hover:bg-slate-800/40 transition-colors">
                         <td className="px-4 py-3.5">
-                          <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                          <div className="font-semibold text-white flex items-center gap-1.5">
                             {inv.investment_name}
                           </div>
                           <span className="text-xs font-mono text-slate-400">{inv.investment_id}</span>
@@ -1204,13 +1204,13 @@ export const InvestmentsPage: React.FC = () => {
                           {getCategoryBadge(inv.category)}
                         </td>
                         <td className="px-4 py-3.5">
-                          <div className="font-medium text-slate-800">{inv.issuing_institution}</div>
+                          <div className="font-medium text-slate-200">{inv.issuing_institution}</div>
                           <div className="text-xs text-slate-400">
                             {inv.reference_number || inv.folio_number || '—'}
                           </div>
                         </td>
                         <td className="px-4 py-3.5 text-right">
-                          <div className="font-semibold text-slate-900">{formatINR(inv.principal_amount)}</div>
+                          <div className="font-semibold text-white">{formatINR(inv.principal_amount)}</div>
                           {parseFloat(inv.acquisition_fees || '0') > 0 && (
                             <div className="text-[11px] text-slate-400">+ Fees: {formatINR(inv.acquisition_fees)}</div>
                           )}
@@ -1224,14 +1224,14 @@ export const InvestmentsPage: React.FC = () => {
                         <td className="px-4 py-3.5">
                           {inv.interest_rate ? (
                             <div>
-                              <span className="font-semibold text-slate-800">{inv.interest_rate}%</span>
+                              <span className="font-semibold text-white">{inv.interest_rate}%</span>
                               <div className="text-[11px] text-slate-400 capitalize">
                                 {inv.compounding_frequency.toLowerCase()}
                               </div>
                             </div>
                           ) : inv.latest_nav ? (
                             <div>
-                              <span className="text-xs font-mono text-slate-700">NAV: ₹{inv.latest_nav}</span>
+                              <span className="text-xs font-mono text-slate-300">NAV: ₹{inv.latest_nav}</span>
                               <div className="text-[11px] text-slate-400">{inv.units} units</div>
                             </div>
                           ) : (
@@ -1241,7 +1241,7 @@ export const InvestmentsPage: React.FC = () => {
                         <td className="px-4 py-3.5">
                           {inv.maturity_date ? (
                             <div>
-                              <div className="font-medium text-slate-700">{inv.maturity_date}</div>
+                              <div className="font-medium text-slate-200">{inv.maturity_date}</div>
                               {inv.is_maturing_soon && (
                                 <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-100 text-purple-700">
                                   {inv.days_to_maturity}d left
@@ -1389,7 +1389,7 @@ export const InvestmentsPage: React.FC = () => {
         <form onSubmit={handleCreateInvestment} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Category *
               </label>
               <select
@@ -1398,7 +1398,7 @@ export const InvestmentsPage: React.FC = () => {
                   setNewForm({ ...newForm, category: e.target.value });
                   setYieldPreview(null);
                 }}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                 required
               >
                 <option value="FIXED_DEPOSIT">Fixed Deposit</option>
@@ -1411,7 +1411,7 @@ export const InvestmentsPage: React.FC = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Investment Name *
               </label>
               <input
@@ -1419,13 +1419,13 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. SBI 3-Year Special Term Deposit / HDFC Liquid Fund"
                 value={newForm.investment_name}
                 onChange={(e) => setNewForm({ ...newForm, investment_name: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Issuing Institution / Bank *
               </label>
               <input
@@ -1433,13 +1433,13 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. State Bank of India / RBI"
                 value={newForm.issuing_institution}
                 onChange={(e) => setNewForm({ ...newForm, issuing_institution: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Reference / FD Receipt No
               </label>
               <input
@@ -1447,12 +1447,12 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. FDR-2026-992144"
                 value={newForm.reference_number}
                 onChange={(e) => setNewForm({ ...newForm, reference_number: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Folio / Demat Account No
               </label>
               <input
@@ -1460,18 +1460,18 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. FOL-882910-MF"
                 value={newForm.folio_number}
                 onChange={(e) => setNewForm({ ...newForm, folio_number: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Source Treasury Bank (Section 13)
               </label>
               <select
                 value={newForm.financial_account}
                 onChange={(e) => setNewForm({ ...newForm, financial_account: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               >
                 <option value="">Select Linked Financial Account</option>
                 {financialAccounts.map((acc) => (
@@ -1483,33 +1483,33 @@ export const InvestmentsPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Purchase / Placement Date *
               </label>
               <input
                 type="date"
                 value={newForm.purchase_date}
                 onChange={(e) => setNewForm({ ...newForm, purchase_date: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Maturity Date {newForm.category === 'FIXED_DEPOSIT' ? '*' : '(Optional)'}
               </label>
               <input
                 type="date"
                 value={newForm.maturity_date}
                 onChange={(e) => setNewForm({ ...newForm, maturity_date: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                 required={newForm.category === 'FIXED_DEPOSIT'}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Principal Amount (₹) *
               </label>
               <input
@@ -1518,7 +1518,7 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. 500000"
                 value={newForm.principal_amount}
                 onChange={(e) => setNewForm({ ...newForm, principal_amount: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-semibold [color-scheme:dark]"
                 required
               />
             </div>
@@ -1527,7 +1527,7 @@ export const InvestmentsPage: React.FC = () => {
             {['MUTUAL_FUNDS', 'SHARES_EQUITIES'].includes(newForm.category) && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                     Units / Quantity
                   </label>
                   <input
@@ -1536,11 +1536,11 @@ export const InvestmentsPage: React.FC = () => {
                     placeholder="e.g. 1000.50"
                     value={newForm.units}
                     onChange={(e) => setNewForm({ ...newForm, units: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                     Purchase NAV / Price Per Unit
                   </label>
                   <input
@@ -1549,14 +1549,14 @@ export const InvestmentsPage: React.FC = () => {
                     placeholder="e.g. 45.20"
                     value={newForm.purchase_nav}
                     onChange={(e) => setNewForm({ ...newForm, purchase_nav: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                   />
                 </div>
               </>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Acquisition Fees / Brokerage (₹)
               </label>
               <input
@@ -1565,7 +1565,7 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. 250"
                 value={newForm.acquisition_fees}
                 onChange={(e) => setNewForm({ ...newForm, acquisition_fees: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
 
@@ -1573,7 +1573,7 @@ export const InvestmentsPage: React.FC = () => {
             {newForm.category === 'FIXED_DEPOSIT' && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                     Interest Rate (% p.a.) *
                   </label>
                   <input
@@ -1582,19 +1582,19 @@ export const InvestmentsPage: React.FC = () => {
                     placeholder="e.g. 7.25"
                     value={newForm.interest_rate}
                     onChange={(e) => setNewForm({ ...newForm, interest_rate: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold"
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-semibold [color-scheme:dark]"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                     Compounding Frequency *
                   </label>
                   <select
                     value={newForm.compounding_frequency}
                     onChange={(e) => setNewForm({ ...newForm, compounding_frequency: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                   >
                     <option value="SIMPLE">Simple Interest (No Compounding)</option>
                     <option value="MONTHLY">Monthly Compounding</option>
@@ -1609,11 +1609,11 @@ export const InvestmentsPage: React.FC = () => {
 
           {/* Section 5: Dedicated Fixed Deposit Yield Calculator Preview */}
           {newForm.category === 'FIXED_DEPOSIT' && (
-            <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-3">
+            <div className="p-4 bg-indigo-950/40 rounded-xl border border-indigo-500/30 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calculator className="w-4 h-4 text-indigo-600" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-300">
                     FD Expected Yield Preview (Mathematical Calculation)
                   </span>
                 </div>
@@ -1621,17 +1621,17 @@ export const InvestmentsPage: React.FC = () => {
                   type="button"
                   onClick={handleCalculateYield}
                   disabled={calculatingYield}
-                  className="px-3 py-1 text-xs font-medium text-indigo-700 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                  className="px-3.5 py-1.5 text-xs font-semibold text-indigo-300 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 rounded-lg transition-colors"
                 >
                   {calculatingYield ? 'Calculating...' : 'Calculate Yield'}
                 </button>
               </div>
 
               {yieldPreview && (
-                <div className="grid grid-cols-3 gap-3 pt-2 border-t border-indigo-100 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-indigo-500/20 text-xs">
                   <div>
                     <span className="text-slate-500 block">Expected Maturity Value:</span>
-                    <span className="text-sm font-bold text-indigo-900">{formatINR(yieldPreview.expected_maturity_amount)}</span>
+                    <span className="text-sm font-bold text-white">{formatINR(yieldPreview.expected_maturity_amount)}</span>
                   </div>
                   <div>
                     <span className="text-slate-500 block">Expected Total Interest:</span>
@@ -1639,7 +1639,7 @@ export const InvestmentsPage: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-slate-500 block">Tenure (Days):</span>
-                    <span className="text-sm font-semibold text-slate-800">{yieldPreview.tenure_days} days</span>
+                    <span className="text-sm font-semibold text-slate-200">{yieldPreview.tenure_days} days</span>
                   </div>
                   <div className="col-span-3 text-[11px] text-slate-500 italic">
                     Note: {yieldPreview.calculation_method}. Estimated amount is for projection and never treated as confirmed bank payout until verified bank settlement receipt.
@@ -1650,7 +1650,7 @@ export const InvestmentsPage: React.FC = () => {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
               Notes & Investment Rationale
             </label>
             <textarea
@@ -1658,22 +1658,22 @@ export const InvestmentsPage: React.FC = () => {
               placeholder="e.g. Hospital liquidity reserve placement approved in Finance Committee meeting..."
               value={newForm.notes}
               onChange={(e) => setNewForm({ ...newForm, notes: e.target.value })}
-              className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
               onClick={() => setShowNewModal(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={actionLoading}
-              className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-colors"
+              className="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/30 transition"
             >
               {actionLoading ? 'Creating...' : 'Save Draft Investment'}
             </button>
@@ -1692,13 +1692,13 @@ export const InvestmentsPage: React.FC = () => {
         <form onSubmit={handleRecordIncome} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Income Type *
               </label>
               <select
                 value={incomeForm.income_type}
                 onChange={(e) => setIncomeForm({ ...incomeForm, income_type: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               >
                 <option value="INTEREST">Interest Income</option>
                 <option value="DIVIDEND">Dividend Income</option>
@@ -1707,20 +1707,20 @@ export const InvestmentsPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Receipt Date *
               </label>
               <input
                 type="date"
                 value={incomeForm.receipt_date}
                 onChange={(e) => setIncomeForm({ ...incomeForm, receipt_date: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Amount Received (Net) (₹) *
               </label>
               <input
@@ -1729,13 +1729,13 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. 18250"
                 value={incomeForm.amount_received}
                 onChange={(e) => setIncomeForm({ ...incomeForm, amount_received: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg font-semibold"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-semibold [color-scheme:dark]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 TDS / Withholding Tax (₹)
               </label>
               <input
@@ -1744,18 +1744,18 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. 1825"
                 value={incomeForm.tds_withheld}
                 onChange={(e) => setIncomeForm({ ...incomeForm, tds_withheld: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
 
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Receiving Bank Account (Section 13)
               </label>
               <select
                 value={incomeForm.receiving_financial_account}
                 onChange={(e) => setIncomeForm({ ...incomeForm, receiving_financial_account: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               >
                 <option value="">Select Receiving Bank Account</option>
                 {financialAccounts.map((acc) => (
@@ -1767,7 +1767,7 @@ export const InvestmentsPage: React.FC = () => {
             </div>
 
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Bank Reference / UTR Number
               </label>
               <input
@@ -1775,12 +1775,12 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. UTR-AXIS-202610-883921"
                 value={incomeForm.bank_reference}
                 onChange={(e) => setIncomeForm({ ...incomeForm, bank_reference: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
 
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Notes
               </label>
               <input
@@ -1788,16 +1788,16 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. Q2 FY26 Interest credited"
                 value={incomeForm.notes}
                 onChange={(e) => setIncomeForm({ ...incomeForm, notes: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
               onClick={() => setShowIncomeModal(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>
@@ -1823,20 +1823,20 @@ export const InvestmentsPage: React.FC = () => {
         <form onSubmit={handleRecordValuation} className="space-y-4">
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Valuation Date *
               </label>
               <input
                 type="date"
                 value={valuationForm.valuation_date}
                 onChange={(e) => setValuationForm({ ...valuationForm, valuation_date: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Total Recorded Valuation (₹) *
               </label>
               <input
@@ -1845,14 +1845,14 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. 525000"
                 value={valuationForm.recorded_valuation}
                 onChange={(e) => setValuationForm({ ...valuationForm, recorded_valuation: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg font-semibold"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-semibold [color-scheme:dark]"
                 required
               />
             </div>
 
             {['MUTUAL_FUNDS', 'SHARES_EQUITIES'].includes(selectedInvestment?.category || '') && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                   Latest NAV / Share Price (₹)
                 </label>
                 <input
@@ -1861,19 +1861,19 @@ export const InvestmentsPage: React.FC = () => {
                   placeholder="e.g. 48.75"
                   value={valuationForm.recorded_nav}
                   onChange={(e) => setValuationForm({ ...valuationForm, recorded_nav: e.target.value })}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Valuation Source *
               </label>
               <select
                 value={valuationForm.valuation_source}
                 onChange={(e) => setValuationForm({ ...valuationForm, valuation_source: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               >
                 <option value="BANK_STATEMENT">Verified Bank Statement / FD Advice</option>
                 <option value="FUND_FACTSHEET">Fund House / AMC Monthly Factsheet</option>
@@ -1884,7 +1884,7 @@ export const InvestmentsPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Remarks
               </label>
               <input
@@ -1892,18 +1892,18 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. Q3 Quarter-end portfolio revaluation"
                 value={valuationForm.notes}
                 onChange={(e) => setValuationForm({ ...valuationForm, notes: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
 
             {selectedInvestment && (
-              <div className="p-3 bg-slate-50 rounded-lg text-xs text-slate-600 space-y-1">
+              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
                 <div className="flex justify-between">
                   <span>Current Carrying Cost:</span>
                   <b>{formatINR(selectedInvestment.principal_amount)}</b>
                 </div>
                 {valuationForm.recorded_valuation && (
-                  <div className="flex justify-between font-semibold pt-1 border-t border-slate-200">
+                  <div className="flex justify-between font-semibold pt-1 border-t border-slate-800">
                     <span>Unrealized Gain / Loss:</span>
                     <span className={parseFloat(valuationForm.recorded_valuation) - parseFloat(selectedInvestment.principal_amount) >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
                       {formatINR(parseFloat(valuationForm.recorded_valuation) - parseFloat(selectedInvestment.principal_amount))}
@@ -1914,11 +1914,11 @@ export const InvestmentsPage: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
               onClick={() => setShowValuationModal(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>
@@ -1944,20 +1944,20 @@ export const InvestmentsPage: React.FC = () => {
         <form onSubmit={handleRedeem} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Redemption Date *
               </label>
               <input
                 type="date"
                 value={redeemForm.redemption_date}
                 onChange={(e) => setRedeemForm({ ...redeemForm, redemption_date: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Gross Proceeds (₹) *
               </label>
               <input
@@ -1966,13 +1966,13 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. 545000"
                 value={redeemForm.gross_proceeds}
                 onChange={(e) => setRedeemForm({ ...redeemForm, gross_proceeds: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg font-semibold"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-semibold [color-scheme:dark]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Exit Load / Bank Penalties (₹)
               </label>
               <input
@@ -1981,12 +1981,12 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. 0"
                 value={redeemForm.exit_load_fees}
                 onChange={(e) => setRedeemForm({ ...redeemForm, exit_load_fees: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 TDS / Withholding Tax (₹)
               </label>
               <input
@@ -1995,18 +1995,18 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. 4500"
                 value={redeemForm.tds_withheld}
                 onChange={(e) => setRedeemForm({ ...redeemForm, tds_withheld: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
 
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Settlement Bank Account (Section 13)
               </label>
               <select
                 value={redeemForm.settlement_financial_account}
                 onChange={(e) => setRedeemForm({ ...redeemForm, settlement_financial_account: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               >
                 <option value="">Select Settlement Bank Account</option>
                 {financialAccounts.map((acc) => (
@@ -2018,7 +2018,7 @@ export const InvestmentsPage: React.FC = () => {
             </div>
 
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Bank UTR / Settlement Reference
               </label>
               <input
@@ -2026,12 +2026,12 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. UTR-SETTLE-202610-10923"
                 value={redeemForm.bank_reference}
                 onChange={(e) => setRedeemForm({ ...redeemForm, bank_reference: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
 
             <div className="col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Settlement Notes
               </label>
               <input
@@ -2039,7 +2039,7 @@ export const InvestmentsPage: React.FC = () => {
                 placeholder="e.g. Full maturity proceeds received in Axis Treasury"
                 value={redeemForm.notes}
                 onChange={(e) => setRedeemForm({ ...redeemForm, notes: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               />
             </div>
           </div>
@@ -2065,11 +2065,11 @@ export const InvestmentsPage: React.FC = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
               onClick={() => setShowRedeemModal(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>
@@ -2105,7 +2105,7 @@ export const InvestmentsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
               Approval Remarks / Board Resolution Ref
             </label>
             <textarea
@@ -2113,15 +2113,15 @@ export const InvestmentsPage: React.FC = () => {
               placeholder="e.g. Approved per hospital treasury investment limit policy..."
               value={approvalNotes}
               onChange={(e) => setApprovalNotes(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
               onClick={() => setShowApproveModal(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>
@@ -2146,7 +2146,7 @@ export const InvestmentsPage: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
               Rejection Reason *
             </label>
             <textarea
@@ -2154,16 +2154,16 @@ export const InvestmentsPage: React.FC = () => {
               placeholder="e.g. Yield rate does not meet hospital investment policy threshold..."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
               required
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
               onClick={() => setShowRejectModal(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>
@@ -2195,13 +2195,13 @@ export const InvestmentsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
               Debit From Source Bank Account *
             </label>
             <select
               value={purchaseAccount}
               onChange={(e) => setPurchaseAccount(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
             >
               <option value="">Use previously linked account ({selectedInvestment?.financial_account_name || 'None'})</option>
               {financialAccounts.map((acc) => (
@@ -2212,11 +2212,11 @@ export const InvestmentsPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
               onClick={() => setShowPurchaseModal(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>
@@ -2242,11 +2242,11 @@ export const InvestmentsPage: React.FC = () => {
       >
         <div className="space-y-4">
           {/* Tabs inside modal */}
-          <div className="flex items-center gap-2 border-b border-slate-200 pb-1">
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-1">
             <button
               onClick={() => setDetailTab('OVERVIEW')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${
-                detailTab === 'OVERVIEW' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                detailTab === 'OVERVIEW' ? 'bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/40' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
               Overview & Terms
@@ -2254,7 +2254,7 @@ export const InvestmentsPage: React.FC = () => {
             <button
               onClick={() => setDetailTab('VALUATIONS')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${
-                detailTab === 'VALUATIONS' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                detailTab === 'VALUATIONS' ? 'bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/40' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
               Valuation History ({selectedInvestment?.valuation_history?.length || 0})
@@ -2262,7 +2262,7 @@ export const InvestmentsPage: React.FC = () => {
             <button
               onClick={() => setDetailTab('INCOME')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${
-                detailTab === 'INCOME' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                detailTab === 'INCOME' ? 'bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/40' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
               Income Receipts ({selectedInvestment?.income_records?.length || 0})
@@ -2270,7 +2270,7 @@ export const InvestmentsPage: React.FC = () => {
             <button
               onClick={() => setDetailTab('DOCUMENTS')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${
-                detailTab === 'DOCUMENTS' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                detailTab === 'DOCUMENTS' ? 'bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/40' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
               Documents ({selectedInvestment?.documents?.length || 0})
@@ -2278,7 +2278,7 @@ export const InvestmentsPage: React.FC = () => {
             <button
               onClick={() => setDetailTab('AUDIT')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${
-                detailTab === 'AUDIT' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                detailTab === 'AUDIT' ? 'bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/40' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
               Audit Trail ({auditLogs.length})
@@ -2288,10 +2288,10 @@ export const InvestmentsPage: React.FC = () => {
           {/* TAB 1: OVERVIEW */}
           {detailTab === 'OVERVIEW' && selectedInvestment && (
             <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-950/80 p-4 rounded-xl border border-slate-800">
                 <div>
                   <span className="text-slate-500 block uppercase">Principal Amount:</span>
-                  <span className="text-sm font-bold text-slate-900">{formatINR(selectedInvestment.principal_amount)}</span>
+                  <span className="text-sm font-bold text-white">{formatINR(selectedInvestment.principal_amount)}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block uppercase">Latest Valuation:</span>
@@ -2307,61 +2307,61 @@ export const InvestmentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 bg-white rounded-xl border border-slate-200">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 bg-slate-950/80 rounded-xl border border-slate-800">
                 <div>
                   <span className="text-slate-400 block">Issuing Institution:</span>
-                  <span className="font-semibold text-slate-800">{selectedInvestment.issuing_institution}</span>
+                  <span className="font-semibold text-slate-200">{selectedInvestment.issuing_institution}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Reference / FD Receipt:</span>
-                  <span className="font-mono text-slate-800">{selectedInvestment.reference_number || '—'}</span>
+                  <span className="font-mono text-slate-200">{selectedInvestment.reference_number || '—'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Folio Number:</span>
-                  <span className="font-mono text-slate-800">{selectedInvestment.folio_number || '—'}</span>
+                  <span className="font-mono text-slate-200">{selectedInvestment.folio_number || '—'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Linked Bank Account:</span>
-                  <span className="font-semibold text-slate-800">{selectedInvestment.financial_account_name || 'None'}</span>
+                  <span className="font-semibold text-slate-200">{selectedInvestment.financial_account_name || 'None'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Purchase Date:</span>
-                  <span className="font-semibold text-slate-800">{selectedInvestment.purchase_date}</span>
+                  <span className="font-semibold text-slate-200">{selectedInvestment.purchase_date}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Maturity Date:</span>
-                  <span className="font-semibold text-slate-800">{selectedInvestment.maturity_date || 'Open-ended'}</span>
+                  <span className="font-semibold text-slate-200">{selectedInvestment.maturity_date || 'Open-ended'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Interest Rate:</span>
-                  <span className="font-semibold text-slate-800">{selectedInvestment.interest_rate ? `${selectedInvestment.interest_rate}% p.a.` : '—'}</span>
+                  <span className="font-semibold text-slate-200">{selectedInvestment.interest_rate ? `${selectedInvestment.interest_rate}% p.a.` : '—'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Compounding:</span>
-                  <span className="font-semibold text-slate-800">{selectedInvestment.compounding_frequency_display}</span>
+                  <span className="font-semibold text-slate-200">{selectedInvestment.compounding_frequency_display}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Expected Maturity:</span>
-                  <span className="font-semibold text-slate-800">{formatINR(selectedInvestment.expected_maturity_amount)}</span>
+                  <span className="font-semibold text-slate-200">{formatINR(selectedInvestment.expected_maturity_amount)}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Created By:</span>
-                  <span className="text-slate-700">{selectedInvestment.created_by_name || 'Staff'}</span>
+                  <span className="text-slate-300">{selectedInvestment.created_by_name || 'Staff'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Approved By:</span>
-                  <span className="text-slate-700">{selectedInvestment.approved_by_name || '—'}</span>
+                  <span className="text-slate-300">{selectedInvestment.approved_by_name || '—'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Acquisition Fees:</span>
-                  <span className="text-slate-700">{formatINR(selectedInvestment.acquisition_fees)}</span>
+                  <span className="text-slate-300">{formatINR(selectedInvestment.acquisition_fees)}</span>
                 </div>
               </div>
 
               {selectedInvestment.notes && (
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800">
                   <span className="text-slate-400 block font-semibold uppercase mb-1">Notes / Rationale:</span>
-                  <p className="text-slate-700">{selectedInvestment.notes}</p>
+                  <p className="text-slate-300">{selectedInvestment.notes}</p>
                 </div>
               )}
             </div>
@@ -2371,7 +2371,7 @@ export const InvestmentsPage: React.FC = () => {
           {detailTab === 'VALUATIONS' && selectedInvestment && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700">Valuation Records</span>
+                <span className="text-xs font-semibold text-slate-300">Valuation Records</span>
                 <button
                   onClick={() => setShowValuationModal(true)}
                   className="px-3 py-1 text-xs font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700"
@@ -2380,9 +2380,9 @@ export const InvestmentsPage: React.FC = () => {
                 </button>
               </div>
               {selectedInvestment.valuation_history && selectedInvestment.valuation_history.length > 0 ? (
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <div className="border border-slate-800 rounded-xl overflow-hidden">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-slate-500">
+                    <thead className="bg-slate-950/80 border-b border-slate-800 uppercase font-semibold text-slate-400">
                       <tr>
                         <th className="px-3 py-2">Date</th>
                         <th className="px-3 py-2 text-right">Valuation</th>
@@ -2391,7 +2391,7 @@ export const InvestmentsPage: React.FC = () => {
                         <th className="px-3 py-2">Recorded By</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-800/60">
                       {selectedInvestment.valuation_history.map((vh) => (
                         <tr key={vh.id}>
                           <td className="px-3 py-2">{vh.valuation_date}</td>
@@ -2416,7 +2416,7 @@ export const InvestmentsPage: React.FC = () => {
           {detailTab === 'INCOME' && selectedInvestment && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700">Income Ledger</span>
+                <span className="text-xs font-semibold text-slate-300">Income Ledger</span>
                 <button
                   onClick={() => setShowIncomeModal(true)}
                   className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
@@ -2425,9 +2425,9 @@ export const InvestmentsPage: React.FC = () => {
                 </button>
               </div>
               {selectedInvestment.income_records && selectedInvestment.income_records.length > 0 ? (
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <div className="border border-slate-800 rounded-xl overflow-hidden">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-slate-500">
+                    <thead className="bg-slate-950/80 border-b border-slate-800 uppercase font-semibold text-slate-400">
                       <tr>
                         <th className="px-3 py-2">Date</th>
                         <th className="px-3 py-2">Type</th>
@@ -2437,7 +2437,7 @@ export const InvestmentsPage: React.FC = () => {
                         <th className="px-3 py-2">Reference</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-800/60">
                       {selectedInvestment.income_records.map((inc) => (
                         <tr key={inc.id}>
                           <td className="px-3 py-2">{inc.receipt_date}</td>
@@ -2461,7 +2461,7 @@ export const InvestmentsPage: React.FC = () => {
           {detailTab === 'DOCUMENTS' && selectedInvestment && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700">Attached Certificates & Statements</span>
+                <span className="text-xs font-semibold text-slate-300">Attached Certificates & Statements</span>
                 <button
                   onClick={() => setShowDocModal(true)}
                   className="px-3 py-1 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center gap-1"
@@ -2471,13 +2471,13 @@ export const InvestmentsPage: React.FC = () => {
                 </button>
               </div>
               {selectedInvestment.documents && selectedInvestment.documents.length > 0 ? (
-                <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+                <div className="divide-y divide-slate-800/60 border border-slate-800 rounded-xl overflow-hidden">
                   {selectedInvestment.documents.map((doc) => (
-                    <div key={doc.id} className="p-3 flex items-center justify-between text-xs hover:bg-slate-50">
+                    <div key={doc.id} className="p-3 flex items-center justify-between text-xs hover:bg-slate-800/40">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-indigo-500" />
                         <div>
-                          <div className="font-semibold text-slate-800">{doc.file_name}</div>
+                          <div className="font-semibold text-slate-200">{doc.file_name}</div>
                           <div className="text-[11px] text-slate-400">{doc.document_type_display} • {doc.uploaded_at?.split('T')[0]}</div>
                         </div>
                       </div>
@@ -2485,7 +2485,7 @@ export const InvestmentsPage: React.FC = () => {
                         href={doc.file_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-2.5 py-1 text-xs text-indigo-600 hover:bg-indigo-50 rounded-lg border border-indigo-200 flex items-center gap-1"
+                        className="px-2.5 py-1 text-xs text-indigo-400 hover:bg-indigo-500/20 rounded-lg border border-indigo-500/30 flex items-center gap-1"
                       >
                         <ExternalLink className="w-3 h-3" />
                         <span>View</span>
@@ -2502,7 +2502,7 @@ export const InvestmentsPage: React.FC = () => {
           {/* TAB 5: AUDIT TRAIL */}
           {detailTab === 'AUDIT' && (
             <div className="space-y-3">
-              <span className="text-xs font-semibold text-slate-700">Immutable Audit Trail (Section 10)</span>
+              <span className="text-xs font-semibold text-slate-300">Immutable Audit Trail (Section 10)</span>
               {auditLoading ? (
                 <div className="p-8 text-center text-slate-400 text-xs">Loading audit trail...</div>
               ) : auditLogs.length > 0 ? (
@@ -2511,7 +2511,7 @@ export const InvestmentsPage: React.FC = () => {
                     <div key={log.id} className="relative pb-3 text-xs">
                       <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-white" />
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900">{log.action_display}</span>
+                        <span className="font-bold text-white">{log.action_display}</span>
                         <span className="text-[11px] text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
                       </div>
                       <div className="text-slate-600 mt-0.5">
@@ -2523,7 +2523,7 @@ export const InvestmentsPage: React.FC = () => {
                         </div>
                       )}
                       {log.remarks && (
-                        <div className="p-2 bg-slate-50 rounded text-slate-700 mt-1 italic">
+                        <div className="p-2 bg-slate-950/80 border border-slate-800 rounded text-slate-300 mt-1 italic">
                           "{log.remarks}"
                         </div>
                       )}
@@ -2536,10 +2536,10 @@ export const InvestmentsPage: React.FC = () => {
             </div>
           )}
 
-          <div className="flex justify-end pt-3 border-t border-slate-200">
+          <div className="flex justify-end pt-3 border-t border-slate-800">
             <button
               onClick={() => setShowDetailModal(false)}
-              className="px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-100 rounded-xl"
             >
               Close
             </button>
@@ -2557,13 +2557,13 @@ export const InvestmentsPage: React.FC = () => {
       >
         <form onSubmit={handleUploadDocument} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
               Document Type *
             </label>
             <select
               value={docType}
               onChange={(e) => setDocType(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-950 border border-slate-700/80 text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
             >
               <option value="DEPOSIT_CERTIFICATE">Fixed Deposit Certificate / Advice</option>
               <option value="BANK_STATEMENT">Bank Treasury Statement</option>
@@ -2575,7 +2575,7 @@ export const InvestmentsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
               Select File (PDF, PNG, JPG) *
             </label>
             <input
@@ -2586,11 +2586,11 @@ export const InvestmentsPage: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
               onClick={() => setShowDocModal(false)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
             >
               Cancel
             </button>

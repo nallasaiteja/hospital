@@ -102,6 +102,7 @@ export interface UserProfile {
   last_name: string;
   phone_number?: string;
   role: Role | { name: UserRole; display_name?: string };
+  preferred_language?: string;
   is_verified?: boolean;
   is_active: boolean;
   created_at: string;

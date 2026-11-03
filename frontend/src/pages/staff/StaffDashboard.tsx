@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import { authService, CurrentUserResponse, reportsDashboardService, clinicalService } from '../../services/api';
 import { Modal } from '../../components/common/Modal';
+import { useTranslation } from 'react-i18next';
 
 export const StaffDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState<CurrentUserResponse | null>(null);
   const [showProvisionModal, setShowProvisionModal] = useState(false);
@@ -137,10 +139,10 @@ export const StaffDashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            <span>Clinical & Operations Command Center</span>
+            <span>{t('dashboard.commandCenter', 'Clinical & Operations Command Center')}</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Active Clinician: <strong className="text-white">{user?.first_name ? `${user.first_name} ${user.last_name}` : 'Staff Clinician'}</strong> &bull; Designation: <strong className="text-cyan-400">{staff?.designation || userRole}</strong>
+            {t('common.activeClinician', 'Active Clinician')}: <strong className="text-white">{user?.first_name ? `${user.first_name} ${user.last_name}` : t('auth.staffClinician', 'Staff Clinician')}</strong> &bull; {t('common.designation', 'Designation')}: <strong className="text-cyan-400">{staff?.designation || userRole}</strong>
           </p>
         </div>
 
@@ -151,12 +153,12 @@ export const StaffDashboard: React.FC = () => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 transition text-xs font-semibold"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              <span>Provision Staff</span>
+              <span>{t('common.provisionStaff', 'Provision Staff')}</span>
             </button>
           )}
           <span className="px-2.5 py-1 rounded-xl bg-emerald-950/60 text-emerald-400 border border-emerald-800 text-xs font-medium flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>On Duty &bull; Active</span>
+            <span>{t('auth.onDuty', 'On Duty')} &bull; {t('common.active', 'Active')}</span>
           </span>
         </div>
       </div>
@@ -165,49 +167,49 @@ export const StaffDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium">OPD Registrations Today</span>
+            <span className="text-xs font-medium">{t('dashboard.opdToday', 'OPD Registrations Today')}</span>
             <Users className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl font-bold text-white">
             {adminMetrics?.metrics?.today_opd_registrations ?? 0}
           </div>
-          <p className="text-[11px] text-cyan-400 mt-1">Real-time outpatient census</p>
+          <p className="text-[11px] text-cyan-400 mt-1">{t('dashboard.realtimeCensus', 'Real-time outpatient census')}</p>
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium">Inpatient Bed Occupancy</span>
+            <span className="text-xs font-medium">{t('dashboard.bedOccupancy', 'Inpatient Bed Occupancy')}</span>
             <Bed className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-bold text-white">
             {adminMetrics?.metrics?.bed_occupancy_rate_pct ?? 0}%
           </div>
           <p className="text-[11px] text-emerald-400 mt-1">
-            {adminMetrics?.metrics?.available_beds ?? 0} beds ready for admission
+            {adminMetrics?.metrics?.available_beds ?? 0} {t('dashboard.bedsReady', 'beds ready for admission')}
           </p>
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium">Pending Diagnostic Reports</span>
+            <span className="text-xs font-medium">{t('dashboard.pendingReports', 'Pending Diagnostic Reports')}</span>
             <Activity className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl font-bold text-white">
             {adminMetrics?.metrics?.pending_diagnostic_reports ?? 0}
           </div>
-          <p className="text-[11px] text-amber-400 mt-1">Awaiting verification</p>
+          <p className="text-[11px] text-amber-400 mt-1">{t('dashboard.awaitingVerification', 'Awaiting verification')}</p>
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium">Emergency Visits</span>
+            <span className="text-xs font-medium">{t('dashboard.emergencyVisits', 'Emergency Visits')}</span>
             <AlertTriangle className="w-4 h-4 text-rose-400" />
           </div>
           <div className="text-2xl font-bold text-white">
             {adminMetrics?.metrics?.emergency_visits ?? 0}
           </div>
           <p className="text-[11px] text-rose-400 mt-1">
-            Active census: {adminMetrics?.metrics?.current_inpatient_census ?? 0} inpatients
+            {t('dashboard.activeCensus', 'Active census')}: {adminMetrics?.metrics?.current_inpatient_census ?? 0} {t('dashboard.inpatients', 'inpatients')}
           </p>
         </div>
       </div>
@@ -215,7 +217,7 @@ export const StaffDashboard: React.FC = () => {
       {/* Modules Nav Grid */}
       <div>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-          Clinical & Operational Workflows
+          {t('dashboard.workflows')}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <div
@@ -226,10 +228,10 @@ export const StaffDashboard: React.FC = () => {
               <Stethoscope className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-cyan-400 transition flex items-center justify-between">
-              <span>Outpatient Consultations (OPD)</span>
+              <span>{t('dashboard.opdCardTitle')}</span>
               <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
             </h3>
-            <p className="text-xs text-slate-400 mt-1">Queue management, vital signs, ICD-10 diagnostic coding, and e-prescriptions.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('dashboard.opdCardDesc')}</p>
           </div>
 
           <div
@@ -240,10 +242,10 @@ export const StaffDashboard: React.FC = () => {
               <Bed className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-emerald-400 transition flex items-center justify-between">
-              <span>Inpatient Admissions (IPD)</span>
+              <span>{t('dashboard.ipdCardTitle')}</span>
               <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
             </h3>
-            <p className="text-xs text-slate-400 mt-1">Ward assignments, bed management, nurse treatment sheets, and discharge summaries.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('dashboard.ipdCardDesc')}</p>
           </div>
 
           <div
@@ -254,10 +256,10 @@ export const StaffDashboard: React.FC = () => {
               <Activity className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-indigo-400 transition flex items-center justify-between">
-              <span>Pathology & Diagnostic Lab</span>
+              <span>{t('dashboard.labCardTitle')}</span>
               <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
             </h3>
-            <p className="text-xs text-slate-400 mt-1">Specimen barcoding, test orders, pathologist verification, and private report upload.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('dashboard.labCardDesc')}</p>
           </div>
 
           <div
@@ -268,10 +270,10 @@ export const StaffDashboard: React.FC = () => {
               <Pill className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-violet-400 transition flex items-center justify-between">
-              <span>Pharmacy & Drug Formulary</span>
+              <span>{t('dashboard.pharmacyCardTitle')}</span>
               <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
             </h3>
-            <p className="text-xs text-slate-400 mt-1">Dispensing against doctor prescriptions, batch expiry monitoring, and stock alerts.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('dashboard.pharmacyCardDesc')}</p>
           </div>
 
           <div
@@ -282,10 +284,10 @@ export const StaffDashboard: React.FC = () => {
               <DollarSign className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-teal-400 transition flex items-center justify-between">
-              <span>Billing & General Ledger</span>
+              <span>{t('dashboard.billingCardTitle')}</span>
               <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
             </h3>
-            <p className="text-xs text-slate-400 mt-1">Invoices, tariff management, receipts, double-entry journal entries, and P&L reporting.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('dashboard.billingCardDesc')}</p>
           </div>
 
           <div
@@ -296,10 +298,10 @@ export const StaffDashboard: React.FC = () => {
               <Building2 className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-amber-400 transition flex items-center justify-between">
-              <span>Branch & Staff Administration</span>
+              <span>{t('dashboard.adminCardTitle')}</span>
               <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
             </h3>
-            <p className="text-xs text-slate-400 mt-1">Staff provisioning, branch assignments, doctor duty rosters, and audit trails.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('dashboard.adminCardDesc')}</p>
           </div>
         </div>
       </div>
@@ -309,21 +311,21 @@ export const StaffDashboard: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm sm:text-base font-semibold text-white flex items-center gap-2">
             <Clock className="w-4 h-4 text-cyan-400" />
-            <span>Current OPD Queue &bull; Cardiology Clinic</span>
+            <span>{t('dashboard.queueTitle')}</span>
           </h3>
-          <span className="text-xs text-cyan-400 font-mono">Live Sync</span>
+          <span className="text-xs text-cyan-400 font-mono">{t('dashboard.liveSync')}</span>
         </div>
 
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left text-xs min-w-full">
             <thead className="bg-slate-950/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 whitespace-nowrap">
               <tr>
-                <th className="py-3 px-3 sm:px-4">Token</th>
-                <th className="py-3 px-3 sm:px-4">Patient Name</th>
-                <th className="py-3 px-3 sm:px-4">MRN</th>
-                <th className="py-3 px-3 sm:px-4">Scheduled Time</th>
-                <th className="py-3 px-3 sm:px-4">Status</th>
-                <th className="py-3 px-3 sm:px-4">Action</th>
+                <th className="py-3 px-3 sm:px-4">{t('dashboard.token')}</th>
+                <th className="py-3 px-3 sm:px-4">{t('common.patientName')}</th>
+                <th className="py-3 px-3 sm:px-4">{t('dashboard.mrn')}</th>
+                <th className="py-3 px-3 sm:px-4">{t('dashboard.scheduledTime')}</th>
+                <th className="py-3 px-3 sm:px-4">{t('common.status')}</th>
+                <th className="py-3 px-3 sm:px-4">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800 text-slate-300">
@@ -331,8 +333,8 @@ export const StaffDashboard: React.FC = () => {
                 <tr>
                   <td colSpan={6} className="py-8 px-4 text-center text-slate-500">
                     <Clock className="w-7 h-7 mx-auto mb-2 opacity-30 text-slate-400" />
-                    <p className="font-medium text-slate-400 text-xs">No OPD Patients in Queue</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">All scheduled consultations for this clinic are completed or none are registered today.</p>
+                    <p className="font-medium text-slate-400 text-xs">{t('dashboard.noPatientsInQueue')}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{t('dashboard.noPatientsInQueueDesc')}</p>
                   </td>
                 </tr>
               ) : (
@@ -342,7 +344,7 @@ export const StaffDashboard: React.FC = () => {
                       #{app.token_number || app.queue_number || idx + 1}
                     </td>
                     <td className="py-3 px-3 sm:px-4 font-medium text-white whitespace-nowrap">
-                      {app.patient?.user_profile?.full_name || app.patient_name || 'Patient'}
+                      {app.patient?.user_profile?.full_name || app.patient_name || t('auth.patient')}
                     </td>
                     <td className="py-3 px-3 sm:px-4 font-mono text-slate-400 whitespace-nowrap">
                       {app.patient?.medical_record_number || 'MRN-PENDING'}
@@ -360,7 +362,7 @@ export const StaffDashboard: React.FC = () => {
                         onClick={() => navigate('/staff/appointments')}
                         className="text-cyan-400 hover:text-cyan-300 font-medium text-xs"
                       >
-                        View Details
+                        {t('common.viewDetails')}
                       </button>
                     </td>
                   </tr>
@@ -375,8 +377,8 @@ export const StaffDashboard: React.FC = () => {
       <Modal
         isOpen={showProvisionModal}
         onClose={() => setShowProvisionModal(false)}
-        title="Provision Hospital Staff Member"
-        subtitle="Create an official staff account. Server controls role allocation and branch security boundaries."
+        title={t('dashboard.provisionStaffModalTitle')}
+        subtitle={t('dashboard.provisionStaffModalSubtitle')}
         size="md"
       >
         {provisionError && (
@@ -395,7 +397,7 @@ export const StaffDashboard: React.FC = () => {
         <form onSubmit={handleProvisionSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">First Name</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('dashboard.firstName')}</label>
               <input
                 type="text"
                 required
@@ -406,7 +408,7 @@ export const StaffDashboard: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Last Name</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('dashboard.lastName')}</label>
               <input
                 type="text"
                 required
@@ -419,7 +421,7 @@ export const StaffDashboard: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Staff Work Email</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">{t('dashboard.staffWorkEmail')}</label>
             <input
               type="email"
               required
@@ -432,23 +434,23 @@ export const StaffDashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Assigned Role</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('dashboard.assignedRole')}</label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
               >
-                <option value="DOCTOR">Doctor / Surgeon</option>
-                <option value="NURSE">Nurse</option>
-                <option value="PHARMACIST">Pharmacist</option>
-                <option value="LAB_TECHNICIAN">Lab Technician</option>
-                <option value="RECEPTIONIST">Receptionist</option>
-                <option value="ACCOUNTANT">Accountant</option>
-                <option value="BRANCH_MANAGER">Branch Manager</option>
+                <option value="DOCTOR">{t('roles.doctor')}</option>
+                <option value="NURSE">{t('roles.nurse')}</option>
+                <option value="PHARMACIST">{t('roles.pharmacist')}</option>
+                <option value="LAB_TECHNICIAN">{t('roles.labTechnician')}</option>
+                <option value="RECEPTIONIST">{t('roles.receptionist')}</option>
+                <option value="ACCOUNTANT">{t('roles.accountant')}</option>
+                <option value="BRANCH_MANAGER">{t('roles.branchManager')}</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Designation</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('dashboard.designation')}</label>
               <input
                 type="text"
                 required
@@ -462,7 +464,7 @@ export const StaffDashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Specialization</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('dashboard.specialization')}</label>
               <input
                 type="text"
                 value={specialization}
@@ -472,7 +474,7 @@ export const StaffDashboard: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Medical License / Reg No</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('dashboard.medicalLicense')}</label>
               <input
                 type="text"
                 value={licenseNumber}
@@ -489,7 +491,7 @@ export const StaffDashboard: React.FC = () => {
               onClick={() => setShowProvisionModal(false)}
               className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -499,10 +501,10 @@ export const StaffDashboard: React.FC = () => {
               {provisionLoading ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Provisioning...</span>
+                  <span>{t('dashboard.provisioning')}</span>
                 </>
               ) : (
-                <span>Confirm Provisioning</span>
+                <span>{t('dashboard.confirmProvisioning')}</span>
               )}
             </button>
           </div>

@@ -28,8 +28,10 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useTranslation } from 'react-i18next';
 
 export const EmergencyPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const [encounters, setEncounters] = useState<EmergencyCase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,11 +254,11 @@ export const EmergencyPage: React.FC = () => {
   const getAcuityBadge = (acuity: string) => {
     switch (acuity) {
       case 'RED':
-        return <Badge variant="danger">🔴 Acuity 1: Resuscitation (Immediate)</Badge>;
+        return <Badge variant="danger">🔴 {t('emergency.acuityRed', 'Acuity 1: Resuscitation (Immediate)')}</Badge>;
       case 'YELLOW':
-        return <Badge variant="warning">🟡 Acuity 2: Emergent (Within 15m)</Badge>;
+        return <Badge variant="warning">🟡 {t('emergency.acuityYellow', 'Acuity 2: Emergent (Within 15m)')}</Badge>;
       case 'GREEN':
-        return <Badge variant="success">🟢 Acuity 3: Urgent / Stable</Badge>;
+        return <Badge variant="success">🟢 {t('emergency.acuityGreen', 'Acuity 3: Urgent / Stable')}</Badge>;
       default:
         return <Badge variant="neutral">{acuity}</Badge>;
     }
@@ -265,17 +267,17 @@ export const EmergencyPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ARRIVED':
-        return <Badge variant="neutral">Arrived</Badge>;
+        return <Badge variant="neutral">{t('emergency.statusArrived', 'Arrived')}</Badge>;
       case 'TRIAGED':
-        return <Badge variant="warning">Triaged</Badge>;
+        return <Badge variant="warning">{t('emergency.statusTriaged', 'Triaged')}</Badge>;
       case 'IN_TREATMENT':
-        return <Badge variant="accent">In Resuscitation</Badge>;
+        return <Badge variant="accent">{t('emergency.statusResuscitation', 'In Resuscitation')}</Badge>;
       case 'ADMITTED_IPD':
-        return <Badge variant="success">Admitted to IPD</Badge>;
+        return <Badge variant="success">{t('emergency.statusAdmittedIPD', 'Admitted to IPD')}</Badge>;
       case 'DISCHARGED':
-        return <Badge variant="neutral">Discharged</Badge>;
+        return <Badge variant="neutral">{t('emergency.statusDischarged', 'Discharged')}</Badge>;
       case 'EXPIRED':
-        return <Badge variant="danger">Expired</Badge>;
+        return <Badge variant="danger">{t('emergency.statusExpired', 'Expired')}</Badge>;
       default:
         return <Badge variant="neutral">{status}</Badge>;
     }
@@ -284,7 +286,7 @@ export const EmergencyPage: React.FC = () => {
   const columns: Column<EmergencyCase>[] = [
     {
       key: 'encounter_number',
-      header: 'ER Case #',
+      header: t('emergency.colCaseNo', 'ER Case #'),
       render: (c) => (
         <div>
           <span className="font-mono text-cyan-400 font-bold">{c.encounter_number}</span>
@@ -298,14 +300,14 @@ export const EmergencyPage: React.FC = () => {
     },
     {
       key: 'patient',
-      header: 'Patient Identification',
+      header: t('emergency.colPatient', 'Patient Identification'),
       render: (c) => (
         <div>
           <div className="font-semibold text-white flex items-center gap-1.5">
-            {c.patient_name || c.unregistered_patient_name || 'Unidentified Casualty'}
+            {c.patient_name || c.unregistered_patient_name || t('emergency.unidentifiedCasualty', 'Unidentified Casualty')}
             {c.unregistered_patient_name && !c.patient_id && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-normal">
-                Temp / Unreconciled
+                {t('emergency.tempUnreconciled', 'Temp / Unreconciled')}
               </span>
             )}
           </div>
@@ -315,12 +317,12 @@ export const EmergencyPage: React.FC = () => {
     },
     {
       key: 'triage_acuity',
-      header: 'Triage Acuity',
+      header: t('emergency.colAcuity', 'Triage Acuity'),
       render: (c) => getAcuityBadge(c.triage_acuity),
     },
     {
       key: 'arrival_mode',
-      header: 'Arrival Mode & Time',
+      header: t('emergency.colArrival', 'Arrival Mode & Time'),
       render: (c) => (
         <div className="text-xs">
           <div className="text-slate-300 font-medium flex items-center gap-1">
@@ -333,7 +335,7 @@ export const EmergencyPage: React.FC = () => {
     },
     {
       key: 'chief_complaint',
-      header: 'Clinical Presentation & Vitals',
+      header: t('emergency.colComplaint', 'Clinical Presentation & Vitals'),
       render: (c) => (
         <div className="max-w-xs">
           <div className="text-slate-200 text-xs font-medium line-clamp-1">{c.chief_complaint}</div>
@@ -347,12 +349,12 @@ export const EmergencyPage: React.FC = () => {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('emergency.colStatus', 'Status'),
       render: (c) => getStatusBadge(c.status),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t('emergency.colActions', 'Actions'),
       render: (c) => (
         <div className="flex items-center gap-1.5 flex-wrap">
           {c.status !== 'DISCHARGED' && c.status !== 'EXPIRED' && (
@@ -366,7 +368,7 @@ export const EmergencyPage: React.FC = () => {
                 className="px-2 py-1 text-[11px] rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium transition"
                 title="Update ER Clinical Notes & Observations"
               >
-                Treat
+                {t('emergency.btnTreat', 'Treat')}
               </button>
 
               {!c.patient_id && (
@@ -378,7 +380,7 @@ export const EmergencyPage: React.FC = () => {
                   className="px-2 py-1 text-[11px] rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-medium transition"
                   title="Link Unidentified Casualty to Patient MRN"
                 >
-                  Reconcile
+                  {t('emergency.btnReconcile', 'Reconcile')}
                 </button>
               )}
 
@@ -392,7 +394,7 @@ export const EmergencyPage: React.FC = () => {
                   className="px-2 py-1 text-[11px] rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-semibold transition"
                   title="Initiate Direct Inpatient Admission from ER"
                 >
-                  Admit IPD
+                  {t('emergency.btnAdmitIPD', 'Admit IPD')}
                 </button>
               )}
 
@@ -404,7 +406,7 @@ export const EmergencyPage: React.FC = () => {
                 className="px-2 py-1 text-[11px] rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-medium transition"
                 title="Discharge from Casualty"
               >
-                Discharge
+                {t('emergency.btnDischarge', 'Discharge')}
               </button>
             </>
           )}
@@ -423,13 +425,13 @@ export const EmergencyPage: React.FC = () => {
           </div>
           <div>
             <div className="text-white font-semibold text-sm flex items-center gap-2">
-              Stat Emergency Resuscitation Policy
+              {t('emergency.policyTitle', 'Stat Emergency Resuscitation Policy')}
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                Non-Blocking Clinical Access
+                {t('emergency.policyBadge', 'Non-Blocking Clinical Access')}
               </span>
             </div>
             <div className="text-xs text-slate-300 mt-0.5">
-              Urgent casualty intake, clinical triage, and resuscitation are never delayed or withheld due to billing, deposit checks, or insurance pre-authorizations.
+              {t('emergency.policyDesc', 'Urgent casualty intake, clinical triage, and resuscitation are never delayed or withheld due to billing, deposit checks, or insurance pre-authorizations.')}
             </div>
           </div>
         </div>
@@ -441,7 +443,7 @@ export const EmergencyPage: React.FC = () => {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-rose-500/20 transition shrink-0"
         >
           <Ambulance className="w-4 h-4" />
-          Rapid Casualty Triage
+          {t('emergency.btnRapidTriage', 'Rapid Casualty Triage')}
         </button>
       </div>
 

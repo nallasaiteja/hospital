@@ -100,6 +100,22 @@ export const authService = {
   },
 
   /**
+   * Update user preferences such as preferred UI language.
+   */
+  async updatePreferences(payload: { preferred_language: string }): Promise<{ status: string; preferred_language: string }> {
+    const res = await api.patch<{ status: string; preferred_language: string }>('/auth/preferences/', payload);
+    return res.data;
+  },
+
+  /**
+   * Get user preferences.
+   */
+  async getPreferences(): Promise<{ status: string; preferred_language: string }> {
+    const res = await api.get<{ status: string; preferred_language: string }>('/auth/preferences/');
+    return res.data;
+  },
+
+  /**
    * Initialize a patient profile upon Supabase public registration.
    */
   async initPatientProfile(payload: {
@@ -508,6 +524,45 @@ export const opdService = {
   },
   finalizeConsultation: async (appointmentId: string, payload: any): Promise<{ message: string; appointment: Appointment }> => {
     const res = await api.post(`/clinical/appointments/${appointmentId}/finalize-consultation/`, payload);
+    return res.data;
+  },
+  extractVoicePrescription: async (transcript: string, patientId?: string): Promise<{
+    status: string;
+    raw_transcript: string;
+    items: Array<{
+      medicine_id: string | null;
+      medicine_name: string;
+      generic_name: string;
+      strength: string;
+      dosage_form: string;
+      dose_amount: string;
+      dose_unit: string;
+      frequency: string;
+      duration_days: number;
+      route: string;
+      food_instruction: string;
+      is_prn: boolean;
+      prn_indication?: string;
+      schedule: {
+        morning: boolean;
+        morning_dose: string;
+        afternoon: boolean;
+        afternoon_dose: string;
+        evening: boolean;
+        evening_dose: string;
+        night: boolean;
+        night_dose: string;
+      };
+      calculated_quantity: number;
+      instructions: string;
+      review_flags: string[];
+    }>;
+    count: number;
+  }> => {
+    const res = await api.post('/clinical/voice-prescription/extract/', {
+      transcript,
+      patient_id: patientId,
+    });
     return res.data;
   },
   getOPDReports: async (params?: {

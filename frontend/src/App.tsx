@@ -46,6 +46,7 @@ import { PatientPortalGatewayPage } from './pages/staff/PatientPortalGatewayPage
 import { ReportsPage } from './pages/staff/ReportsPage'; // 25. Reports & Analytics
 import { UsersRolesPage } from './pages/staff/UsersRolesPage'; // 26. Users, Roles & Permissions
 import { SettingsAuditPage } from './pages/staff/SettingsAuditPage'; // 27. Settings & Audit Logs
+import { VoiceTranslationPage } from './pages/VoiceTranslationPage'; // Voice Language Translation Utility
 
 export const App: React.FC = () => {
   return (
@@ -74,6 +75,7 @@ export const App: React.FC = () => {
               <Route path="prescriptions" element={<PatientPrescriptionsPage />} />
               <Route path="lab-reports" element={<PatientLabReportsPage />} />
               <Route path="billing" element={<PatientBillingPage />} />
+              <Route path="voice-translation" element={<VoiceTranslationPage />} />
               <Route path="" element={<Navigate to="dashboard" replace />} />
             </Route>
 
@@ -172,6 +174,9 @@ export const App: React.FC = () => {
               {/* 27. Settings & Audit Logs */}
               <Route path="settings-audit" element={<SettingsAuditPage />} />
               <Route path="audit" element={<SettingsAuditPage />} />
+
+              {/* Standalone Voice Language Translation Utility */}
+              <Route path="voice-translation" element={<VoiceTranslationPage />} />
 
               {/* Default redirect to Dashboard */}
               <Route path="" element={<Navigate to="dashboard" replace />} />

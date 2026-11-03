@@ -50,6 +50,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'phone_number',
             'role',
             'avatar_url',
+            'preferred_language',
             'is_verified',
             'is_active',
             'created_at',

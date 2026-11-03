@@ -12,6 +12,7 @@ from .opd_views import (
     OPDWalkInRegistrationView, OPDQueueView, OPDQueueActionView,
     OPDConsultationEncounterView, OPDReportsView
 )
+from .voice_views import VoicePrescriptionExtractView
 from .ipd_views import (
     EmergencyIPDDashboardStatsView, EmergencyEncounterViewSet,
     EmergencyActionView, InpatientAdmissionViewSet, BedViewSet,
@@ -64,6 +65,7 @@ urlpatterns = [
     # Encounter & Consultation Workspace
     path('appointments/<uuid:pk>/encounter/', OPDConsultationEncounterView.as_view(), name='appointment-encounter'),
     path('appointments/<uuid:pk>/finalize-consultation/', OPDConsultationEncounterView.as_view(), name='appointment-finalize-consultation'),
+    path('voice-prescription/extract/', VoicePrescriptionExtractView.as_view(), name='voice-prescription-extract'),
 
     # Section 7: Emergency & IPD Management
     path('ipd/dashboard-stats/', EmergencyIPDDashboardStatsView.as_view(), name='ipd-dashboard-stats'),

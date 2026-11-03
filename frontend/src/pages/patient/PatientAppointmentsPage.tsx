@@ -18,6 +18,7 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
+import { useTranslation } from 'react-i18next';
 
 interface Appointment {
   id: string;
@@ -34,6 +35,7 @@ interface Appointment {
 }
 
 export const PatientAppointmentsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,15 +122,15 @@ export const PatientAppointmentsPage: React.FC = () => {
     switch (status) {
       case 'CONFIRMED':
       case 'SCHEDULED':
-        return <Badge variant="info">Scheduled</Badge>;
+        return <Badge variant="info">{t('appointments.statusScheduled', 'Scheduled')}</Badge>;
       case 'CHECKED_IN':
-        return <Badge variant="warning">Checked In (In Queue)</Badge>;
+        return <Badge variant="warning">{t('appointments.statusCheckedIn', 'Checked In (In Queue)')}</Badge>;
       case 'IN_CONSULTATION':
-        return <Badge variant="accent">In Doctor Cabin</Badge>;
+        return <Badge variant="accent">{t('appointments.statusInConsultation', 'In Doctor Cabin')}</Badge>;
       case 'COMPLETED':
-        return <Badge variant="success">Completed</Badge>;
+        return <Badge variant="success">{t('appointments.statusCompleted', 'Completed')}</Badge>;
       case 'CANCELLED':
-        return <Badge variant="danger">Cancelled</Badge>;
+        return <Badge variant="danger">{t('appointments.statusCancelled', 'Cancelled')}</Badge>;
       default:
         return <Badge variant="neutral">{status}</Badge>;
     }
@@ -141,17 +143,17 @@ export const PatientAppointmentsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
             <Calendar className="w-7 h-7 text-teal-400" />
-            My Doctor Appointments
+            {t('navigation.myAppointments', 'My Doctor Appointments')}
           </h1>
           <p className="text-sm text-slate-400">
-            Book outpatient appointments, track queue tokens, and review doctor consultation notes.
+            {t('patient.confirmedOPD', 'Book outpatient appointments, track queue tokens, and review doctor consultation notes.')}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={loadData}
             className="p-2 border border-slate-700 hover:bg-slate-800 rounded-lg text-slate-300 transition-colors"
-            title="Refresh Appointments"
+            title={t('common.refresh', 'Refresh Appointments')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -160,7 +162,7 @@ export const PatientAppointmentsPage: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-lg text-sm font-bold transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            Book New Appointment
+            {t('patient.bookAppointment', 'Book New Appointment')}
           </button>
         </div>
       </div>
@@ -174,7 +176,7 @@ export const PatientAppointmentsPage: React.FC = () => {
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by doctor name or specialty department..."
+            placeholder={t('common.searchRecords', 'Search by doctor name or specialty department...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"

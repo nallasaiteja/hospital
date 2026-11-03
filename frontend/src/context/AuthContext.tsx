@@ -3,6 +3,8 @@ import { supabase } from '../services/supabase';
 import { authService, CurrentUserResponse } from '../services/api';
 import { UserProfile, StaffProfile, PatientProfile, UserRole } from '../types';
 
+import i18n from '../i18n/i18n';
+
 interface AuthContextType {
   user: any | null;
   userProfile: UserProfile | null;
@@ -13,6 +15,7 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<CurrentUserResponse | null>;
+  updateUserLanguage: (newLang: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,11 +38,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setPermissions(data.permissions || []);
         setStaffProfile(data.staff_profile || null);
         setPatientProfile(data.patient_profile || null);
+
+        // Restore individual user's saved language preference if none chosen yet in session
+        const sessionLang = localStorage.getItem('hms_language_preference');
+        const userLang = data.user.preferred_language || sessionLang || 'en';
+        if (i18n.language !== userLang) {
+          await i18n.changeLanguage(userLang);
+        }
+        try {
+          localStorage.setItem('hms_language_preference', userLang);
+        } catch (e) {
+          // Ignore
+        }
       }
       return data;
     } catch (err) {
       console.warn('Unable to retrieve user profile from backend:', err);
       return null;
+    }
+  };
+
+  const updateUserLanguage = async (newLang: string) => {
+    await i18n.changeLanguage(newLang);
+    try {
+      localStorage.setItem('hms_language_preference', newLang);
+    } catch (e) {}
+
+    if (userProfile) {
+      setUserProfile((prev) => (prev ? { ...prev, preferred_language: newLang } : null));
+      try {
+        await authService.updatePreferences({ preferred_language: newLang });
+      } catch (err) {
+        console.warn('Failed to persist language preference to backend:', err);
+      }
     }
   };
 
@@ -100,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         logout,
         refreshProfile,
+        updateUserLanguage,
       }}
     >
       {children}

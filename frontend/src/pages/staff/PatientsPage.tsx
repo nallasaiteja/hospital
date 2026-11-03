@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -32,8 +32,10 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useTranslation } from 'react-i18next';
 
 export const PatientsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const navigate = useNavigate();
 
@@ -299,122 +301,125 @@ export const PatientsPage: React.FC = () => {
     }
   };
 
-  const columns: Column<PatientProfile>[] = [
-    {
-      key: 'medical_record_number',
-      header: 'MRN Identifier',
-      render: (p) => (
-        <div>
-          <span className="font-mono text-cyan-400 font-semibold tracking-wide">
-            {p.medical_record_number}
-          </span>
-          {p.status === 'MERGED' && (
-            <div className="text-[10px] text-amber-400 font-mono">
-              Merged into: {p.merged_into_mrn}
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'user_profile',
-      header: 'Patient Full Name',
-      render: (p) => (
-        <div>
-          <div className="font-semibold text-white">
-            {p.user_profile?.first_name} {p.user_profile?.last_name}
+  const columns: Column<PatientProfile>[] = useMemo(
+    () => [
+      {
+        key: 'medical_record_number',
+        header: t('patients.mrn', 'MRN Identifier'),
+        render: (p: PatientProfile) => (
+          <div>
+            <span className="font-mono text-cyan-400 font-semibold tracking-wide">
+              {p.medical_record_number}
+            </span>
+            {p.status === 'MERGED' && (
+              <div className="text-[10px] text-amber-400 font-mono">
+                Merged into: {p.merged_into_mrn}
+              </div>
+            )}
           </div>
-          <div className="text-[11px] text-slate-500 font-mono">{p.user_profile?.email}</div>
-        </div>
-      ),
-    },
-    {
-      key: 'gender',
-      header: 'Demographics',
-      render: (p) => (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Badge variant="neutral">{p.gender}</Badge>
-          {p.blood_group && <Badge variant="warning">{p.blood_group}</Badge>}
-          {p.age !== undefined && p.age !== null && (
-            <span className="text-[11px] text-slate-400 font-mono">{p.age}y</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'phone',
-      header: 'Phone / Location',
-      render: (p) => (
-        <div>
-          <span className="text-slate-300 font-mono text-xs block">
-            {p.user_profile?.phone_number || 'No phone'}
-          </span>
-          <span className="text-[11px] text-slate-500">
-            {p.city ? `${p.city}, ${p.state || ''}` : p.primary_branch_name}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: 'allergies',
-      header: 'Clinical Alerts',
-      render: (p) => (
-        <div className="flex flex-wrap gap-1 max-w-xs">
-          {p.allergies && p.allergies.length > 0 ? (
-            p.allergies.map((a, i) => (
-              <Badge key={i} variant="danger" size="sm">
-                {a}
-              </Badge>
-            ))
-          ) : (
-            <span className="text-slate-500 text-xs">No known allergies</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (p) => (
-        <Badge variant={p.status === 'ACTIVE' ? 'success' : p.status === 'MERGED' ? 'warning' : 'neutral'}>
-          {p.status || 'ACTIVE'}
-        </Badge>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      align: 'right',
-      render: (p) => (
-        <div className="flex items-center justify-end gap-1.5">
-          <button
-            onClick={() => {
-              setEditingPatient(p);
-              setEditFirstName(p.user_profile?.first_name || '');
-              setEditLastName(p.user_profile?.last_name || '');
-              setEditPhone(p.user_profile?.phone_number || '');
-              setEditAddress(p.address || '');
-              setEditCity(p.city || '');
-              setEditState(p.state || '');
-              setEditPostal(p.postal_code || '');
-              setEditEmergencyName(p.emergency_contact_name || '');
-              setEditEmergencyPhone(p.emergency_contact_phone || '');
-            }}
-            className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => navigate(`/staff/patients/${p.id}`)}
-            className="px-3 py-1 text-xs font-semibold rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition flex items-center gap-1"
-          >
-            <span>EMR Chart</span>
-            <ExternalLink className="w-3 h-3" />
-          </button>
-        </div>
-      ),
-    },
-  ];
+        ),
+      },
+      {
+        key: 'user_profile',
+        header: t('common.name', 'Patient Full Name'),
+        render: (p: PatientProfile) => (
+          <div>
+            <div className="font-semibold text-white">
+              {p.user_profile?.first_name} {p.user_profile?.last_name}
+            </div>
+            <div className="text-[11px] text-slate-500 font-mono">{p.user_profile?.email}</div>
+          </div>
+        ),
+      },
+      {
+        key: 'gender',
+        header: t('patients.vitals', 'Demographics'),
+        render: (p: PatientProfile) => (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge variant="neutral">{p.gender}</Badge>
+            {p.blood_group && <Badge variant="warning">{p.blood_group}</Badge>}
+            {p.age !== undefined && p.age !== null && (
+              <span className="text-[11px] text-slate-400 font-mono">{p.age}y</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'phone',
+        header: t('common.phone', 'Phone / Location'),
+        render: (p: PatientProfile) => (
+          <div>
+            <span className="text-slate-300 font-mono text-xs block">
+              {p.user_profile?.phone_number || 'No phone'}
+            </span>
+            <span className="text-[11px] text-slate-500">
+              {p.city ? `${p.city}, ${p.state || ''}` : p.primary_branch_name}
+            </span>
+          </div>
+        ),
+      },
+      {
+        key: 'allergies',
+        header: t('dashboard.pendingReports', 'Clinical Alerts'),
+        render: (p: PatientProfile) => (
+          <div className="flex flex-wrap gap-1 max-w-xs">
+            {p.allergies && p.allergies.length > 0 ? (
+              p.allergies.map((a: string, i: number) => (
+                <Badge key={i} variant="danger" size="sm">
+                  {a}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-slate-500 text-xs">{t('common.noData', 'No known allergies')}</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'status',
+        header: t('common.status', 'Status'),
+        render: (p: PatientProfile) => (
+          <Badge variant={p.status === 'ACTIVE' ? 'success' : p.status === 'MERGED' ? 'warning' : 'neutral'}>
+            {p.status || 'ACTIVE'}
+          </Badge>
+        ),
+      },
+      {
+        key: 'actions',
+        header: t('common.actions', 'Actions'),
+        align: 'right',
+        render: (p: PatientProfile) => (
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              onClick={() => {
+                setEditingPatient(p);
+                setEditFirstName(p.user_profile?.first_name || '');
+                setEditLastName(p.user_profile?.last_name || '');
+                setEditPhone(p.user_profile?.phone_number || '');
+                setEditAddress(p.address || '');
+                setEditCity(p.city || '');
+                setEditState(p.state || '');
+                setEditPostal(p.postal_code || '');
+                setEditEmergencyName(p.emergency_contact_name || '');
+                setEditEmergencyPhone(p.emergency_contact_phone || '');
+              }}
+              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+            >
+              {t('common.edit', 'Edit')}
+            </button>
+            <button
+              onClick={() => navigate(`/staff/patients/${p.id}`)}
+              className="px-3 py-1 text-xs font-semibold rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition flex items-center gap-1"
+            >
+              <span>{t('patients.medicalHistory', 'EMR Chart')}</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [t, patients]
+  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -431,7 +436,7 @@ export const PatientsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Users className="w-6 h-6 text-cyan-400" />
-            Patient Management & Electronic Medical Records (EMR)
+            {t('patients.title', 'Patient Management & Electronic Medical Records (EMR)')}
           </h1>
           <p className="text-sm text-slate-400 mt-1">
             Enterprise Master Patient Index (EMPI), Longitudinal Clinical Records, Duplicate Matching & Merging.
@@ -442,7 +447,7 @@ export const PatientsPage: React.FC = () => {
             onClick={handleOpenDuplicates}
             className="px-3 py-2 rounded-xl text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition flex items-center gap-1.5"
           >
-            <GitMerge className="w-4 h-4" /> Duplicate Review
+            <GitMerge className="w-4 h-4" /> {t('common.filter', 'Duplicate Review')}
             {stats && stats.potential_duplicates_count > 0 && (
               <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px]">
                 {stats.potential_duplicates_count}
@@ -456,7 +461,7 @@ export const PatientsPage: React.FC = () => {
             }}
             className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20"
           >
-            <Plus className="w-4 h-4" /> Register New Patient
+            <Plus className="w-4 h-4" /> {t('patients.registerNew', 'Register New Patient')}
           </button>
         </div>
       </div>
@@ -464,33 +469,33 @@ export const PatientsPage: React.FC = () => {
       {/* KPI Stats Calculated from Persistent Database Records */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard
-          title="Total Registered"
+          title={t('dashboard.totalPatients', 'Total Registered')}
           value={stats ? stats.total_registered.toString() : '...'}
           change="+100% Verified"
           icon={Users}
         />
         <StatCard
-          title="Registered Today"
+          title={t('dashboard.opdToday', 'Registered Today')}
           value={stats ? stats.registered_today.toString() : '...'}
           icon={Calendar}
         />
         <StatCard
-          title="Active Census"
+          title={t('dashboard.activeCensus', 'Active Census')}
           value={stats ? stats.active_patients.toString() : '...'}
           icon={Activity}
         />
         <StatCard
-          title="Upcoming Appts"
+          title={t('dashboard.todayAppointments', 'Upcoming Appts')}
           value={stats ? stats.upcoming_appointments.toString() : '...'}
           icon={Clock}
         />
         <StatCard
-          title="Follow-ups Due"
+          title={t('dashboard.pendingReports', 'Follow-ups Due')}
           value={stats ? stats.requiring_follow_up.toString() : '...'}
           icon={Heart}
         />
         <StatCard
-          title="Potential Duplicates"
+          title={t('common.warning', 'Potential Duplicates')}
           value={stats ? stats.potential_duplicates_count.toString() : '...'}
           icon={GitMerge}
         />
@@ -503,7 +508,7 @@ export const PatientsPage: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by MRN, Name, Phone, Email..."
+              placeholder={t('common.searchRecords', 'Search by MRN, Name, Phone, Email...')}
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);

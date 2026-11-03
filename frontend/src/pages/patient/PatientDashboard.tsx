@@ -22,8 +22,10 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
+import { useTranslation } from 'react-i18next';
 
 export const PatientDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const [profileData, setProfileData] = useState<CurrentUserResponse | null>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
@@ -124,14 +126,14 @@ export const PatientDashboard: React.FC = () => {
       <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-teal-950/60 via-slate-800/80 to-slate-800/60 border border-teal-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white">
-            Welcome, {user?.first_name ? `${user.first_name} ${user.last_name}` : 'Patient'}!
+            {t('common.welcome', 'Welcome')}, {user?.first_name ? `${user.first_name} ${user.last_name}` : t('auth.patient', 'Patient')}!
           </h1>
           <p className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
-            <span>UHID: <strong className="text-teal-400 font-mono">{patient?.uhid || patient?.medical_record_number || 'PENDING'}</strong></span>
+            <span>{t('patient.uhid', 'UHID')}: <strong className="text-teal-400 font-mono">{patient?.uhid || patient?.medical_record_number || 'PENDING'}</strong></span>
             <span>&bull;</span>
-            <span>Blood Group: <strong className="text-white">{patient?.blood_group || 'Recorded in EMR'}</strong></span>
+            <span>{t('patient.bloodGroup', 'Blood Group')}: <strong className="text-white">{patient?.blood_group || 'Recorded in EMR'}</strong></span>
             <span>&bull;</span>
-            <span>Branch: <strong className="text-slate-300">{patient?.primary_branch_name || 'Main Hospital Campus'}</strong></span>
+            <span>{t('common.branch', 'Branch')}: <strong className="text-slate-300">{patient?.primary_branch_name || 'Main Hospital Campus'}</strong></span>
           </p>
         </div>
         <button
@@ -139,7 +141,7 @@ export const PatientDashboard: React.FC = () => {
           className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 shrink-0"
         >
           <PlusCircle className="w-4 h-4 shrink-0" />
-          <span>Book Appointment</span>
+          <span>{t('patient.bookAppointment', 'Book Appointment')}</span>
         </button>
       </div>
 
@@ -147,39 +149,39 @@ export const PatientDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium">Scheduled Visits</span>
+            <span className="text-xs font-medium">{t('patient.scheduledVisits', 'Scheduled Visits')}</span>
             <Calendar className="w-4 h-4 text-teal-400" />
           </div>
           <div className="text-2xl font-bold text-white">{appointments.length}</div>
-          <p className="text-[11px] text-teal-400 mt-1">Confirmed OPD consultations</p>
+          <p className="text-[11px] text-teal-400 mt-1">{t('patient.confirmedOPD', 'Confirmed OPD consultations')}</p>
         </div>
 
         <div className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium">Digital Prescriptions</span>
+            <span className="text-xs font-medium">{t('patient.digitalPrescriptions', 'Digital Prescriptions')}</span>
             <Pill className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl font-bold text-white">{prescriptions.length}</div>
-          <p className="text-[11px] text-slate-400 mt-1">Hospital pharmacy prescriptions</p>
+          <p className="text-[11px] text-slate-400 mt-1">{t('patient.pharmacyPrescriptions', 'Hospital pharmacy prescriptions')}</p>
         </div>
 
         <div className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium">Medical Invoices</span>
+            <span className="text-xs font-medium">{t('patient.medicalInvoices', 'Medical Invoices')}</span>
             <FileText className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="text-2xl font-bold text-white">{invoices.length}</div>
-          <p className="text-[11px] text-emerald-400 mt-1">Itemized hospital bills</p>
+          <p className="text-[11px] text-emerald-400 mt-1">{t('patient.itemizedBills', 'Itemized hospital bills')}</p>
         </div>
 
         <div className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium">Outstanding Due</span>
+            <span className="text-xs font-medium">{t('patient.outstandingDue', 'Outstanding Due')}</span>
             <CreditCard className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-bold text-white">₹{totalOutstanding.toFixed(2)}</div>
           <p className="text-[11px] text-emerald-400 mt-1">
-            {totalOutstanding === 0 ? 'All bills cleared' : 'Payment pending at cashier'}
+            {totalOutstanding === 0 ? t('patient.allBillsCleared') : t('patient.paymentPendingCashier')}
           </p>
         </div>
       </div>
@@ -190,10 +192,10 @@ export const PatientDashboard: React.FC = () => {
         <div className="p-4 sm:p-6 rounded-2xl bg-slate-800/60 border border-slate-700/60">
           <h3 className="text-sm sm:text-base font-semibold text-white mb-4 flex items-center gap-2">
             <Clock className="w-4 h-4 text-teal-400" />
-            <span>My Scheduled Appointments</span>
+            <span>{t('patient.myScheduledAppointments')}</span>
           </h3>
           {appointments.length === 0 ? (
-            <p className="text-xs text-slate-400 py-6 text-center">No upcoming consultations booked.</p>
+            <p className="text-xs text-slate-400 py-6 text-center">{t('patient.noUpcomingConsultations')}</p>
           ) : (
             <div className="space-y-3">
               {appointments.slice(0, 4).map((a) => (
@@ -202,10 +204,10 @@ export const PatientDashboard: React.FC = () => {
                   className="p-3.5 sm:p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 flex flex-col xs:flex-row xs:items-center justify-between gap-2.5"
                 >
                   <div>
-                    <p className="text-xs sm:text-sm font-semibold text-white">Dr. {a.doctor_name || 'Consultant'}</p>
-                    <p className="text-xs text-slate-400">{a.department_name || 'General OPD'}</p>
+                    <p className="text-xs sm:text-sm font-semibold text-white">Dr. {a.doctor_name || t('roles.doctor')}</p>
+                    <p className="text-xs text-slate-400">{a.department_name || t('navigation.appointments')}</p>
                     <p className="text-[11px] text-teal-400 mt-0.5">
-                      Token #{a.token_number} &bull; {a.appointment_date} at {a.appointment_time}
+                      {t('dashboard.token')} #{a.token_number} &bull; {a.appointment_date} at {a.appointment_time}
                     </p>
                   </div>
                   <div className="self-start xs:self-center shrink-0">
@@ -221,10 +223,10 @@ export const PatientDashboard: React.FC = () => {
         <div className="p-4 sm:p-6 rounded-2xl bg-slate-800/60 border border-slate-700/60">
           <h3 className="text-sm sm:text-base font-semibold text-white mb-4 flex items-center gap-2">
             <Pill className="w-4 h-4 text-cyan-400" />
-            <span>My Active Prescriptions & Medications</span>
+            <span>{t('patient.myActivePrescriptions')}</span>
           </h3>
           {prescriptions.length === 0 ? (
-            <p className="text-xs text-slate-400 py-6 text-center">No active prescriptions on file.</p>
+            <p className="text-xs text-slate-400 py-6 text-center">{t('patient.noActivePrescriptions')}</p>
           ) : (
             <div className="space-y-3">
               {prescriptions.slice(0, 4).map((rx) => (
@@ -234,12 +236,12 @@ export const PatientDashboard: React.FC = () => {
                 >
                   <div>
                     <p className="text-xs font-semibold text-white">Rx #{rx.prescription_number}</p>
-                    <p className="text-[11px] text-slate-400">{rx.diagnosis || 'Clinical Prescription'}</p>
-                    <p className="text-[11px] text-slate-500">Prescribed by {rx.doctor_name}</p>
+                    <p className="text-[11px] text-slate-400">{rx.diagnosis || t('navigation.prescriptionsTab')}</p>
+                    <p className="text-[11px] text-slate-500">{t('patient.prescribedBy')} {rx.doctor_name}</p>
                   </div>
                   <div className="self-start xs:self-center shrink-0">
                     <Badge variant={rx.is_dispensed ? 'success' : 'warning'}>
-                      {rx.is_dispensed ? 'Dispensed' : 'Ready at Pharmacy'}
+                      {rx.is_dispensed ? t('patient.dispensed') : t('patient.readyAtPharmacy')}
                     </Badge>
                   </div>
                 </div>
@@ -253,17 +255,17 @@ export const PatientDashboard: React.FC = () => {
       <Modal
         isOpen={isBookModalOpen}
         onClose={() => setIsBookModalOpen(false)}
-        title="Schedule OPD Consultation Slot"
+        title={t('patient.scheduleSlotModalTitle')}
         size="md"
       >
         <form onSubmit={handleBookAppointment} className="space-y-4">
           <Select
-            label="Consulting Doctor / Specialist"
+            label={t('patient.consultingDoctor')}
             required
             value={bookForm.doctor_id}
             onChange={(e) => setBookForm({ ...bookForm, doctor_id: e.target.value })}
             options={[
-              { value: '', label: '-- Choose Doctor --' },
+              { value: '', label: t('patient.chooseDoctor') },
               ...doctors.map((d) => ({
                 value: d.id,
                 label: `Dr. ${d.user_profile?.first_name || ''} ${d.user_profile?.last_name || ''} (${d.specialization || d.designation || 'General Physician'})`,
@@ -273,14 +275,14 @@ export const PatientDashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
-              label="Consultation Date"
+              label={t('patient.consultationDate')}
               type="date"
               required
               value={bookForm.appointment_date}
               onChange={(e) => setBookForm({ ...bookForm, appointment_date: e.target.value })}
             />
             <Input
-              label="Preferred Time Slot"
+              label={t('patient.preferredTimeSlot')}
               type="time"
               required
               value={bookForm.appointment_time}
@@ -289,7 +291,7 @@ export const PatientDashboard: React.FC = () => {
           </div>
 
           <Input
-            label="Current Symptoms / Reason for Visit"
+            label={t('patient.currentSymptoms')}
             placeholder="e.g. Chest discomfort, recurrent fever, routine checkup"
             required
             value={bookForm.symptoms}
@@ -302,14 +304,14 @@ export const PatientDashboard: React.FC = () => {
               onClick={() => setIsBookModalOpen(false)}
               className="w-full sm:w-auto px-4 py-2.5 border border-slate-700 text-slate-300 hover:bg-slate-800 rounded-xl text-xs"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={bookingSubmitting}
               className="w-full sm:w-auto px-5 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl text-xs disabled:opacity-50 shadow-md shadow-teal-500/20"
             >
-              {bookingSubmitting ? 'Confirming Slot...' : 'Confirm Appointment'}
+              {bookingSubmitting ? t('patient.confirmingSlot') : t('patient.confirmAppointment')}
             </button>
           </div>
         </form>

@@ -6,6 +6,7 @@ import {
   Check, CalendarCheck, UserPlus, FileSpreadsheet, Eye, ChevronDown
 } from 'lucide-react';
 import { opdService, clinicalService, authService, pharmacyService } from '../../services/api';
+import { VoicePrescriptionModal, StructuredPrescriptionItem } from '../../components/clinical/VoicePrescriptionModal';
 import { parseApiError } from '../../utils/errorHandler';
 import { DataTable, Column } from '../../components/common/DataTable';
 import { StatCard } from '../../components/common/StatCard';
@@ -16,12 +17,14 @@ import { Select } from '../../components/common/Select';
 import { DateField } from '../../components/common/DateField';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useTranslation } from 'react-i18next';
 import {
   Appointment, OPDDashboardStats, DoctorAvailabilityResponse,
   QueueItem, DoctorScheduleRecord, DoctorLeaveRecord
 } from '../../types';
 
 export const AppointmentsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
 
   // Active navigation tab
@@ -68,6 +71,7 @@ export const AppointmentsPage: React.FC = () => {
 
   // Consultation Workspace State
   const [showConsultModal, setShowConsultModal] = useState<boolean>(false);
+  const [showVoicePrescriptionModal, setShowVoicePrescriptionModal] = useState<boolean>(false);
   const [activeConsultAppointment, setActiveConsultAppointment] = useState<QueueItem | null>(null);
   const [encounterData, setEncounterData] = useState<any | null>(null);
   const [consultLoading, setConsultLoading] = useState<boolean>(false);
@@ -85,7 +89,7 @@ export const AppointmentsPage: React.FC = () => {
   const [bookFollowUp, setBookFollowUp] = useState<boolean>(false);
   const [followUpSlot, setFollowUpSlot] = useState<string>('10:00 - 10:15');
 
-  // E-Prescription Items
+  // E-Prescription Items with detailed schedule & food instructions
   const [rxItems, setRxItems] = useState<Array<{
     medicine_id: string;
     dosage: string;
@@ -93,6 +97,18 @@ export const AppointmentsPage: React.FC = () => {
     duration_days: number;
     total_quantity: number;
     instructions: string;
+    food_instruction?: string;
+    route?: string;
+    is_prn?: boolean;
+    prn_indication?: string;
+    morning?: boolean;
+    morning_dose?: string;
+    afternoon?: boolean;
+    afternoon_dose?: string;
+    evening?: boolean;
+    evening_dose?: string;
+    night?: boolean;
+    night_dose?: string;
   }>>([]);
 
   // Diagnostic Lab Orders
@@ -290,18 +306,86 @@ export const AppointmentsPage: React.FC = () => {
   };
 
   // 8. Add Rx Item
-  const handleAddRxItem = () => {
-    if (!encounterData?.medicines || encounterData.medicines.length === 0) return;
-    const defaultMed = encounterData.medicines[0];
+  // Handle items extracted from Voice Prescription Modal
+  const handleApplyVoicePrescriptions = (items: StructuredPrescriptionItem[]) => {
+    const formatted = items.map((item) => {
+      // Build dosage string
+      const dosageStr = item.dosage_form ? `${item.dose_amount || '1'} ${item.dose_unit || 'Tablet'}` : (item.strength || '1 Tablet');
+      
+      // Build timing and frequency instructions
+      const timingParts = [];
+      if (item.schedule?.morning) timingParts.push(`M:${item.schedule.morning_dose || '1'}`);
+      if (item.schedule?.afternoon) timingParts.push(`A:${item.schedule.afternoon_dose || '1'}`);
+      if (item.schedule?.evening) timingParts.push(`E:${item.schedule.evening_dose || '1'}`);
+      if (item.schedule?.night) timingParts.push(`N:${item.schedule.night_dose || '1'}`);
+      const schedStr = timingParts.length > 0 ? ` [${timingParts.join('-')}]` : '';
+
+      const foodStr = item.food_instruction ? ` (${item.food_instruction.replace('_', ' ')})` : '';
+      const freqFormatted = `${item.frequency || '1-0-1'}${schedStr}${foodStr}`;
+
+      return {
+        medicine_id: item.medicine_id || 'fb3ef1cc-4d06-4f95-a9f5-6aaef3c50aa5',
+        dosage: dosageStr,
+        frequency: freqFormatted,
+        duration_days: item.duration_days || 5,
+        total_quantity: item.total_quantity || 10,
+        instructions: item.instructions || 'Take as prescribed',
+        food_instruction: item.food_instruction || 'AFTER_FOOD',
+        route: item.route || 'Oral',
+        is_prn: !!item.is_prn,
+        prn_indication: item.prn_indication || '',
+        morning: item.schedule?.morning ?? true,
+        morning_dose: item.schedule?.morning_dose || '1',
+        afternoon: item.schedule?.afternoon ?? false,
+        afternoon_dose: item.schedule?.afternoon_dose || '0',
+        evening: item.schedule?.evening ?? false,
+        evening_dose: item.schedule?.evening_dose || '0',
+        night: item.schedule?.night ?? true,
+        night_dose: item.schedule?.night_dose || '1',
+      };
+    });
+
+    setRxItems((prev) => [...prev, ...formatted]);
+  };
+
+  const handleAddRxItem = async () => {
+    let availableMeds = encounterData?.medicines || [];
+
+    if (availableMeds.length === 0) {
+      try {
+        const res = await pharmacyService.getMedicines({ page_size: 50 });
+        const fetched = Array.isArray(res) ? res : res?.results || [];
+        if (fetched.length > 0) {
+          availableMeds = fetched;
+          setEncounterData((prev: any) => ({ ...(prev || {}), medicines: fetched }));
+        }
+      } catch (err) {
+        console.warn('Could not fetch pharmacy formulary fallback:', err);
+      }
+    }
+
+    const defaultMedId = availableMeds[0]?.id || 'fb3ef1cc-4d06-4f95-a9f5-6aaef3c50aa5';
+
     setRxItems((prev) => [
       ...prev,
       {
-        medicine_id: defaultMed.id,
+        medicine_id: defaultMedId,
         dosage: '1 Tablet',
         frequency: '1-0-1 (After Food)',
         duration_days: 5,
         total_quantity: 10,
         instructions: 'Take after meals',
+        food_instruction: 'AFTER_FOOD',
+        route: 'Oral',
+        is_prn: false,
+        morning: true,
+        morning_dose: '1',
+        afternoon: false,
+        afternoon_dose: '0',
+        evening: false,
+        evening_dose: '0',
+        night: true,
+        night_dose: '1',
       },
     ]);
   };
@@ -389,205 +473,208 @@ export const AppointmentsPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'SCHEDULED':
-        return <Badge variant="info">Scheduled</Badge>;
+        return <Badge variant="info">{t('appointments.statusScheduled', 'Scheduled')}</Badge>;
       case 'CHECKED_IN':
-        return <Badge variant="warning">Checked In (Waiting)</Badge>;
+        return <Badge variant="warning">{t('appointments.statusCheckedIn', 'Checked In (Waiting)')}</Badge>;
       case 'IN_CONSULTATION':
-        return <Badge variant="accent">In Consultation</Badge>;
+        return <Badge variant="accent">{t('appointments.statusInConsultation', 'In Consultation')}</Badge>;
       case 'COMPLETED':
-        return <Badge variant="success">Completed</Badge>;
+        return <Badge variant="success">{t('appointments.statusCompleted', 'Completed')}</Badge>;
       case 'CANCELLED':
-        return <Badge variant="danger">Cancelled</Badge>;
+        return <Badge variant="danger">{t('appointments.statusCancelled', 'Cancelled')}</Badge>;
       case 'NO_SHOW':
-        return <Badge variant="neutral">No Show</Badge>;
+        return <Badge variant="neutral">{t('appointments.statusNoShow', 'No Show')}</Badge>;
       default:
         return <Badge variant="neutral">{status}</Badge>;
     }
   };
 
   // Queue Columns
-  const queueColumns: Column<QueueItem>[] = [
-    {
-      key: 'token_number',
-      header: 'Token #',
-      render: (item) => (
-        <div className="flex items-center gap-1.5">
-          <span className="font-mono text-cyan-300 font-extrabold px-2.5 py-1 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-xs shadow-sm">
-            {item.token_number || '—'}
-          </span>
-          {item.appointment_type === 'WALK_IN' && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-medium border border-amber-500/30">
-              Walk-in
+  const queueColumns: Column<QueueItem>[] = useMemo(
+    () => [
+      {
+        key: 'token_number',
+        header: t('appointments.tokenHeader', 'Token #'),
+        render: (item) => (
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-cyan-300 font-extrabold px-2.5 py-1 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-xs shadow-sm">
+              {item.token_number || '—'}
             </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'patient_name',
-      header: 'Patient Info',
-      render: (item) => (
-        <div>
-          <div className="font-semibold text-white flex items-center gap-1.5">
-            {item.patient_name}
-            {item.patient_gender && (
-              <span className="text-[11px] text-slate-400 font-normal">
-                ({item.patient_gender[0]}
-                {item.patient_blood_group ? `, ${item.patient_blood_group}` : ''})
+            {item.appointment_type === 'WALK_IN' && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-medium border border-amber-500/30">
+                {t('appointments.walkIn', 'Walk-in')}
               </span>
             )}
           </div>
-          <div className="text-[11px] font-mono text-cyan-400/80">MRN: {item.patient_mrn}</div>
-          {item.patient_allergies && item.patient_allergies.length > 0 && (
-            <div className="text-[10px] text-rose-400 flex items-center gap-1 mt-0.5 font-medium">
-              <AlertTriangle className="w-2.5 h-2.5" />
-              Allergies: {item.patient_allergies.join(', ')}
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'doctor_name',
-      header: 'Doctor & Department',
-      render: (item) => (
-        <div>
-          <div className="text-slate-200 font-medium">Dr. {item.doctor_name}</div>
-          <div className="text-[11px] text-slate-400">{item.doctor_specialization || item.department_name}</div>
-        </div>
-      ),
-    },
-    {
-      key: 'time_slot',
-      header: 'Slot / Check-In',
-      render: (item) => (
-        <div className="text-xs">
-          <div className="text-slate-300 font-mono flex items-center gap-1">
-            <Clock className="w-3 h-3 text-cyan-400" />
-            {item.time_slot}
-          </div>
-          {item.checked_in_at && (
-            <div className="text-[11px] text-slate-500 mt-0.5">
-              In: {new Date(item.checked_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'wait_minutes',
-      header: 'Wait Time',
-      render: (item) => (
-        <div>
-          {item.status === 'CHECKED_IN' ? (
-            <span className={`font-mono text-xs font-semibold px-2 py-0.5 rounded ${
-              item.wait_minutes > 30
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-            }`}>
-              {item.wait_minutes} min
-            </span>
-          ) : item.status === 'IN_CONSULTATION' ? (
-            <span className="text-xs text-cyan-400 font-medium animate-pulse flex items-center gap-1">
-              <Activity className="w-3 h-3" /> Consulting
-            </span>
-          ) : (
-            <span className="text-xs text-slate-500">—</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (item) => getStatusBadge(item.status),
-    },
-    {
-      key: 'invoice_status',
-      header: 'Fee / Invoice',
-      render: (item) => (
-        <div className="text-xs">
-          {item.invoice_number ? (
-            <div>
-              <span className="font-mono text-[11px] text-slate-400">{item.invoice_number}</span>
-              <div>
-                <span className={`text-[10px] font-semibold ${
-                  item.invoice_status === 'PAID' ? 'text-emerald-400' : 'text-amber-400'
-                }`}>
-                  {item.invoice_status}
+        ),
+      },
+      {
+        key: 'patient_name',
+        header: t('appointments.patientInfoHeader', 'Patient Info'),
+        render: (item) => (
+          <div>
+            <div className="font-semibold text-white flex items-center gap-1.5">
+              {item.patient_name}
+              {item.patient_gender && (
+                <span className="text-[11px] text-slate-400 font-normal">
+                  ({item.patient_gender[0]}
+                  {item.patient_blood_group ? `, ${item.patient_blood_group}` : ''})
                 </span>
-              </div>
+              )}
             </div>
-          ) : (
-            <span className="text-slate-600">—</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Queue Actions',
-      align: 'right',
-      render: (item) => (
-        <div className="flex items-center justify-end gap-1.5 flex-wrap">
-          {item.status === 'SCHEDULED' && (
-            <button
-              onClick={() => handleQueueAction(item.id, 'CHECK_IN')}
-              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 transition shadow-sm"
-            >
-              Check In
-            </button>
-          )}
+            <div className="text-[11px] font-mono text-cyan-400/80">MRN: {item.patient_mrn}</div>
+            {item.patient_allergies && item.patient_allergies.length > 0 && (
+              <div className="text-[10px] text-rose-400 flex items-center gap-1 mt-0.5 font-medium">
+                <AlertTriangle className="w-2.5 h-2.5" />
+                {t('patients.allergies', 'Allergies')}: {item.patient_allergies.join(', ')}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'doctor_name',
+        header: t('appointments.doctorDeptHeader', 'Doctor & Department'),
+        render: (item) => (
+          <div>
+            <div className="text-slate-200 font-medium">Dr. {item.doctor_name}</div>
+            <div className="text-[11px] text-slate-400">{item.doctor_specialization || item.department_name}</div>
+          </div>
+        ),
+      },
+      {
+        key: 'time_slot',
+        header: t('appointments.slotCheckInHeader', 'Slot / Check-In'),
+        render: (item) => (
+          <div className="text-xs">
+            <div className="text-slate-300 font-mono flex items-center gap-1">
+              <Clock className="w-3 h-3 text-cyan-400" />
+              {item.time_slot}
+            </div>
+            {item.checked_in_at && (
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                In: {new Date(item.checked_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'wait_minutes',
+        header: t('appointments.waitTimeHeader', 'Wait Time'),
+        render: (item) => (
+          <div>
+            {item.status === 'CHECKED_IN' ? (
+              <span className={`font-mono text-xs font-semibold px-2 py-0.5 rounded ${
+                item.wait_minutes > 30
+                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                  : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+              }`}>
+                {item.wait_minutes} min
+              </span>
+            ) : item.status === 'IN_CONSULTATION' ? (
+              <span className="text-xs text-cyan-400 font-medium animate-pulse flex items-center gap-1">
+                <Activity className="w-3 h-3" /> {t('appointments.statusInConsultation', 'In Consultation')}
+              </span>
+            ) : (
+              <span className="text-xs text-slate-500">—</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'status',
+        header: t('common.status', 'Status'),
+        render: (item) => getStatusBadge(item.status),
+      },
+      {
+        key: 'invoice_status',
+        header: t('billing.invoiceNumber', 'Fee / Invoice'),
+        render: (item) => (
+          <div className="text-xs">
+            {item.invoice_number ? (
+              <div>
+                <span className="font-mono text-[11px] text-slate-400">{item.invoice_number}</span>
+                <div>
+                  <span className={`text-[10px] font-semibold ${
+                    item.invoice_status === 'PAID' ? 'text-emerald-400' : 'text-amber-400'
+                  }`}>
+                    {item.invoice_status}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <span className="text-slate-600">—</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'actions',
+        header: t('appointments.queueActionsHeader', 'Queue Actions'),
+        align: 'right',
+        render: (item) => (
+          <div className="flex items-center justify-end gap-1.5 flex-wrap">
+            {item.status === 'SCHEDULED' && (
+              <button
+                onClick={() => handleQueueAction(item.id, 'CHECK_IN')}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 transition shadow-sm"
+              >
+                {t('appointments.checkIn', 'Check In')}
+              </button>
+            )}
 
-          {item.status === 'CHECKED_IN' && (
-            <>
+            {item.status === 'CHECKED_IN' && (
+              <>
+                <button
+                  onClick={() => handleOpenConsultation(item)}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition shadow-sm flex items-center gap-1"
+                >
+                  <Stethoscope className="w-3 h-3" /> {t('appointments.callInConsult', 'Call In & Consult')}
+                </button>
+                <button
+                  onClick={() => handleQueueAction(item.id, 'NO_SHOW')}
+                  className="px-2 py-1 text-xs text-slate-400 hover:text-rose-400 transition"
+                  title={t('appointments.noShow', 'No Show')}
+                >
+                  {t('appointments.noShow', 'No Show')}
+                </button>
+              </>
+            )}
+
+            {item.status === 'IN_CONSULTATION' && (
               <button
                 onClick={() => handleOpenConsultation(item)}
-                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition shadow-sm flex items-center gap-1"
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 hover:brightness-110 transition shadow-sm flex items-center gap-1"
               >
-                <Stethoscope className="w-3 h-3" /> Call In & Consult
+                <FileText className="w-3 h-3" /> {t('appointments.resumeRx', 'Resume / Finalize Rx')}
               </button>
+            )}
+
+            {item.status === 'COMPLETED' && (
+              <span className="text-xs text-emerald-400/80 font-medium flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" /> {t('appointments.statusCompleted', 'Completed')}
+              </span>
+            )}
+
+            {['SCHEDULED', 'CHECKED_IN'].includes(item.status) && (
               <button
-                onClick={() => handleQueueAction(item.id, 'NO_SHOW')}
-                className="px-2 py-1 text-xs text-slate-400 hover:text-rose-400 transition"
-                title="Mark No Show"
+                onClick={() => {
+                  const reason = prompt('Please enter cancellation reason:');
+                  if (reason) handleQueueAction(item.id, 'CANCEL', { reason });
+                }}
+                className="px-2 py-1 text-xs text-slate-500 hover:text-rose-400 transition"
+                title={t('common.cancel', 'Cancel')}
               >
-                No Show
+                {t('common.cancel', 'Cancel')}
               </button>
-            </>
-          )}
-
-          {item.status === 'IN_CONSULTATION' && (
-            <button
-              onClick={() => handleOpenConsultation(item)}
-              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 hover:brightness-110 transition shadow-sm flex items-center gap-1"
-            >
-              <FileText className="w-3 h-3" /> Resume / Finalize Rx
-            </button>
-          )}
-
-          {item.status === 'COMPLETED' && (
-            <span className="text-xs text-emerald-400/80 font-medium flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" /> Completed
-            </span>
-          )}
-
-          {['SCHEDULED', 'CHECKED_IN'].includes(item.status) && (
-            <button
-              onClick={() => {
-                const reason = prompt('Please enter cancellation reason:');
-                if (reason) handleQueueAction(item.id, 'CANCEL', { reason });
-              }}
-              className="px-2 py-1 text-xs text-slate-500 hover:text-rose-400 transition"
-              title="Cancel Appointment"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      ),
-    },
-  ];
+            )}
+          </div>
+        ),
+      },
+    ],
+    [t, queue]
+  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -600,10 +687,10 @@ export const AppointmentsPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white tracking-tight">
-                Outpatient Department (OPD) & Appointments
+                {t('navigation.appointments', 'Outpatient Department (OPD) & Appointments')}
               </h1>
               <p className="text-xs text-slate-400">
-                Multi-Specialty Clinic Management • Collision Prevention • Walk-in Tokens • Integrated EMR & Rx
+                {t('appointments.subtitle', 'Multi-Specialty Clinic Management • Collision Prevention • Walk-in Tokens • Integrated EMR & Rx')}
               </p>
             </div>
           </div>
@@ -616,19 +703,19 @@ export const AppointmentsPage: React.FC = () => {
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-xs hover:bg-amber-500/25 transition shadow-sm"
           >
             <UserPlus className="w-4 h-4" />
-            Walk-in Token
+            {t('appointments.walkInToken', 'Walk-in Token')}
           </button>
           <button
             onClick={() => setShowBookModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition"
           >
             <Plus className="w-4 h-4" />
-            Book Appointment
+            {t('appointments.bookAppointment', 'Book Appointment')}
           </button>
           <button
             onClick={fetchOPDData}
             className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
-            title="Refresh OPD Queue"
+            title={t('appointments.refreshQueue', 'Refresh OPD Queue')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -646,7 +733,7 @@ export const AppointmentsPage: React.FC = () => {
           }`}
         >
           <Activity className="w-4 h-4" />
-          Live OPD Queue & Dashboard
+          {t('appointments.liveQueueTab', 'Live OPD Queue & Dashboard')}
         </button>
         <button
           onClick={() => setActiveTab('schedules')}
@@ -657,7 +744,7 @@ export const AppointmentsPage: React.FC = () => {
           }`}
         >
           <CalendarCheck className="w-4 h-4" />
-          Doctor Availability & Rosters
+          {t('appointments.schedulesTab', 'Doctor Availability & Rosters')}
         </button>
         <button
           onClick={() => setActiveTab('reports')}
@@ -668,7 +755,7 @@ export const AppointmentsPage: React.FC = () => {
           }`}
         >
           <TrendingUp className="w-4 h-4" />
-          Doctor & OPD Analytics Reports
+          {t('appointments.reportsTab', 'Doctor & OPD Analytics Reports')}
         </button>
       </div>
 
@@ -678,32 +765,32 @@ export const AppointmentsPage: React.FC = () => {
           {/* KPI Stat Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <StatCard
-              title="Today's Appointments"
+              title={t('dashboard.todayAppointments', "Today's Appointments")}
               value={stats ? stats.total_appointments.toString() : '0'}
               icon={Calendar}
             />
             <StatCard
-              title="Waiting in Queue"
+              title={t('appointments.waiting', 'Waiting in Queue')}
               value={stats ? stats.waiting.toString() : '0'}
               icon={Clock}
             />
             <StatCard
-              title="In Consultation"
+              title={t('appointments.inConsultation', 'In Consultation')}
               value={stats ? stats.in_consultation.toString() : '0'}
               icon={Stethoscope}
             />
             <StatCard
-              title="Completed Today"
+              title={t('appointments.completed', 'Completed Today')}
               value={stats ? stats.completed.toString() : '0'}
               icon={CheckCircle}
             />
             <StatCard
-              title="Avg Wait Duration"
+              title={t('dashboard.pendingReports', 'Avg Wait Duration')}
               value={stats ? `${stats.average_wait_minutes} min` : '0 min'}
               icon={Activity}
             />
             <StatCard
-              title="Doctors on Duty"
+              title={t('common.activeClinician', 'Doctors on Duty')}
               value={stats ? stats.available_doctors_count.toString() : '0'}
               icon={User}
             />
@@ -1258,6 +1345,17 @@ export const AppointmentsPage: React.FC = () => {
         </Modal>
       )}
 
+      {/* MODAL: Voice Prescription Dictation & AI Extraction */}
+      <VoicePrescriptionModal
+        isOpen={showVoicePrescriptionModal}
+        onClose={() => setShowVoicePrescriptionModal(false)}
+        patientId={activeConsultAppointment?.patient_id}
+        patientName={activeConsultAppointment?.patient_name}
+        patientAllergies={encounterData?.emr_summary?.allergies || []}
+        formularyMedicines={encounterData?.medicines || []}
+        onApplyPrescriptions={handleApplyVoicePrescriptions}
+      />
+
       {/* MODAL 4: Doctor Consultation Workspace (EMR Integration + Rx + Diagnostics) */}
       {activeConsultAppointment && (
         <Modal
@@ -1446,13 +1544,23 @@ export const AppointmentsPage: React.FC = () => {
                     <Pill className="w-4 h-4 text-cyan-400" />
                     Electronic Prescriptions (HMS Pharmacy Formulary)
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAddRxItem}
-                    className="flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/25 transition"
-                  >
-                    <Plus className="w-3 h-3" /> Add Medicine
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowVoicePrescriptionModal(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/40 text-purple-300 hover:from-purple-500/30 hover:to-indigo-500/30 transition shadow-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
+                      Voice Prescription
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddRxItem}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/25 transition"
+                    >
+                      <Plus className="w-3 h-3" /> Add Medicine
+                    </button>
+                  </div>
                 </div>
 
                 {rxItems.length === 0 ? (
@@ -1462,75 +1570,204 @@ export const AppointmentsPage: React.FC = () => {
                 ) : (
                   <div className="space-y-2">
                     {rxItems.map((item, idx) => (
-                      <div key={idx} className="p-2.5 bg-slate-900 border border-slate-800 rounded-xl grid grid-cols-1 sm:grid-cols-6 gap-2 items-center text-xs">
-                        <div className="sm:col-span-2">
-                          <label className="text-[10px] text-slate-500">Medicine</label>
-                          <select
-                            value={item.medicine_id}
-                            onChange={(e) => {
-                              const updated = [...rxItems];
-                              updated[idx].medicine_id = e.target.value;
-                              setRxItems(updated);
-                            }}
-                            className="w-full px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
-                          >
-                            {encounterData?.medicines?.map((m: any) => (
-                              <option key={m.id} value={m.id}>
-                                {m.brand_name} ({m.generic_name} {m.strength})
-                              </option>
-                            ))}
-                          </select>
+                      <div key={idx} className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2.5 text-xs">
+                        {/* Row 1: Medicine, Dosage, Frequency, Duration, Qty, Remove */}
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                          <div className="sm:col-span-4">
+                            <label className="text-[10px] font-semibold text-slate-400">Medicine</label>
+                            <select
+                              value={item.medicine_id}
+                              onChange={(e) => {
+                                const updated = [...rxItems];
+                                updated[idx].medicine_id = e.target.value;
+                                setRxItems(updated);
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                            >
+                              {(encounterData?.medicines && encounterData.medicines.length > 0
+                                ? encounterData.medicines
+                                : [
+                                    { id: 'fb3ef1cc-4d06-4f95-a9f5-6aaef3c50aa5', brand_name: 'Augmentin Duo / Amoxycillin', generic_name: 'Amoxicillin Trihydrate', strength: '500mg' },
+                                    { id: '644061a7-7d9f-480e-87be-a828852ee472', brand_name: 'Atorva 20', generic_name: 'Atorvastatin Calcium', strength: '20mg' },
+                                    { id: 'fe0a1f1b-d43c-4b31-919b-49da25beba11', brand_name: 'Monocef 1g', generic_name: 'Ceftriaxone Sodium Injection', strength: '1g Vial' },
+                                    { id: '6082f368-ed54-4181-9470-25535950820a', brand_name: 'Glycomet 500', generic_name: 'Metformin Hydrochloride', strength: '500mg' },
+                                    { id: '471b13da-2842-489e-8001-577def17ec4d', brand_name: 'Dolo 650', generic_name: 'Paracetamol', strength: '650mg' },
+                                    { id: '95fffc76-f447-467f-ab46-dbc55fcd3f7d', brand_name: 'Pan 40', generic_name: 'Pantoprazole Sodium', strength: '40mg' },
+                                  ]
+                              ).map((m: any) => (
+                                <option key={m.id} value={m.id}>
+                                  {m.brand_name} ({m.generic_name} • {m.strength})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="text-[10px] font-semibold text-slate-400">Dose</label>
+                            <input
+                              type="text"
+                              value={item.dosage}
+                              onChange={(e) => {
+                                const updated = [...rxItems];
+                                updated[idx].dosage = e.target.value;
+                                setRxItems(updated);
+                              }}
+                              placeholder="1 Tablet"
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="text-[10px] font-semibold text-slate-400">Frequency</label>
+                            <input
+                              type="text"
+                              value={item.frequency}
+                              onChange={(e) => {
+                                const updated = [...rxItems];
+                                updated[idx].frequency = e.target.value;
+                                setRxItems(updated);
+                              }}
+                              placeholder="1-0-1"
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                            />
+                          </div>
+                          <div className="sm:col-span-1">
+                            <label className="text-[10px] font-semibold text-slate-400">Days</label>
+                            <input
+                              type="number"
+                              min={1}
+                              value={item.duration_days}
+                              onChange={(e) => {
+                                const updated = [...rxItems];
+                                updated[idx].duration_days = parseInt(e.target.value) || 1;
+                                // recalculate qty
+                                let d = 0;
+                                if (updated[idx].morning) d += parseFloat(updated[idx].morning_dose || '1') || 1;
+                                if (updated[idx].afternoon) d += parseFloat(updated[idx].afternoon_dose || '1') || 1;
+                                if (updated[idx].evening) d += parseFloat(updated[idx].evening_dose || '1') || 1;
+                                if (updated[idx].night) d += parseFloat(updated[idx].night_dose || '1') || 1;
+                                if (d > 0) updated[idx].total_quantity = Math.ceil(d * updated[idx].duration_days);
+                                setRxItems(updated);
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="text-[10px] font-semibold text-slate-400">Food Instruction</label>
+                            <select
+                              value={item.food_instruction || 'AFTER_FOOD'}
+                              onChange={(e) => {
+                                const updated = [...rxItems];
+                                updated[idx].food_instruction = e.target.value;
+                                setRxItems(updated);
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                            >
+                              <option value="AFTER_FOOD">After Food</option>
+                              <option value="BEFORE_FOOD">Before Food</option>
+                              <option value="WITH_FOOD">With Food</option>
+                              <option value="EMPTY_STOMACH">Empty Stomach</option>
+                              <option value="BEDTIME">At Bedtime</option>
+                              <option value="NONE">No Restriction</option>
+                            </select>
+                          </div>
+                          <div className="sm:col-span-1 flex items-center justify-end pt-3">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveRxItem(idx)}
+                              className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/15 transition"
+                              title="Remove Medicine"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Row 2: Morning, Afternoon, Evening, Night Time-of-day Schedule */}
+                        <div className="p-2.5 bg-slate-950/80 border border-slate-800/80 rounded-lg flex items-center justify-between flex-wrap gap-2 text-[11px]">
+                          <div className="text-slate-400 font-semibold flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-cyan-400" />
+                            Schedule:
+                          </div>
+
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {/* Morning */}
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={item.morning !== false}
+                                onChange={(e) => {
+                                  const updated = [...rxItems];
+                                  updated[idx].morning = e.target.checked;
+                                  setRxItems(updated);
+                                }}
+                                className="rounded border-slate-700 text-cyan-500 focus:ring-0"
+                              />
+                              <span className="text-slate-300">Morning ({item.morning_dose || '1'})</span>
+                            </label>
+
+                            {/* Afternoon */}
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={!!item.afternoon}
+                                onChange={(e) => {
+                                  const updated = [...rxItems];
+                                  updated[idx].afternoon = e.target.checked;
+                                  setRxItems(updated);
+                                }}
+                                className="rounded border-slate-700 text-cyan-500 focus:ring-0"
+                              />
+                              <span className="text-slate-300">Afternoon ({item.afternoon_dose || '1'})</span>
+                            </label>
+
+                            {/* Evening */}
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={!!item.evening}
+                                onChange={(e) => {
+                                  const updated = [...rxItems];
+                                  updated[idx].evening = e.target.checked;
+                                  setRxItems(updated);
+                                }}
+                                className="rounded border-slate-700 text-cyan-500 focus:ring-0"
+                              />
+                              <span className="text-slate-300">Evening ({item.evening_dose || '1'})</span>
+                            </label>
+
+                            {/* Night */}
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={item.night !== false}
+                                onChange={(e) => {
+                                  const updated = [...rxItems];
+                                  updated[idx].night = e.target.checked;
+                                  setRxItems(updated);
+                                }}
+                                className="rounded border-slate-700 text-cyan-500 focus:ring-0"
+                              />
+                              <span className="text-slate-300">Night ({item.night_dose || '1'})</span>
+                            </label>
+                          </div>
+
+                          <div className="text-slate-400 text-[10px]">
+                            Qty: <strong className="text-white">{item.total_quantity || 10}</strong>
+                          </div>
+                        </div>
+
+                        {/* Row 3: Special instructions */}
                         <div>
-                          <label className="text-[10px] text-slate-500">Dosage</label>
                           <input
                             type="text"
-                            value={item.dosage}
+                            value={item.instructions || ''}
                             onChange={(e) => {
                               const updated = [...rxItems];
-                              updated[idx].dosage = e.target.value;
+                              updated[idx].instructions = e.target.value;
                               setRxItems(updated);
                             }}
-                            placeholder="1 Tablet"
-                            className="w-full px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                            placeholder="Specific clinical instructions (e.g. Take after meals with warm water, avoid milk)"
+                            className="w-full px-2.5 py-1 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50"
                           />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-slate-500">Frequency</label>
-                          <input
-                            type="text"
-                            value={item.frequency}
-                            onChange={(e) => {
-                              const updated = [...rxItems];
-                              updated[idx].frequency = e.target.value;
-                              setRxItems(updated);
-                            }}
-                            placeholder="1-0-1"
-                            className="w-full px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-slate-500">Duration (Days)</label>
-                          <input
-                            type="number"
-                            value={item.duration_days}
-                            onChange={(e) => {
-                              const updated = [...rxItems];
-                              updated[idx].duration_days = parseInt(e.target.value) || 1;
-                              setRxItems(updated);
-                            }}
-                            className="w-full px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2 pt-3">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveRxItem(idx)}
-                            className="p-1 rounded text-rose-400 hover:bg-rose-500/10 transition"
-                            title="Remove Medicine"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     ))}

@@ -9,22 +9,27 @@ import {
   LogOut,
   PhoneCall,
   UserCheck,
+  Languages,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Badge } from '../components/common/Badge';
+import { LanguageSelector } from '../components/common/LanguageSelector';
 import clsx from 'clsx';
 
 export const PatientLayout: React.FC = () => {
+  const { t } = useTranslation();
   const { userProfile, patientProfile, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const navLinks = [
-    { label: 'Health Overview', path: '/patient/dashboard', icon: Activity },
-    { label: 'My Appointments', path: '/patient/appointments', icon: Calendar },
-    { label: 'Digital Prescriptions', path: '/patient/prescriptions', icon: Pill },
-    { label: 'Diagnostic Reports', path: '/patient/lab-reports', icon: FileText },
-    { label: 'Billing & Invoices', path: '/patient/billing', icon: CreditCard },
+    { label: 'Health Overview', translationKey: 'navigation.healthOverview', path: '/patient/dashboard', icon: Activity },
+    { label: 'My Appointments', translationKey: 'navigation.myAppointments', path: '/patient/appointments', icon: Calendar },
+    { label: 'Digital Prescriptions', translationKey: 'navigation.prescriptionsTab', path: '/patient/prescriptions', icon: Pill },
+    { label: 'Diagnostic Reports', translationKey: 'navigation.labReportsTab', path: '/patient/lab-reports', icon: FileText },
+    { label: 'Billing & Invoices', translationKey: 'navigation.billingTab', path: '/patient/billing', icon: CreditCard },
+    { label: 'Voice Translation', translationKey: 'navigation.voiceTranslation', path: '/patient/voice-translation', icon: Languages },
   ];
 
   const handleSignOut = async () => {
@@ -38,11 +43,11 @@ export const PatientLayout: React.FC = () => {
       <div className="bg-gradient-to-r from-teal-950/90 via-slate-900 to-teal-950/90 border-b border-teal-500/20 py-2 px-3 sm:px-4 text-center text-xs text-slate-300 flex flex-wrap items-center justify-center gap-2 sm:gap-4">
         <span className="flex items-center gap-1.5 text-teal-400 font-medium text-[11px] sm:text-xs">
           <PhoneCall className="w-3.5 h-3.5 shrink-0" />
-          <span>24x7 Emergency Helpline: <strong>+91 22 2654 0100 / 108</strong></span>
+          <span>{t('common.emergencyHelpline', '24x7 Emergency Helpline')}: <strong>+91 22 2654 0100 / 108</strong></span>
         </span>
         <span className="hidden md:inline text-slate-500">&bull;</span>
         <span className="hidden md:inline text-slate-400 text-xs">
-          Ambulance & Critical Care Trauma Available 24x7
+          {t('common.ambulanceAvailable', 'Ambulance & Critical Care Trauma Available 24x7')}
         </span>
       </div>
 
@@ -59,18 +64,21 @@ export const PatientLayout: React.FC = () => {
                 AURA Care
               </span>
               <span className="text-[10px] uppercase font-semibold tracking-wider text-teal-400 leading-tight block">
-                Patient Portal
+                {t('navigation.patientPortal', 'Patient Portal')}
               </span>
             </div>
           </Link>
 
-          {/* Right: Patient Profile and Sign Out */}
+          {/* Right: Language Selector, Patient Profile and Sign Out */}
           <div className="flex items-center gap-2 sm:gap-4 text-xs">
+            {/* Global Language Selector */}
+            <LanguageSelector variant="compact" />
+
             <div className="hidden sm:flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/80 max-w-[200px] truncate">
               <UserCheck className="w-4 h-4 text-teal-400 shrink-0" />
               <div className="truncate">
                 <span className="text-white font-medium block truncate text-xs">
-                  {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name}` : 'Patient'}
+                  {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name}` : t('auth.patient', 'Patient')}
                 </span>
                 <span className="text-[10px] text-teal-400 font-mono block truncate">
                   {patientProfile?.medical_record_number || 'UHID: Registered'}
@@ -81,10 +89,10 @@ export const PatientLayout: React.FC = () => {
             <button
               onClick={handleSignOut}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition shrink-0"
-              title="Sign Out"
+              title={t('auth.signOut', 'Sign Out')}
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">Sign Out</span>
+              <span className="hidden xs:inline">{t('auth.signOut', 'Sign Out')}</span>
             </button>
           </div>
         </div>
@@ -95,6 +103,7 @@ export const PatientLayout: React.FC = () => {
             {navLinks.map((tab) => {
               const Icon = tab.icon;
               const isActive = location.pathname === tab.path;
+              const displayLabel = tab.translationKey ? t(tab.translationKey) : tab.label;
 
               return (
                 <Link
@@ -108,7 +117,7 @@ export const PatientLayout: React.FC = () => {
                   )}
                 >
                   <Icon className={clsx('w-4 h-4 shrink-0', isActive ? 'text-teal-400' : 'text-slate-500')} />
-                  <span>{tab.label}</span>
+                  <span>{displayLabel}</span>
                 </Link>
               );
             })}
@@ -128,7 +137,7 @@ export const PatientLayout: React.FC = () => {
           <div className="flex items-center gap-3 text-[11px] sm:text-xs">
             <span className="text-teal-400">Asia/Kolkata</span>
             <span>&bull;</span>
-            <span className="text-slate-400">Currency: INR (₹)</span>
+            <span className="text-slate-400">{t('common.currencyINR', 'Currency: INR (₹)')}</span>
           </div>
         </div>
       </footer>

@@ -5,13 +5,17 @@ import { supabase } from '../../services/supabase';
 import { authService, rbacService } from '../../services/api';
 import { Modal } from '../../components/common/Modal';
 import { parseApiError } from '../../utils/errorHandler';
+import { useTranslation } from 'react-i18next';
+import { LanguageSelector } from '../../components/common/LanguageSelector';
 
 export const StaffLoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   // Password Recovery State
   const [isRecoveryOpen, setIsRecoveryOpen] = useState(false);
@@ -93,14 +97,17 @@ export const StaffLoginPage: React.FC = () => {
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md relative z-10">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-white transition mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to HMS Home</span>
-        </Link>
+      <div className="w-full max-w-2xl relative z-10">
+        <div className="flex items-center justify-between mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-white transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{t('common.back', 'Back to HMS Home')}</span>
+          </Link>
+          <LanguageSelector variant="compact" />
+        </div>
 
         <div className="p-5 sm:p-8 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
           <div className="text-center mb-6">
@@ -109,48 +116,105 @@ export const StaffLoginPage: React.FC = () => {
             </div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-950/60 border border-cyan-800 text-[11px] font-semibold text-cyan-400 mb-2">
               <ShieldAlert className="w-3.5 h-3.5" />
-              <span>Restricted Staff Gateway</span>
+              <span>{t('auth.staffGateway', 'Restricted Staff Gateway')}</span>
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Staff Authentication</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">{t('auth.login', 'Staff Authentication')}</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Authorized clinical, administrative, and operations personnel only
+              {t('auth.staffSpecialist', 'Authorized clinical, administrative, and operations personnel only')}
             </p>
           </div>
 
-          {/* Quick Demo Accounts Selector */}
-          <div className="mb-6 p-3.5 rounded-xl bg-slate-950/80 border border-cyan-900/40">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+          {/* Quick Demo Accounts Selector (All 21 Staff Roles) */}
+          <div className="mb-6 p-4 rounded-xl bg-slate-950/90 border border-cyan-900/50 shadow-inner">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-3">
+              <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                Quick Demo Accounts
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono">Pass: HospitalDemo@123</span>
+                <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider">
+                  All 21 Demo Staff Roles
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-950 border border-cyan-800 text-cyan-400">
+                  21 Roles
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+                <span>Password:</span>
+                <code className="text-cyan-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 font-semibold">HospitalDemo@123</code>
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+
+            {/* Category Filter Tabs */}
+            <div className="flex flex-wrap gap-1 mb-2.5 pb-2 border-b border-slate-800/80 text-[11px]">
               {[
-                { label: '👑 Admin', email: 'admin.demo@aurahospital.com' },
-                { label: '🩺 Doctor', email: 'doctor.demo@aurahospital.com' },
-                { label: '💉 Nurse', email: 'nurse.demo@aurahospital.com' },
-                { label: '📋 Reception', email: 'receptionist.demo@aurahospital.com' },
-                { label: '💼 Finance', email: 'finance.manager@aurahospital.com' },
-                { label: '🔬 Lab Tech', email: 'lab.demo@aurahospital.com' },
-              ].map((acc) => (
+                { key: 'ALL', label: 'All Roles (21)' },
+                { key: 'EXECUTIVE', label: 'Executive (4)' },
+                { key: 'CLINICAL', label: 'Clinical (3)' },
+                { key: 'DIAGNOSTICS', label: 'Diagnostics & Pharm (4)' },
+                { key: 'FINANCE', label: 'Finance & Billing (7)' },
+                { key: 'OPERATIONS', label: 'Operations & HR (3)' },
+              ].map((tab) => (
                 <button
-                  key={acc.email}
+                  key={tab.key}
                   type="button"
-                  onClick={() => {
-                    setEmail(acc.email);
-                    setPassword('HospitalDemo@123');
-                  }}
-                  className={`px-2 py-1.5 rounded-lg text-left text-[11px] font-medium border transition ${
-                    email === acc.email
-                      ? 'bg-cyan-500/20 border-cyan-500 text-cyan-200 shadow-sm'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                  onClick={() => setSelectedCategory(tab.key)}
+                  className={`px-2 py-0.5 rounded-md font-medium transition ${
+                    selectedCategory === tab.key
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm font-semibold'
+                      : 'bg-slate-900/40 text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
                 >
-                  <div className="truncate">{acc.label}</div>
+                  {tab.label}
                 </button>
               ))}
+            </div>
+
+            {/* Accounts Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+              {[
+                { label: '👑 Super Admin', role: 'Chief Administrator', category: 'EXECUTIVE', email: 'admin.demo@aurahospital.com' },
+                { label: '🏛️ Hospital Admin', role: 'Hospital COO', category: 'EXECUTIVE', email: 'hospital.admin@aurahospital.com' },
+                { label: '🏢 Branch Manager', role: 'Branch Operations', category: 'EXECUTIVE', email: 'branch.manager@aurahospital.com' },
+                { label: '🩺 Medical Director', role: 'Chief Medical Head', category: 'EXECUTIVE', email: 'medical.director@aurahospital.com' },
+                { label: '👨‍⚕️ Doctor', role: 'Internal Medicine', category: 'CLINICAL', email: 'doctor.demo@aurahospital.com' },
+                { label: '💉 Nurse', role: 'Head Nursing Officer', category: 'CLINICAL', email: 'nurse.demo@aurahospital.com' },
+                { label: '🎖️ Dept Head', role: 'Clinical Department HOD', category: 'CLINICAL', email: 'dept.head@aurahospital.com' },
+                { label: '🔬 Lab Tech', role: 'Pathology & Lab', category: 'DIAGNOSTICS', email: 'lab.demo@aurahospital.com' },
+                { label: '🩻 Radiology Tech', role: 'Imaging & Scans', category: 'DIAGNOSTICS', email: 'radiology.demo@aurahospital.com' },
+                { label: '💊 Pharmacist', role: 'Formulary & Dispensary', category: 'DIAGNOSTICS', email: 'pharmacist.demo@aurahospital.com' },
+                { label: '📦 Inventory Mgr', role: 'Materials & Stock', category: 'DIAGNOSTICS', email: 'inventory.demo@aurahospital.com' },
+                { label: '💼 Finance Mgr', role: 'Finance Head', category: 'FINANCE', email: 'finance.manager@aurahospital.com' },
+                { label: '💳 Billing Exec', role: 'Patient Billing & Invoices', category: 'FINANCE', email: 'billing.demo@aurahospital.com' },
+                { label: '💵 Cashier', role: 'Cash Counter Desk', category: 'FINANCE', email: 'cashier.demo@aurahospital.com' },
+                { label: '📊 Accountant', role: 'General Ledger & Audit', category: 'FINANCE', email: 'accountant.demo@aurahospital.com' },
+                { label: '📈 Investment Mgr', role: 'Treasury & Yields', category: 'FINANCE', email: 'investment.demo@aurahospital.com' },
+                { label: '📑 Insurance Coord', role: 'TPA & Cashless Claims', category: 'FINANCE', email: 'insurance.demo@aurahospital.com' },
+                { label: '🔍 Auditor', role: 'Compliance & Audit', category: 'FINANCE', email: 'auditor.demo@aurahospital.com' },
+                { label: '📋 Receptionist', role: 'Front Desk Lead', category: 'OPERATIONS', email: 'receptionist.demo@aurahospital.com' },
+                { label: '🛍️ Procurement', role: 'Vendor & Purchasing', category: 'OPERATIONS', email: 'procurement.demo@aurahospital.com' },
+                { label: '👥 HR Manager', role: 'Human Resources & Roster', category: 'OPERATIONS', email: 'hr.manager@aurahospital.com' },
+              ]
+                .filter((acc) => selectedCategory === 'ALL' || acc.category === selectedCategory)
+                .map((acc) => (
+                  <button
+                    key={acc.email}
+                    type="button"
+                    onClick={() => {
+                      setEmail(acc.email);
+                      setPassword('HospitalDemo@123');
+                    }}
+                    className={`px-2 py-1.5 rounded-lg text-left border transition flex items-center justify-between ${
+                      email === acc.email
+                        ? 'bg-cyan-500/20 border-cyan-500 text-cyan-200 shadow-sm'
+                        : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                    }`}
+                    title={`${acc.label} (${acc.role}): ${acc.email}`}
+                  >
+                    <div className="truncate">
+                      <div className="text-[11px] font-semibold truncate leading-tight">{acc.label}</div>
+                      <div className="text-[9px] text-slate-400 truncate leading-tight mt-0.5">{acc.role}</div>
+                    </div>
+                    {email === acc.email && <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0 ml-1" />}
+                  </button>
+                ))}
             </div>
           </div>
 
@@ -164,7 +228,7 @@ export const StaffLoginPage: React.FC = () => {
           <form onSubmit={handleStaffLogin} className="space-y-4">
             <div>
               <label htmlFor="staff-login-email" className="block text-xs font-medium text-slate-300 mb-1">
-                Official Staff Email
+                {t('auth.email', 'Official Staff Email')}
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
@@ -185,14 +249,14 @@ export const StaffLoginPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label htmlFor="staff-login-password" className="block text-xs font-medium text-slate-300">
-                  Password
+                  {t('auth.password', 'Password')}
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsRecoveryOpen(true)}
                   className="text-xs text-cyan-400 hover:text-cyan-300 transition"
                 >
-                  Forgot Password?
+                  {t('auth.forgotPassword', 'Forgot Password?')}
                 </button>
               </div>
               <div className="relative">
@@ -219,10 +283,10 @@ export const StaffLoginPage: React.FC = () => {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Verifying Credentials & Permissions...</span>
+                  <span>{t('auth.signingIn', 'Verifying Credentials & Permissions...')}</span>
                 </>
               ) : (
-                <span>Access Staff System</span>
+                <span>{t('auth.accessStaff', 'Access Staff System')}</span>
               )}
             </button>
           </form>

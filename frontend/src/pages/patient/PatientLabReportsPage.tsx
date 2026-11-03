@@ -5,8 +5,10 @@ import { Badge } from '../../components/common/Badge';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { Modal } from '../../components/common/Modal';
 import { parseApiError } from '../../utils/errorHandler';
+import { useTranslation } from 'react-i18next';
 
 export const PatientLabReportsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [labOrders, setLabOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,10 +58,10 @@ export const PatientLabReportsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
             <FileText className="w-7 h-7 text-teal-400" />
-            Verified Diagnostic Laboratory Reports
+            {t('labReports.title', 'Verified Diagnostic Laboratory Reports')}
           </h1>
           <p className="text-sm text-slate-400">
-            Pathology profiles, hematology counts, specimen test outcomes, and verified reference ranges released by clinical pathologists.
+            {t('labReports.subtitle', 'Pathology profiles, hematology counts, specimen test outcomes, and verified reference ranges released by clinical pathologists.')}
           </p>
         </div>
         <button
@@ -78,7 +80,7 @@ export const PatientLabReportsPage: React.FC = () => {
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by order # or prescribing doctor..."
+            placeholder={t('labReports.searchPlaceholder', 'Search by order # or prescribing doctor...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
@@ -90,14 +92,14 @@ export const PatientLabReportsPage: React.FC = () => {
         {loading ? (
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-400">
             <RefreshCw className="w-6 h-6 animate-spin mx-auto text-teal-400 mb-2" />
-            Loading your verified diagnostic findings...
+            {t('labReports.loading', 'Loading your verified diagnostic findings...')}
           </div>
         ) : filtered.length === 0 ? (
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-500">
             <Layers className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-base font-semibold text-slate-300">No released diagnostic reports available</p>
+            <p className="text-base font-semibold text-slate-300">{t('labReports.emptyTitle', 'No released diagnostic reports available')}</p>
             <p className="text-xs text-slate-500 mt-1">
-              Tests under laboratory processing or awaiting final pathologist authorization are not shown until digitally released.
+              {t('labReports.emptySubtitle', 'Tests under laboratory processing or awaiting final pathologist authorization are not shown until digitally released.')}
             </p>
           </div>
         ) : (
@@ -110,12 +112,12 @@ export const PatientLabReportsPage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-teal-400 text-sm">
-                      Order #{order.order_number}
+                      {t('labReports.order', 'Order')} #{order.order_number}
                     </span>
-                    <Badge variant="success">Verified & Released</Badge>
+                    <Badge variant="success">{t('labReports.verifiedReleased', 'Verified & Released')}</Badge>
                   </div>
                   <p className="text-xs text-slate-400 mt-1">
-                    Prescribed by: <strong className="text-slate-200">Dr. {order.doctor?.user_profile?.last_name || 'Staff'}</strong> &bull; Ordered on {new Date(order.created_at).toLocaleDateString()}
+                    {t('labReports.prescribedBy', 'Prescribed by')}: <strong className="text-slate-200">Dr. {order.doctor?.user_profile?.last_name || 'Staff'}</strong> &bull; {t('labReports.orderedOn', 'Ordered on')} {new Date(order.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <button
@@ -123,7 +125,7 @@ export const PatientLabReportsPage: React.FC = () => {
                   className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition self-start sm:self-auto"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  View & Print Official Report
+                  {t('labReports.viewPrint', 'View & Print Official Report')}
                 </button>
               </div>
 
@@ -132,11 +134,11 @@ export const PatientLabReportsPage: React.FC = () => {
                   <table className="w-full text-left text-xs text-slate-300">
                     <thead className="text-slate-400 uppercase border-b border-slate-800">
                       <tr>
-                        <th className="py-2 px-3">Test Name</th>
-                        <th className="py-2 px-3">Specimen</th>
-                        <th className="py-2 px-3">Result Value</th>
-                        <th className="py-2 px-3">Biological Reference Interval</th>
-                        <th className="py-2 px-3 text-center">Outcome</th>
+                        <th className="py-2 px-3">{t('labReports.testName', 'Test Name')}</th>
+                        <th className="py-2 px-3">{t('labReports.specimen', 'Specimen')}</th>
+                        <th className="py-2 px-3">{t('labReports.resultValue', 'Result Value')}</th>
+                        <th className="py-2 px-3">{t('labReports.biologicalRef', 'Biological Reference Interval')}</th>
+                        <th className="py-2 px-3 text-center">{t('labReports.outcome', 'Outcome')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/40">
@@ -155,7 +157,7 @@ export const PatientLabReportsPage: React.FC = () => {
                           </td>
                           <td className="py-2 px-3 text-center">
                             {item.abnormal_flag === 'NORMAL' ? (
-                              <Badge variant="success">Normal</Badge>
+                              <Badge variant="success">{t('labReports.normal', 'Normal')}</Badge>
                             ) : (
                               <Badge variant="warning">{item.abnormal_flag || 'Flagged'}</Badge>
                             )}
@@ -215,10 +217,10 @@ export const PatientLabReportsPage: React.FC = () => {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-900 text-slate-400 uppercase border-b border-slate-800">
                     <tr>
-                      <th className="py-2 px-3">Investigation</th>
-                      <th className="py-2 px-3">Result</th>
-                      <th className="py-2 px-3">Reference Interval</th>
-                      <th className="py-2 px-3">Status</th>
+                      <th className="py-2 px-3">{t('labReports.testName', 'Investigation')}</th>
+                      <th className="py-2 px-3">{t('labReports.resultValue', 'Result')}</th>
+                      <th className="py-2 px-3">{t('labReports.biologicalRef', 'Reference Interval')}</th>
+                      <th className="py-2 px-3">{t('labReports.outcome', 'Status')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
