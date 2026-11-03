@@ -31,10 +31,25 @@ export const PatientLoginPage: React.FC = () => {
 
   const handlePasswordRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = recoveryEmail.trim().toLowerCase();
+    if (!cleanEmail) {
+      setRecoveryError('Please enter a valid registered email address.');
+      return;
+    }
+
     try {
       setRecoveryLoading(true);
       setRecoveryError(null);
-      await rbacService.requestPasswordRecovery(recoveryEmail);
+      await rbacService.requestPasswordRecovery(cleanEmail);
+
+      try {
+        await supabase.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo: `${window.location.origin}/patient/login`,
+        });
+      } catch (sbErr) {
+        console.warn('Supabase password reset warning:', sbErr);
+      }
+
       setRecoverySent(true);
     } catch (err: any) {
       setRecoveryError(parseApiError(err).message);
@@ -145,7 +160,12 @@ export const PatientLoginPage: React.FC = () => {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setIsRecoveryOpen(true)}
+                  onClick={() => {
+                    setRecoveryEmail(email.trim());
+                    setRecoveryError(null);
+                    setRecoverySent(false);
+                    setIsRecoveryOpen(true);
+                  }}
                   className="text-xs text-teal-400 hover:text-teal-300 transition"
                 >
                   {t('auth.forgotPassword', 'Forgot?')}
