@@ -98,4 +98,8 @@ urlpatterns = [
     path('api/v1/operations-hr/', include('apps.operations_hr.urls')),
     path('api/v1/dashboards-reports/', include('apps.core.dashboard_reporting_urls')),
     path('api/v1/reports/', include('apps.core.dashboard_reporting_urls')),
+
+    # Voice Language Translation (Gemini-powered communication)
+    path('api/v1/voice-translation/', include('apps.voice_translation.urls')),
+    path('api/voice-translation/', include('apps.voice_translation.urls')),
 ]
