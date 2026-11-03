@@ -165,7 +165,7 @@
     "signOut": "Sign Out",
     "login": "Log In",
     "logout": "Log Out",
-    "email": "Official Staff Email",
+    "email": "Email Address",
     "emailAddress": "Email Address",
     "password": "Password",
     "forgotPassword": "Forgot Password?",
@@ -190,7 +190,9 @@
     "patient": "Patient",
     "staffMember": "Staff Member",
     "staffSpecialist": "Staff Specialist",
-    "staffClinician": "Staff Clinician"
+    "staffClinician": "Staff Clinician",
+    "patientEmail": "Email Address",
+    "staffEmail": "Official Staff Email"
   },
   "dashboard": {
     "title": "Hospital Operational Command",

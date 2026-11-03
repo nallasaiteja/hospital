@@ -165,7 +165,7 @@
     "signOut": "ಸೈನ್ ಔಟ್",
     "login": "ಲಾಗಿನ್ ಮಾಡಿ",
     "logout": "ಲಾಗ್ ಔಟ್",
-    "email": "ಅಧಿಕೃತ ಸಿಬ್ಬಂದಿ ಇಮೇಲ್",
+    "email": "ಇಮೇಲ್ ವಿಳಾಸ",
     "emailAddress": "ಇಮೇಲ್ ವಿಳಾಸ",
     "password": "ಪಾಸ್‌ವರ್ಡ್",
     "forgotPassword": "ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿದ್ದೀರಾ?",
@@ -190,7 +190,9 @@
     "patient": "ರೋಗಿ",
     "staffMember": "ಸಿಬ್ಬಂದಿ ಸದಸ್ಯ",
     "staffSpecialist": "ಸಿಬ್ಬಂದಿ ತಜ್ಞ",
-    "staffClinician": "ಸಿಬ್ಬಂದಿ ವೈದ್ಯರು"
+    "staffClinician": "ಸಿಬ್ಬಂದಿ ವೈದ್ಯರು",
+    "patientEmail": "ಇಮೇಲ್ ವಿಳಾಸ",
+    "staffEmail": "ಅಧಿಕೃತ ಸಿಬ್ಬಂದಿ ಇಮೇಲ್"
   },
   "dashboard": {
     "title": "ಆಸ್ಪತ್ರೆ ಕಾರ್ಯಾಚರಣಾ ಕಮಾಂಡ್",

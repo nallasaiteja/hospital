@@ -120,7 +120,7 @@ export const PatientLoginPage: React.FC = () => {
 
             <div>
               <label htmlFor="patient-login-email" className="block text-xs font-medium text-slate-300 mb-1">
-                {t('auth.email', 'Email Address')}
+                {t('auth.patientEmail', 'Email Address')}
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />

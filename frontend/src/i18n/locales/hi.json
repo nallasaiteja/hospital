@@ -165,7 +165,7 @@
     "signOut": "साइन आउट",
     "login": "लॉग इन करें",
     "logout": "लॉग आउट",
-    "email": "आधिकारिक स्टाफ ईमेल",
+    "email": "ईमेल पता",
     "emailAddress": "ईमेल पता",
     "password": "पासवर्ड",
     "forgotPassword": "पासवर्ड भूल गए?",
@@ -190,7 +190,9 @@
     "patient": "रोगी",
     "staffMember": "स्टाफ सदस्य",
     "staffSpecialist": "स्टाफ विशेषज्ञ",
-    "staffClinician": "स्टाफ चिकित्सक"
+    "staffClinician": "स्टाफ चिकित्सक",
+    "patientEmail": "ईमेल पता",
+    "staffEmail": "आधिकारिक स्टाफ ईमेल"
   },
   "dashboard": {
     "title": "अस्पताल परिचालन कमान",
