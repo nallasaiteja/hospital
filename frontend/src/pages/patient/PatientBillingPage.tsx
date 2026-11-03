@@ -83,21 +83,95 @@ export const PatientBillingPage: React.FC = () => {
 
   const handleSimulateSandboxPayment = async () => {
     if (!gatewayOrder) return;
+    const orderId = gatewayOrder.razorpay_order_id || gatewayOrder.order_id || gatewayOrder.gateway_order?.gateway_order_id;
+    if (!orderId) {
+      setError('Missing Razorpay Order ID. Please re-initiate checkout.');
+      return;
+    }
     try {
       setPayLoading(true);
       setError(null);
       await billingFinanceService.verifyGatewayPayment({
-        razorpay_order_id: gatewayOrder.razorpay_order_id,
+        razorpay_order_id: orderId,
         razorpay_payment_id: `pay_sim_${Date.now()}`,
         razorpay_signature: 'sandbox_verified_signature'
       });
       setSuccessMsg(`Payment of ₹${payAmount} completed successfully via gateway.`);
       setIsPayModalOpen(false);
+      setGatewayOrder(null);
       loadData();
     } catch (err: any) {
       setError(parseApiError(err).message);
     } finally {
       setPayLoading(false);
+    }
+  };
+
+  const handleOpenRazorpayCheckout = async () => {
+    if (!gatewayOrder) return;
+    const orderId = gatewayOrder.razorpay_order_id || gatewayOrder.order_id;
+    if (!orderId) return;
+
+    const loadScript = (): Promise<boolean> => {
+      return new Promise((resolve) => {
+        if ((window as any).Razorpay) return resolve(true);
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+    };
+
+    const isLoaded = await loadScript();
+    if (!isLoaded || !(window as any).Razorpay) {
+      await handleSimulateSandboxPayment();
+      return;
+    }
+
+    const options = {
+      key: gatewayOrder.key_id,
+      amount: gatewayOrder.amount_in_paise || Math.round(parseFloat(payAmount) * 100),
+      currency: gatewayOrder.currency || 'INR',
+      name: 'AURA Hospital',
+      description: `Invoice ${selectedInvoice?.invoice_number}`,
+      order_id: orderId,
+      prefill: {
+        name: gatewayOrder.patient_name || '',
+        email: gatewayOrder.patient_email || '',
+      },
+      theme: {
+        color: '#0d9488',
+      },
+      handler: async (response: any) => {
+        try {
+          setPayLoading(true);
+          await billingFinanceService.verifyGatewayPayment({
+            razorpay_order_id: response.razorpay_order_id || orderId,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+          setSuccessMsg(`Payment of ₹${payAmount} completed successfully!`);
+          setIsPayModalOpen(false);
+          setGatewayOrder(null);
+          loadData();
+        } catch (err: any) {
+          setError(parseApiError(err).message);
+        } finally {
+          setPayLoading(false);
+        }
+      },
+    };
+
+    try {
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', (resp: any) => {
+        setError(resp.error?.description || 'Payment failed or was cancelled.');
+      });
+      rzp.open();
+    } catch (e: any) {
+      console.warn('Razorpay checkout window error, fallback to simulation:', e);
+      await handleSimulateSandboxPayment();
     }
   };
 
@@ -310,11 +384,21 @@ export const PatientBillingPage: React.FC = () => {
                 <ShieldCheck className="w-4 h-4" /> Gateway Order Generated
               </div>
               <div className="text-xs text-slate-300 space-y-1 font-mono">
-                <div>Order ID: <span className="text-white">{gatewayOrder.razorpay_order_id}</span></div>
-                <div>Amount: <span className="text-emerald-400">₹{gatewayOrder.amount} {gatewayOrder.currency}</span></div>
-                <div>Status: <span className="text-amber-400">{gatewayOrder.status}</span></div>
+                <div>Order ID: <span className="text-white">{gatewayOrder.razorpay_order_id || gatewayOrder.order_id}</span></div>
+                <div>Amount: <span className="text-emerald-400">₹{gatewayOrder.amount} {gatewayOrder.currency || 'INR'}</span></div>
+                <div>Status: <span className="text-amber-400">{gatewayOrder.status || 'INITIATED'}</span></div>
               </div>
-              <div className="pt-2 border-t border-slate-800">
+              <div className="pt-2 border-t border-slate-800 space-y-2">
+                {gatewayOrder.key_id && gatewayOrder.key_id.startsWith('rzp_') && gatewayOrder.key_id !== 'rzp_test_mock_key_12345' && (
+                  <button
+                    onClick={handleOpenRazorpayCheckout}
+                    disabled={payLoading}
+                    className="w-full py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 rounded-lg font-bold text-xs transition shadow-md shadow-teal-500/10 flex items-center justify-center gap-1.5"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    {payLoading ? 'Processing...' : 'Pay with Razorpay (UPI, Card, NetBanking)'}
+                  </button>
+                )}
                 <button
                   onClick={handleSimulateSandboxPayment}
                   disabled={payLoading}
