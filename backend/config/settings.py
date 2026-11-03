@@ -229,7 +229,12 @@ SUPABASE_PUBLISHABLE_KEY = os.getenv('SUPABASE_PUBLISHABLE_KEY', '')
 SUPABASE_SECRET_KEY = os.getenv('SUPABASE_SECRET_KEY', '')
 
 # Healthcare & Financial Defaults
-DEFAULT_CURRENCY = os.getenv('DEFAULT_CURRENCY', 'INR')
+DEFAULT_CURRENCY = os.getenv('DEFAULT_CURRENCY', 'INR')
+
+# Razorpay Payment Gateway Settings
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', 'rzp_test_mock_key_12345')
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', 'mock_secret_key_67890')
+RAZORPAY_WEBHOOK_SECRET = os.getenv('RAZORPAY_WEBHOOK_SECRET', 'mock_webhook_secret_999')
 
 # Google Gemini AI Integration (Voice Translation)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')

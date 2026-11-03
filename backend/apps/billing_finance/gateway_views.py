@@ -3,6 +3,8 @@ import hmac
 import hashlib
 import json
 import uuid
+import logging
+import requests
 from decimal import Decimal
 from django.conf import settings
 from django.db import transaction
@@ -27,6 +29,8 @@ from .serializers import (
 RAZORPAY_KEY_ID = getattr(settings, 'RAZORPAY_KEY_ID', os.getenv('RAZORPAY_KEY_ID', 'rzp_test_mock_key_12345'))
 RAZORPAY_KEY_SECRET = getattr(settings, 'RAZORPAY_KEY_SECRET', os.getenv('RAZORPAY_KEY_SECRET', 'mock_secret_key_67890'))
 RAZORPAY_WEBHOOK_SECRET = getattr(settings, 'RAZORPAY_WEBHOOK_SECRET', os.getenv('RAZORPAY_WEBHOOK_SECRET', 'mock_webhook_secret_999'))
+
+logger = logging.getLogger('hospital.billing.gateway')
 
 
 def verify_razorpay_signature(order_id: str, payment_id: str, signature: str, secret: str = RAZORPAY_KEY_SECRET) -> bool:
@@ -99,11 +103,45 @@ class RazorpayCreateOrderView(views.APIView):
         if amount <= Decimal('0.00'):
             return Response({'error': 'Payment amount must be greater than zero.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Generate unique order id for gateway
-        gateway_order_id = f"order_{uuid.uuid4().hex[:14]}"
         amount_in_paise = int(amount * 100)
+        active_key_id = getattr(settings, 'RAZORPAY_KEY_ID', os.getenv('RAZORPAY_KEY_ID', RAZORPAY_KEY_ID))
+        active_key_secret = getattr(settings, 'RAZORPAY_KEY_SECRET', os.getenv('RAZORPAY_KEY_SECRET', RAZORPAY_KEY_SECRET))
 
-        is_sandbox = not bool(os.getenv('RAZORPAY_LIVE_KEY_ID'))
+        is_sandbox = not bool(os.getenv('RAZORPAY_LIVE_KEY_ID')) or active_key_id.startswith('rzp_test_')
+        gateway_order_id = None
+        is_live_gateway = False
+
+        # Attempt to create genuine order via Razorpay Orders API if valid credentials exist
+        if active_key_id and active_key_secret and not active_key_id.startswith('rzp_test_mock'):
+            try:
+                receipt_str = f"rcpt_{invoice.id if invoice else deposit.id}_{uuid.uuid4().hex[:6]}"
+                resp = requests.post(
+                    'https://api.razorpay.com/v1/orders',
+                    auth=(active_key_id, active_key_secret),
+                    json={
+                        'amount': amount_in_paise,
+                        'currency': 'INR',
+                        'receipt': receipt_str[:40],
+                        'notes': {
+                            'invoice_number': invoice.invoice_number if invoice else '',
+                            'patient_id': str(patient.id) if patient else '',
+                        }
+                    },
+                    timeout=10
+                )
+                if resp.status_code in (200, 201):
+                    order_data = resp.json()
+                    gateway_order_id = order_data.get('id')
+                    is_live_gateway = True
+                    logger.info("Created authentic Razorpay order: %s", gateway_order_id)
+                else:
+                    logger.warning("Razorpay order API returned %s: %s", resp.status_code, resp.text)
+            except Exception as exc:
+                logger.error("Razorpay order creation connection exception: %s", exc)
+
+        # Fallback to local sandbox mock order ID if Razorpay API could not be reached
+        if not gateway_order_id:
+            gateway_order_id = f"order_{uuid.uuid4().hex[:14]}"
 
         order = PaymentGatewayOrder.objects.create(
             gateway_order_id=gateway_order_id,
@@ -118,6 +156,12 @@ class RazorpayCreateOrderView(views.APIView):
             notes=f"Order for {'Invoice ' + invoice.invoice_number if invoice else 'Deposit ' + deposit.receipt_number}"
         )
 
+        patient_name = ''
+        patient_email = ''
+        if patient and hasattr(patient, 'user_profile') and patient.user_profile:
+            patient_name = patient.user_profile.full_name or ''
+            patient_email = patient.user_profile.email or ''
+
         return Response({
             'order_id': gateway_order_id,
             'razorpay_order_id': gateway_order_id,
@@ -125,10 +169,11 @@ class RazorpayCreateOrderView(views.APIView):
             'amount_in_paise': amount_in_paise,
             'currency': 'INR',
             'status': 'INITIATED',
-            'key_id': RAZORPAY_KEY_ID,
+            'key_id': active_key_id,
             'is_sandbox': is_sandbox,
-            'patient_name': patient.user_profile.full_name,
-            'patient_email': patient.user_profile.email,
+            'is_live_gateway': is_live_gateway,
+            'patient_name': patient_name,
+            'patient_email': patient_email,
             'invoice_number': invoice.invoice_number if invoice else None,
             'gateway_order': PaymentGatewayOrderSerializer(order).data
         }, status=status.HTTP_201_CREATED)
@@ -164,11 +209,11 @@ class RazorpayVerifyPaymentView(views.APIView):
             }, status=status.HTTP_200_OK)
 
         # Cryptographic verification
-        # In sandbox test mode, accept simulated signature if secret matches mock test
-        is_valid = verify_razorpay_signature(gateway_order_id, gateway_payment_id, signature)
+        active_key_secret = getattr(settings, 'RAZORPAY_KEY_SECRET', os.getenv('RAZORPAY_KEY_SECRET', RAZORPAY_KEY_SECRET))
+        is_valid = verify_razorpay_signature(gateway_order_id, gateway_payment_id, signature, active_key_secret)
         if not is_valid:
             # Check test sandbox mock signature
-            test_sig = hmac.new(RAZORPAY_KEY_SECRET.encode('utf-8'), f"{gateway_order_id}|{gateway_payment_id}".encode('utf-8'), hashlib.sha256).hexdigest()
+            test_sig = hmac.new(active_key_secret.encode('utf-8'), f"{gateway_order_id}|{gateway_payment_id}".encode('utf-8'), hashlib.sha256).hexdigest()
             if signature != test_sig and signature not in ('sandbox_verified_signature', 'sandbox_test_verified_signature'):
                 order.status = GatewayOrderStatus.FAILED
                 order.save()

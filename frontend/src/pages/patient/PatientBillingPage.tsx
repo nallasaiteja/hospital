@@ -391,12 +391,12 @@ export const PatientBillingPage: React.FC = () => {
               <div className="pt-2 border-t border-slate-800 space-y-2">
                 {gatewayOrder.key_id && gatewayOrder.key_id.startsWith('rzp_') && gatewayOrder.key_id !== 'rzp_test_mock_key_12345' && (
                   <button
-                    onClick={handleOpenRazorpayCheckout}
+                    onClick={gatewayOrder.is_live_gateway ? handleOpenRazorpayCheckout : handleSimulateSandboxPayment}
                     disabled={payLoading}
                     className="w-full py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 rounded-lg font-bold text-xs transition shadow-md shadow-teal-500/10 flex items-center justify-center gap-1.5"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
-                    {payLoading ? 'Processing...' : 'Pay with Razorpay (UPI, Card, NetBanking)'}
+                    {payLoading ? 'Processing...' : (gatewayOrder.is_live_gateway ? 'Pay with Razorpay (UPI, Card, NetBanking)' : 'Authorize via Test Gateway')}
                   </button>
                 )}
                 <button
