@@ -45,9 +45,41 @@ class TestCoreEndpoints:
         url = reverse('health-check')
         response = self.client.get(url)
         assert response.status_code == 200
+        assert response.headers['Content-Type'] == 'application/json'
         data = response.json()
-        assert data['status'] == 'healthy'
-        assert data['system'] == 'Hospital Management System (HMS)'
+        assert data == {'status': 'ok'}
+        assert len(response.content) <= 30
+        sensitive_keys = {'system', 'version', 'database', 'patient', 'staff', 'password', 'token', 'secret'}
+        assert not any(key in data for key in sensitive_keys)
+
+    def test_health_check_head_request(self):
+        url = reverse('health-check')
+        response = self.client.head(url)
+        assert response.status_code == 200
+
+    def test_health_check_no_trailing_slash(self):
+        response = self.client.get('/api/health')
+        assert response.status_code == 200
+        assert response.json() == {'status': 'ok'}
+
+    def test_health_check_no_auth_required(self):
+        self.client.credentials()
+        response = self.client.get('/api/health/')
+        assert response.status_code == 200
+
+    def test_health_check_accept_html_header_still_returns_json(self):
+        response = self.client.get('/api/health/', HTTP_ACCEPT='text/html,application/xhtml+xml')
+        assert response.status_code == 200
+        assert response.headers['Content-Type'] == 'application/json'
+        assert response.json() == {'status': 'ok'}
+        assert len(response.content) <= 30
+
+    def test_readiness_check_endpoint(self):
+        url = reverse('readiness-check')
+        response = self.client.get(url)
+        assert response.status_code == 200
+        assert response.json()['status'] == 'ok'
+        assert response.json()['database'] == 'connected'
 
     def test_system_info_endpoint(self):
         url = reverse('core:system-info')
