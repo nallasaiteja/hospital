@@ -55,6 +55,46 @@ export const StaffDashboard: React.FC = () => {
       .then((data) => {
         setProfileData(data);
         const userRole = String(data?.role || '');
+        if (userRole === 'BRANCH_MANAGER') {
+          navigate('/staff/branch-manager');
+          return;
+        }
+        if (userRole === 'DEPARTMENT_HEAD') {
+          navigate('/staff/department-head');
+          return;
+        }
+        if (userRole === 'HR_MANAGER') {
+          navigate('/staff/hr-management');
+          return;
+        }
+        if (userRole === 'LAB_TECHNICIAN') {
+          navigate('/staff/laboratory');
+          return;
+        }
+        if (userRole === 'PHARMACIST') {
+          navigate('/staff/pharmacy');
+          return;
+        }
+        if (userRole === 'INSURANCE_COORDINATOR') {
+          navigate('/staff/insurance');
+          return;
+        }
+        if (userRole === 'BILLING_EXECUTIVE') {
+          navigate('/staff/billing?tab=invoices');
+          return;
+        }
+        if (userRole === 'CASHIER') {
+          navigate('/staff/billing?tab=receipts');
+          return;
+        }
+        if (userRole === 'ACCOUNTANT') {
+          navigate('/staff/general-ledger');
+          return;
+        }
+        if (userRole === 'AUDITOR') {
+          navigate('/staff/settings-audit');
+          return;
+        }
         const isAdminOrMgr = ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'AUDITOR', 'MEDICAL_DIRECTOR'].includes(userRole);
 
         if (isAdminOrMgr) {
@@ -147,7 +187,7 @@ export const StaffDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          {isAdmin && (
+          {userRole === 'SUPER_ADMIN' && (
             <button
               onClick={() => setShowProvisionModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 transition text-xs font-semibold"
@@ -162,6 +202,33 @@ export const StaffDashboard: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Doctor Clinical Workspace Quick Launch Banner */}
+      {userRole === 'DOCTOR' && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-cyan-950/80 via-blue-950/60 to-slate-900 border border-cyan-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-cyan-950/20">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shrink-0">
+              <Stethoscope className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <span>Doctor Clinical Workspace</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold uppercase tracking-wider">Active Clinical Mode</span>
+              </h2>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Access your real-time consultation desk, digital prescriptions, inpatient ward rounds, lab requisitions, and patient EMR timeline.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/staff/doctor-workspace')}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition shadow-md shadow-cyan-500/20 shrink-0"
+          >
+            <span>Launch Clinical Workspace</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Operational Indicators */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -291,17 +358,19 @@ export const StaffDashboard: React.FC = () => {
           </div>
 
           <div
-            onClick={() => navigate('/staff/users-roles')}
+            onClick={() => navigate(userRole === 'SUPER_ADMIN' ? '/staff/users-roles' : '/staff/settings-audit')}
             className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-amber-500/50 transition cursor-pointer group"
           >
             <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-3">
               <Building2 className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-white group-hover:text-amber-400 transition flex items-center justify-between">
-              <span>{t('dashboard.adminCardTitle')}</span>
+              <span>{userRole === 'SUPER_ADMIN' ? t('dashboard.adminCardTitle') : 'Hospital Settings & Audit'}</span>
               <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
             </h3>
-            <p className="text-xs text-slate-400 mt-1">{t('dashboard.adminCardDesc')}</p>
+            <p className="text-xs text-slate-400 mt-1">
+              {userRole === 'SUPER_ADMIN' ? t('dashboard.adminCardDesc') : 'View hospital branch configurations, system parameters, and audit trails.'}
+            </p>
           </div>
         </div>
       </div>
@@ -341,7 +410,7 @@ export const StaffDashboard: React.FC = () => {
                 queueAppointments.map((app, idx) => (
                   <tr key={app.id || idx} className="hover:bg-slate-800/40 transition">
                     <td className="py-3 px-3 sm:px-4 font-mono font-bold text-cyan-400">
-                      #{app.token_number || app.queue_number || idx + 1}
+                      #{String(app.token_number || app.queue_number || idx + 1).replace(/^(token\s*#*|#)+/i, '').trim()}
                     </td>
                     <td className="py-3 px-3 sm:px-4 font-medium text-white whitespace-nowrap">
                       {app.patient?.user_profile?.full_name || app.patient_name || t('auth.patient')}

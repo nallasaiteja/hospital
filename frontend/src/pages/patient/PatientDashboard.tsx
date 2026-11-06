@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Calendar,
   FileText,
@@ -7,13 +8,15 @@ import {
   CreditCard,
   PlusCircle,
   Activity,
-  Hospital
+  Hospital,
+  Tv,
 } from 'lucide-react';
 import {
   authService,
   clinicalService,
   pharmacyService,
   billingFinanceService,
+  diagnosticsService,
   CurrentUserResponse
 } from '../../services/api';
 import { Badge } from '../../components/common/Badge';
@@ -24,12 +27,22 @@ import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
 import { useTranslation } from 'react-i18next';
 
+const getTodayDateStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const PatientDashboard: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [profileData, setProfileData] = useState<CurrentUserResponse | null>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [labOrders, setLabOrders] = useState<any[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +53,7 @@ export const PatientDashboard: React.FC = () => {
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookForm, setBookForm] = useState({
     doctor_id: '',
-    appointment_date: new Date().toISOString().split('T')[0],
+    appointment_date: getTodayDateStr(),
     appointment_time: '10:00:00',
     type: 'NEW_CONSULTATION',
     symptoms: ''
@@ -53,16 +66,18 @@ export const PatientDashboard: React.FC = () => {
       const userRes = await authService.getCurrentUser();
       setProfileData(userRes);
 
-      const [appts, rxs, invs, docs] = await Promise.all([
+      const [appts, rxs, invs, docs, labs] = await Promise.all([
         clinicalService.getAppointments().catch(() => []),
         pharmacyService.getPrescriptions().catch(() => []),
         billingFinanceService.getInvoices().catch(() => []),
-        authService.getStaffDirectory({ role: 'DOCTOR' }).catch(() => [])
+        authService.getStaffDirectory({ role: 'DOCTOR' }).catch(() => []),
+        diagnosticsService.getOrders().catch(() => [])
       ]);
       setAppointments(appts || []);
       setPrescriptions(rxs || []);
       setInvoices(invs || []);
       setDoctors(docs || []);
+      setLabOrders(labs || []);
     } catch (err: any) {
       setError(parseApiError(err).message);
     } finally {
@@ -95,7 +110,7 @@ export const PatientDashboard: React.FC = () => {
       setIsBookModalOpen(false);
       setBookForm({
         doctor_id: '',
-        appointment_date: new Date().toISOString().split('T')[0],
+        appointment_date: getTodayDateStr(),
         appointment_time: '10:00:00',
         type: 'NEW_CONSULTATION',
         symptoms: ''
@@ -136,27 +151,122 @@ export const PatientDashboard: React.FC = () => {
             <span>{t('common.branch', 'Branch')}: <strong className="text-slate-300">{patient?.primary_branch_name || 'Main Hospital Campus'}</strong></span>
           </p>
         </div>
-        <button
-          onClick={() => setIsBookModalOpen(true)}
-          className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 shrink-0"
-        >
-          <PlusCircle className="w-4 h-4 shrink-0" />
-          <span>{t('patient.bookAppointment', 'Book Appointment')}</span>
-        </button>
+        <div className="px-3.5 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-slate-300">
+          For new appointments or OPD tokens, please visit the <strong className="text-teal-400">Hospital Reception Desk</strong>.
+        </div>
       </div>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium">{t('patient.scheduledVisits', 'Scheduled Visits')}</span>
-            <Calendar className="w-4 h-4 text-teal-400" />
-          </div>
-          <div className="text-2xl font-bold text-white">{appointments.length}</div>
-          <p className="text-[11px] text-teal-400 mt-1">{t('patient.confirmedOPD', 'Confirmed OPD consultations')}</p>
-        </div>
+      {/* Active Token & Waiting Lounge Telemetry Card (STRICTLY FOR TODAY'S ACTIVE APPOINTMENTS) */}
+      {(() => {
+        const todayStr = getTodayDateStr();
+        const activeAppt = appointments.find(
+          (a) =>
+            a.appointment_date === todayStr &&
+            Boolean(a.token_number) &&
+            ['SCHEDULED', 'CHECKED_IN', 'IN_CONSULTATION'].includes(a.status)
+        );
+        if (!activeAppt) return null;
 
-        <div className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60">
+        const cleanTokenStr = String(activeAppt.token_number).replace(/^(token\s*#*|#)+/i, '').trim();
+        const waitingCount = activeAppt.lounge_waiting_count ?? 0;
+
+        return (
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-950/40 via-slate-900 to-cyan-950/40 border-2 border-teal-500/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-teal-500 text-slate-950 flex flex-col items-center justify-center font-mono font-black shadow-lg shadow-teal-500/30 shrink-0">
+                <span className="text-[9px] uppercase tracking-wider">Token</span>
+                <span className="text-xl">#{cleanTokenStr}</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                    Live Waiting Lounge Telemetry
+                  </span>
+                  <span className="text-xs font-mono text-slate-400">Ref: {activeAppt.appointment_number}</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mt-0.5">
+                  Dr. {activeAppt.doctor_name || 'Consultant'} &bull; {activeAppt.department_name || 'General OPD'}
+                </h3>
+                <div className="text-xs text-slate-300 mt-1 flex flex-wrap items-center gap-2">
+                  {activeAppt.status === 'IN_CONSULTATION' ? (
+                    <span className="text-emerald-400 font-bold">🟢 It&apos;s Your Turn! Please proceed inside consultation cabin</span>
+                  ) : activeAppt.status === 'CHECKED_IN' ? (
+                    <>
+                      <span className="text-amber-300 font-semibold">
+                        {activeAppt.tokens_ahead !== undefined && activeAppt.tokens_ahead > 0
+                          ? `${activeAppt.tokens_ahead} patients ahead of you in lounge`
+                          : waitingCount > 1
+                          ? 'You are next in line in the lounge!'
+                          : waitingCount === 1
+                          ? 'You are next in line in the lounge!'
+                          : 'You have checked in for today\'s consultation.'}
+                      </span>
+                      <span>&bull;</span>
+                      <span>
+                        {waitingCount > 0
+                          ? `Total ${waitingCount} ${waitingCount === 1 ? 'person' : 'people'} waiting for this doctor`
+                          : 'Queue currently clear'}
+                      </span>
+                      {activeAppt.serving_token && (
+                        <>
+                          <span>&bull;</span>
+                          <span className="text-cyan-400 font-mono">
+                            Now Calling: #{String(activeAppt.serving_token).replace(/^(token\s*#*|#)+/i, '').trim()}
+                          </span>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-teal-300 font-semibold">
+                        Appointment Confirmed for Today
+                      </span>
+                      <span>&bull;</span>
+                      <span className="text-slate-400">
+                        Please check in at Reception Desk upon arrival to enter the live waiting lounge queue.
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <a
+                href={`/lounge-tv?doctor_id=${activeAppt.doctor_id || activeAppt.doctor || ''}`}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-teal-500/25"
+              >
+                <Tv className="w-4 h-4" />
+                <span>Open Lounge TV</span>
+              </a>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+        {(() => {
+          const todayStr = getTodayDateStr();
+          const activeScheduledCount = appointments.filter(
+            (a) => a.appointment_date >= todayStr && ['SCHEDULED', 'CHECKED_IN', 'IN_CONSULTATION'].includes(a.status)
+          ).length;
+          return (
+            <div onClick={() => navigate('/patient/appointments')} className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-teal-500/50 cursor-pointer transition">
+              <div className="flex items-center justify-between text-slate-400 mb-2">
+                <span className="text-xs font-medium">{t('patient.scheduledVisits', 'Scheduled Visits')}</span>
+                <Calendar className="w-4 h-4 text-teal-400" />
+              </div>
+              <div className="text-2xl font-bold text-white">{activeScheduledCount}</div>
+              <p className="text-[11px] text-teal-400 mt-1">{t('patient.confirmedOPD', 'Confirmed OPD consultations')}</p>
+            </div>
+          );
+        })()}
+
+        <div onClick={() => navigate('/patient/prescriptions')} className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/50 cursor-pointer transition">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-medium">{t('patient.digitalPrescriptions', 'Digital Prescriptions')}</span>
             <Pill className="w-4 h-4 text-cyan-400" />
@@ -165,7 +275,16 @@ export const PatientDashboard: React.FC = () => {
           <p className="text-[11px] text-slate-400 mt-1">{t('patient.pharmacyPrescriptions', 'Hospital pharmacy prescriptions')}</p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60">
+        <div onClick={() => navigate('/patient/lab-reports')} className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-teal-500/50 cursor-pointer transition">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-xs font-medium">{t('patient.diagnosticReports', 'Diagnostic Reports')}</span>
+            <Activity className="w-4 h-4 text-teal-400" />
+          </div>
+          <div className="text-2xl font-bold text-white">{labOrders.length}</div>
+          <p className="text-[11px] text-teal-400 mt-1">{t('patient.labInvestigations', 'Pathology & Lab reports')}</p>
+        </div>
+
+        <div onClick={() => navigate('/patient/billing')} className="p-4 sm:p-5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-indigo-500/50 cursor-pointer transition">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-medium">{t('patient.medicalInvoices', 'Medical Invoices')}</span>
             <FileText className="w-4 h-4 text-indigo-400" />
@@ -194,29 +313,58 @@ export const PatientDashboard: React.FC = () => {
             <Clock className="w-4 h-4 text-teal-400" />
             <span>{t('patient.myScheduledAppointments')}</span>
           </h3>
-          {appointments.length === 0 ? (
-            <p className="text-xs text-slate-400 py-6 text-center">{t('patient.noUpcomingConsultations')}</p>
-          ) : (
-            <div className="space-y-3">
-              {appointments.slice(0, 4).map((a) => (
-                <div
-                  key={a.id}
-                  className="p-3.5 sm:p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 flex flex-col xs:flex-row xs:items-center justify-between gap-2.5"
-                >
-                  <div>
-                    <p className="text-xs sm:text-sm font-semibold text-white">Dr. {a.doctor_name || t('roles.doctor')}</p>
-                    <p className="text-xs text-slate-400">{a.department_name || t('navigation.appointments')}</p>
-                    <p className="text-[11px] text-teal-400 mt-0.5">
-                      {t('dashboard.token')} #{a.token_number} &bull; {a.appointment_date} at {a.appointment_time}
-                    </p>
-                  </div>
-                  <div className="self-start xs:self-center shrink-0">
-                    <Badge variant={a.status === 'COMPLETED' ? 'success' : 'info'}>{a.status}</Badge>
-                  </div>
+          {(() => {
+            const todayStr = getTodayDateStr();
+            const upcomingAppointments = appointments.filter(
+              (a) => a.appointment_date >= todayStr && ['SCHEDULED', 'CHECKED_IN', 'IN_CONSULTATION'].includes(a.status)
+            );
+            if (upcomingAppointments.length === 0) {
+              return (
+                <div className="text-center py-6 text-slate-400">
+                  <p className="text-xs font-medium">{t('patient.noUpcomingConsultations', 'No active upcoming consultations.')}</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Visit or contact Hospital Reception Desk to schedule an appointment or obtain a queue token.</p>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            }
+            return (
+              <div className="space-y-3">
+                {upcomingAppointments.slice(0, 4).map((a) => {
+                  const cleanTok = String(a.token_number || '').replace(/^(token\s*#*|#)+/i, '').trim();
+                  return (
+                    <div
+                      key={a.id}
+                      className="p-3.5 sm:p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 flex flex-col xs:flex-row xs:items-center justify-between gap-2.5"
+                    >
+                      <div>
+                        <p className="text-xs sm:text-sm font-semibold text-white">Dr. {a.doctor_name || t('roles.doctor')}</p>
+                        <p className="text-xs text-slate-400">{a.department_name || t('navigation.appointments')}</p>
+                        <p className="text-[11px] text-teal-400 mt-0.5">
+                          {cleanTok ? `Token #${cleanTok} • ` : ''}{a.appointment_date} at {a.appointment_time || a.time_slot || '10:00 AM'}
+                        </p>
+                      </div>
+                      <div className="self-start xs:self-center shrink-0">
+                        <Badge
+                          variant={
+                            a.status === 'COMPLETED'
+                              ? 'success'
+                              : a.status === 'CANCELLED' || a.status === 'NO_SHOW'
+                              ? 'danger'
+                              : a.status === 'IN_CONSULTATION'
+                              ? 'accent'
+                              : a.status === 'CHECKED_IN'
+                              ? 'warning'
+                              : 'info'
+                          }
+                        >
+                          {a.status === 'NO_SHOW' ? 'No Show / Lapsed' : a.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Clinical Prescriptions */}
@@ -250,72 +398,6 @@ export const PatientDashboard: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Booking Modal */}
-      <Modal
-        isOpen={isBookModalOpen}
-        onClose={() => setIsBookModalOpen(false)}
-        title={t('patient.scheduleSlotModalTitle')}
-        size="md"
-      >
-        <form onSubmit={handleBookAppointment} className="space-y-4">
-          <Select
-            label={t('patient.consultingDoctor')}
-            required
-            value={bookForm.doctor_id}
-            onChange={(e) => setBookForm({ ...bookForm, doctor_id: e.target.value })}
-            options={[
-              { value: '', label: t('patient.chooseDoctor') },
-              ...doctors.map((d) => ({
-                value: d.id,
-                label: `Dr. ${d.user_profile?.first_name || ''} ${d.user_profile?.last_name || ''} (${d.specialization || d.designation || 'General Physician'})`,
-              })),
-            ]}
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <Input
-              label={t('patient.consultationDate')}
-              type="date"
-              required
-              value={bookForm.appointment_date}
-              onChange={(e) => setBookForm({ ...bookForm, appointment_date: e.target.value })}
-            />
-            <Input
-              label={t('patient.preferredTimeSlot')}
-              type="time"
-              required
-              value={bookForm.appointment_time}
-              onChange={(e) => setBookForm({ ...bookForm, appointment_time: e.target.value })}
-            />
-          </div>
-
-          <Input
-            label={t('patient.currentSymptoms')}
-            placeholder="e.g. Chest discomfort, recurrent fever, routine checkup"
-            required
-            value={bookForm.symptoms}
-            onChange={(e) => setBookForm({ ...bookForm, symptoms: e.target.value })}
-          />
-
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3 pt-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => setIsBookModalOpen(false)}
-              className="w-full sm:w-auto px-4 py-2.5 border border-slate-700 text-slate-300 hover:bg-slate-800 rounded-xl text-xs"
-            >
-              {t('common.cancel')}
-            </button>
-            <button
-              type="submit"
-              disabled={bookingSubmitting}
-              className="w-full sm:w-auto px-5 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl text-xs disabled:opacity-50 shadow-md shadow-teal-500/20"
-            >
-              {bookingSubmitting ? t('patient.confirmingSlot') : t('patient.confirmAppointment')}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 };

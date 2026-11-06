@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
-  Stethoscope, Calendar, Clock, Plus, CheckCircle, XCircle, AlertCircle,
+  Tv, Stethoscope, Calendar, Clock, Plus, CheckCircle, XCircle, AlertCircle,
   User, FileText, Printer, Search, Filter, RefreshCw, Pill, FlaskConical,
   DollarSign, Activity, ChevronRight, AlertTriangle, TrendingUp, Sparkles,
-  Check, CalendarCheck, UserPlus, FileSpreadsheet, Eye, ChevronDown
+  Check, CalendarCheck, UserPlus, FileSpreadsheet, Eye, ChevronDown, Ban,
+  CreditCard, Banknote, Download, ShieldAlert, ShieldCheck, Receipt
 } from 'lucide-react';
-import { opdService, clinicalService, authService, pharmacyService } from '../../services/api';
+import api, { opdService, clinicalService, authService, pharmacyService, patientService } from '../../services/api';
 import { VoicePrescriptionModal, StructuredPrescriptionItem } from '../../components/clinical/VoicePrescriptionModal';
 import { parseApiError } from '../../utils/errorHandler';
+import { getLocalTodayDateString } from '../../utils/dateUtils';
 import { DataTable, Column } from '../../components/common/DataTable';
 import { StatCard } from '../../components/common/StatCard';
 import { Badge } from '../../components/common/Badge';
@@ -17,7 +20,9 @@ import { Select } from '../../components/common/Select';
 import { DateField } from '../../components/common/DateField';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { LoungeTVPage } from '../LoungeTVPage';
 import {
   Appointment, OPDDashboardStats, DoctorAvailabilityResponse,
   QueueItem, DoctorScheduleRecord, DoctorLeaveRecord
@@ -26,12 +31,18 @@ import {
 export const AppointmentsPage: React.FC = () => {
   const { t } = useTranslation();
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const location = useLocation();
+
+  // Strict Receptionist-Only Access Control for Appointment Booking & Token Issuing
+  const isReceptionist = role === 'RECEPTIONIST';
+  const canConductConsultation = ['DOCTOR', 'MEDICAL_DIRECTOR', 'DEPARTMENT_HEAD'].includes(role || '');
 
   // Active navigation tab
   const [activeTab, setActiveTab] = useState<'queue' | 'book' | 'schedules' | 'reports'>('queue');
 
   // Date and filters
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalTodayDateString());
   const [selectedDoctorFilter, setSelectedDoctorFilter] = useState<string>('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -48,6 +59,7 @@ export const AppointmentsPage: React.FC = () => {
 
   // Booking & Walk-in Form States
   const [showBookModal, setShowBookModal] = useState<boolean>(false);
+  const [showLoungeTVModal, setShowLoungeTVModal] = useState<boolean>(false);
   const [showWalkInModal, setShowWalkInModal] = useState<boolean>(false);
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
@@ -55,7 +67,7 @@ export const AppointmentsPage: React.FC = () => {
   // Doctor dynamic slots state
   const [bookingPatientId, setBookingPatientId] = useState<string>('');
   const [bookingDoctorId, setBookingDoctorId] = useState<string>('');
-  const [bookingDate, setBookingDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [bookingDate, setBookingDate] = useState<string>(getLocalTodayDateString());
   const [bookingReason, setBookingReason] = useState<string>('');
   const [doctorSlots, setDoctorSlots] = useState<DoctorAvailabilityResponse | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string>('');
@@ -68,6 +80,76 @@ export const AppointmentsPage: React.FC = () => {
   const [walkInVitals, setWalkInVitals] = useState({ bp: '', pulse: '', temp: '', spo2: '' });
   const [tokenReceipt, setTokenReceipt] = useState<any | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
+
+  // Patient Search & Inline Quick Patient Registration State (Receptionist Workflow Step 1)
+  const [patientSearchQuery, setPatientSearchQuery] = useState<string>('');
+  const [showQuickRegForm, setShowQuickRegForm] = useState<boolean>(false);
+  const [quickRegLoading, setQuickRegLoading] = useState<boolean>(false);
+  const [quickRegError, setQuickRegError] = useState<string | null>(null);
+  const [quickFirstName, setQuickFirstName] = useState<string>('');
+  const [quickLastName, setQuickLastName] = useState<string>('');
+  const [quickPhone, setQuickPhone] = useState<string>('');
+  const [quickGender, setQuickGender] = useState<'MALE' | 'FEMALE' | 'OTHER'>('MALE');
+  const [quickBloodGroup, setQuickBloodGroup] = useState<string>('O+');
+  const [quickDob, setQuickDob] = useState<string>('');
+
+  // Mandatory Payment Collection State (Receptionist Workflow Steps 3–8)
+  const [consultationFeeInfo, setConsultationFeeInfo] = useState<{
+    consultation_fee: string;
+    formatted_amount: string;
+    fee_source: string;
+    department_name: string;
+  } | null>(null);
+  const [loadingFee, setLoadingFee] = useState<boolean>(false);
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'ONLINE'>('CASH');
+  const [cashReceivedConfirmed, setCashReceivedConfirmed] = useState<boolean>(false);
+  const [cashReferenceNote, setCashReferenceNote] = useState<string>('');
+  const [onlineOrderData, setOnlineOrderData] = useState<any | null>(null);
+  const [onlineVerifiedData, setOnlineVerifiedData] = useState<{
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    amount: string;
+  } | null>(null);
+  const [onlinePaymentStatus, setOnlinePaymentStatus] = useState<'IDLE' | 'ORDER_CREATED' | 'VERIFIED' | 'FAILED'>('IDLE');
+  const [onlinePaymentError, setOnlinePaymentError] = useState<string | null>(null);
+  const [gatewayProcessing, setGatewayProcessing] = useState<boolean>(false);
+
+
+  // Triage Vitals Modal State
+  const [showTriageModal, setShowTriageModal] = useState<boolean>(false);
+  const [selectedTriageItem, setSelectedTriageItem] = useState<any | null>(null);
+  const [triageVitals, setTriageVitals] = useState({
+    bp: '',
+    pulse: '',
+    temp: '',
+    spo2: '',
+    weight: '',
+    height: '',
+    respRate: ''
+  });
+  const [savingTriage, setSavingTriage] = useState<boolean>(false);
+
+  const handleSaveTriageVitals = async () => {
+    if (!selectedTriageItem) return;
+    setSavingTriage(true);
+    try {
+      await api.patch(`/clinical/appointments/${selectedTriageItem.id}/`, {
+        vitals: triageVitals
+      });
+      setShowTriageModal(false);
+      fetchOPDData();
+    } catch (err: any) {
+      console.error('Failed to save triage vitals', err);
+    } finally {
+      setSavingTriage(false);
+    }
+  };
+
+  // Cancellation Modal State
+  const [cancelModalItem, setCancelModalItem] = useState<QueueItem | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>('Cancelled by doctor');
+  const [cancelling, setCancelling] = useState<boolean>(false);
 
   // Consultation Workspace State
   const [showConsultModal, setShowConsultModal] = useState<boolean>(false);
@@ -120,25 +202,41 @@ export const AppointmentsPage: React.FC = () => {
   const [scheduleDoctorFilter, setScheduleDoctorFilter] = useState<string>('');
 
   // Reports State
-  const [reportStartDate, setReportStartDate] = useState<string>(
-    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  );
-  const [reportEndDate, setReportEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [reportStartDate, setReportStartDate] = useState<string>(getLocalTodayDateString(-30));
+  const [reportEndDate, setReportEndDate] = useState<string>(getLocalTodayDateString());
   const [reportsData, setReportsData] = useState<any | null>(null);
   const [loadingReports, setLoadingReports] = useState<boolean>(false);
   const [pageError, setPageError] = useState<string | null>(null);
   const [consultError, setConsultError] = useState<string | null>(null);
 
+  const getDoctorLabel = (d: any) => {
+    const rawName = d?.user_profile?.full_name || `${d?.user_profile?.first_name || ''} ${d?.user_profile?.last_name || ''}`.trim() || 'Physician';
+    const cleanName = rawName.replace(/^Dr\.?\s*/i, '');
+    const specialty = d?.specialization || d?.designation || d?.department_name || 'Specialist';
+    return `Dr. ${cleanName} (${specialty})`;
+  };
+
   // 1. Initial Data Fetch
   const loadInitialData = async () => {
     try {
-      const [patList, docList] = await Promise.all([
+      const [patList, docList, currentUser] = await Promise.all([
         authService.getPatients({ branch_id: currentBranch?.id }),
         authService.getStaffDirectory({ branch_id: currentBranch?.id, role: 'DOCTOR' }),
+        authService.getCurrentUser().catch(() => null),
       ]);
       setPatients(patList || []);
       setDoctors(docList || []);
-      if (docList && docList.length > 0) {
+
+      const userRole = String(currentUser?.role || '');
+      const isDoc = ['DOCTOR', 'MEDICAL_DIRECTOR', 'DEPARTMENT_HEAD'].includes(userRole);
+      const myStaffId = currentUser?.staff_profile?.id;
+
+      if (isDoc && myStaffId) {
+        setSelectedDoctorFilter(myStaffId);
+        setBookingDoctorId(myStaffId);
+        setWalkInDoctorId(myStaffId);
+        setScheduleDoctorFilter(myStaffId);
+      } else if (docList && docList.length > 0) {
         setBookingDoctorId(docList[0].id);
         setWalkInDoctorId(docList[0].id);
         setScheduleDoctorFilter(docList[0].id);
@@ -207,26 +305,240 @@ export const AppointmentsPage: React.FC = () => {
     }
   }, [bookingDoctorId, bookingDate]);
 
-  // 4. Handle Book Scheduled Appointment
+  // 3b. Direct URL Route Protection & Auto-Modal Trigger for Receptionist
+  useEffect(() => {
+    const path = location.pathname.toLowerCase();
+    const params = new URLSearchParams(location.search);
+    const actionParam = (params.get('action') || '').toLowerCase();
+    const wantsBook = path.endsWith('/book') || actionParam === 'book';
+    const wantsWalkIn = path.endsWith('/walk-in') || path.endsWith('/token') || actionParam === 'walk-in' || actionParam === 'token';
+
+    if (wantsBook || wantsWalkIn) {
+      if (!isReceptionist) {
+        setShowBookModal(false);
+        setShowWalkInModal(false);
+        setPageError('Access Denied (403 Forbidden): Only the Receptionist role is authorized to book appointments or issue patient tokens.');
+      } else if (wantsBook) {
+        resetPaymentState();
+        setShowBookModal(true);
+      } else if (wantsWalkIn) {
+        resetPaymentState();
+        setShowWalkInModal(true);
+      }
+    }
+  }, [location.pathname, location.search, isReceptionist]);
+
+  // 3c. Reset Payment State when switching modal, doctor, or patient
+  const resetPaymentState = () => {
+    setPaymentMethod('CASH');
+    setCashReceivedConfirmed(false);
+    setCashReferenceNote('');
+    setOnlineOrderData(null);
+    setOnlineVerifiedData(null);
+    setOnlinePaymentStatus('IDLE');
+    setOnlinePaymentError(null);
+    setBookingError(null);
+    setShowQuickRegForm(false);
+    setQuickRegError(null);
+  };
+
+  // 3d. Fetch Authoritative Hospital Consultation Fee in ₹ whenever active doctor/patient changes
+  const activeModalDoctorId = showWalkInModal ? walkInDoctorId : bookingDoctorId;
+  const activeModalPatientId = showWalkInModal ? walkInPatientId : bookingPatientId;
+
+  useEffect(() => {
+    if (!isReceptionist || (!showBookModal && !showWalkInModal) || !activeModalDoctorId) return;
+    setLoadingFee(true);
+    setOnlineOrderData(null);
+    setOnlineVerifiedData(null);
+    setOnlinePaymentStatus('IDLE');
+    setOnlinePaymentError(null);
+    setCashReceivedConfirmed(false);
+
+    opdService
+      .getConsultationFee({
+        doctor_id: activeModalDoctorId,
+        patient_id: activeModalPatientId || undefined,
+      })
+      .then((res) => {
+        setConsultationFeeInfo({
+          consultation_fee: res.consultation_fee,
+          formatted_amount: res.formatted_amount,
+          fee_source: res.fee_source,
+          department_name: res.department_name,
+        });
+      })
+      .catch(() => {
+        const docObj = doctors.find((d) => d.id === activeModalDoctorId);
+        const fallbackFee = docObj?.consultation_fee ? Number(docObj.consultation_fee).toFixed(2) : '500.00';
+        setConsultationFeeInfo({
+          consultation_fee: fallbackFee,
+          formatted_amount: `₹${fallbackFee}`,
+          fee_source: 'DOCTOR_PROFILE',
+          department_name: docObj?.department_name || docObj?.specialization || 'General OPD',
+        });
+      })
+      .finally(() => setLoadingFee(false));
+  }, [isReceptionist, showBookModal, showWalkInModal, activeModalDoctorId, activeModalPatientId, doctors]);
+
+  // Filtered patients for quick search inside Booking / Walk-in modals
+  const filteredModalPatients = useMemo(() => {
+    if (!patientSearchQuery.trim()) return patients;
+    const q = patientSearchQuery.toLowerCase().trim();
+    return patients.filter((p) => {
+      const fullName = `${p.user_profile?.first_name || ''} ${p.user_profile?.last_name || ''} ${p.user_profile?.full_name || ''}`.toLowerCase();
+      const mrn = (p.medical_record_number || '').toLowerCase();
+      const phone = (p.user_profile?.phone_number || '').toLowerCase();
+      return fullName.includes(q) || mrn.includes(q) || phone.includes(q);
+    });
+  }, [patients, patientSearchQuery]);
+
+  // Inline Quick New Patient Registration Handler (Step 1 of Receptionist Workflow)
+  const handleQuickPatientRegister = async () => {
+    if (!quickFirstName.trim() || !quickLastName.trim() || !quickPhone.trim()) {
+      setQuickRegError('First name, last name, and phone number are required to register a new patient.');
+      return;
+    }
+    setQuickRegLoading(true);
+    setQuickRegError(null);
+    try {
+      const created = await patientService.registerPatient({
+        first_name: quickFirstName.trim(),
+        last_name: quickLastName.trim(),
+        phone_number: quickPhone.trim(),
+        gender: quickGender,
+        blood_group: quickBloodGroup,
+        date_of_birth: quickDob || null,
+        primary_branch_id: currentBranch?.id,
+      });
+      const updatedPatients = [created, ...patients];
+      setPatients(updatedPatients);
+      if (showWalkInModal) {
+        setWalkInPatientId(created.id);
+      } else {
+        setBookingPatientId(created.id);
+      }
+      setShowQuickRegForm(false);
+      setQuickFirstName('');
+      setQuickLastName('');
+      setQuickPhone('');
+      setQuickDob('');
+    } catch (err: any) {
+      setQuickRegError(parseApiError(err).message);
+    } finally {
+      setQuickRegLoading(false);
+    }
+  };
+
+  // Online Payment Step A: Generate Razorpay Order
+  const handleGenerateOnlineOrder = async (bookingType: 'APPOINTMENT' | 'WALK_IN') => {
+    const patId = bookingType === 'WALK_IN' ? walkInPatientId : bookingPatientId;
+    const docId = bookingType === 'WALK_IN' ? walkInDoctorId : bookingDoctorId;
+    if (!patId || !docId) {
+      setOnlinePaymentError('Please select both a patient and a doctor before generating an online payment order.');
+      return;
+    }
+    setGatewayProcessing(true);
+    setOnlinePaymentError(null);
+    try {
+      const orderRes = await opdService.createPaymentOrder({
+        patient_id: patId,
+        doctor_id: docId,
+        booking_type: bookingType,
+      });
+      setOnlineOrderData(orderRes);
+      setOnlineVerifiedData(null);
+      setOnlinePaymentStatus('ORDER_CREATED');
+    } catch (err: any) {
+      setOnlinePaymentStatus('FAILED');
+      setOnlinePaymentError(parseApiError(err).message);
+    } finally {
+      setGatewayProcessing(false);
+    }
+  };
+
+  // Online Payment Step B: Complete & Verify Gateway Payment (or Simulate Failure to test Retry)
+  const handleCompleteOnlinePayment = async (simulateFailure: boolean = false) => {
+    if (!onlineOrderData?.razorpay_order_id) {
+      setOnlinePaymentError('Please generate a payment order first.');
+      return;
+    }
+    setGatewayProcessing(true);
+    setOnlinePaymentError(null);
+    try {
+      const authRes = await opdService.authorizeSandboxPaymentOrder({
+        razorpay_order_id: onlineOrderData.razorpay_order_id,
+        simulate_failure: simulateFailure,
+      });
+      setOnlineVerifiedData({
+        razorpay_order_id: authRes.razorpay_order_id,
+        razorpay_payment_id: authRes.razorpay_payment_id,
+        razorpay_signature: authRes.razorpay_signature,
+        amount: authRes.amount,
+      });
+      setOnlinePaymentStatus('VERIFIED');
+    } catch (err: any) {
+      setOnlineVerifiedData(null);
+      setOnlinePaymentStatus('FAILED');
+      setOnlinePaymentError(parseApiError(err).message);
+    } finally {
+      setGatewayProcessing(false);
+    }
+  };
+
+  // 4. Handle Book Scheduled Appointment (Strictly Receptionist + Mandatory Payment)
   const handleBookAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingError(null);
+    if (!isReceptionist) {
+      setBookingError('Access Denied: Only Receptionists are permitted to book appointments.');
+      return;
+    }
+    if (!bookingPatientId) {
+      setBookingError('Please select or register a patient.');
+      return;
+    }
     if (!selectedSlot) {
       setBookingError('Please select a valid available time slot.');
       return;
     }
+    if (paymentMethod === 'CASH' && !cashReceivedConfirmed) {
+      setBookingError(`Please confirm that ${consultationFeeInfo?.formatted_amount || 'the consultation fee'} in Cash has been received before confirming the appointment.`);
+      return;
+    }
+    if (paymentMethod === 'ONLINE' && (!onlineVerifiedData || onlinePaymentStatus !== 'VERIFIED')) {
+      setBookingError('Please complete and verify the Online (Razorpay) payment before confirming the appointment.');
+      return;
+    }
+
     setBookingLoading(true);
     try {
-      await clinicalService.bookAppointment({
+      const payload: any = {
         patient_id: bookingPatientId,
         doctor_id: bookingDoctorId,
         branch_id: currentBranch?.id,
         appointment_date: bookingDate,
         time_slot: selectedSlot,
         reason_for_visit: bookingReason || 'General Consultation',
-      });
+        payment_method: paymentMethod,
+      };
+      if (paymentMethod === 'CASH') {
+        payload.cash_received_confirmed = true;
+        if (cashReferenceNote.trim()) payload.transaction_reference = cashReferenceNote.trim();
+      } else {
+        payload.razorpay_order_id = onlineVerifiedData!.razorpay_order_id;
+        payload.razorpay_payment_id = onlineVerifiedData!.razorpay_payment_id;
+        payload.razorpay_signature = onlineVerifiedData!.razorpay_signature;
+      }
+
+      const res = await clinicalService.bookAppointment(payload);
       setShowBookModal(false);
       setBookingReason('');
+      resetPaymentState();
+      if (res?.receipt || res?.token_receipt) {
+        setTokenReceipt(res.receipt || res.token_receipt);
+        setShowReceiptModal(true);
+      }
       fetchOPDData();
     } catch (err: any) {
       setBookingError(parseApiError(err).message);
@@ -235,30 +547,137 @@ export const AppointmentsPage: React.FC = () => {
     }
   };
 
-  // 5. Handle Walk-in Registration
+  // 5. Handle Walk-in Registration (Strictly Receptionist + Mandatory Payment)
   const handleWalkInRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingError(null);
+    if (!isReceptionist) {
+      setBookingError('Access Denied: Only Receptionists are permitted to issue walk-in tokens.');
+      return;
+    }
+    if (!walkInPatientId) {
+      setBookingError('Please select or register a patient.');
+      return;
+    }
+    if (paymentMethod === 'CASH' && !cashReceivedConfirmed) {
+      setBookingError(`Please confirm that ${consultationFeeInfo?.formatted_amount || 'the consultation fee'} in Cash has been received before issuing the token.`);
+      return;
+    }
+    if (paymentMethod === 'ONLINE' && (!onlineVerifiedData || onlinePaymentStatus !== 'VERIFIED')) {
+      setBookingError('Please complete and verify the Online (Razorpay) payment before issuing the token.');
+      return;
+    }
+
     setBookingLoading(true);
     try {
-      const res = await opdService.registerWalkIn({
+      const payload: any = {
         patient_id: walkInPatientId,
         doctor_id: walkInDoctorId,
         branch_id: currentBranch?.id,
         chief_complaint: walkInComplaint,
         vitals: walkInVitals,
-      });
+        payment_method: paymentMethod,
+      };
+      if (paymentMethod === 'CASH') {
+        payload.cash_received_confirmed = true;
+        if (cashReferenceNote.trim()) payload.transaction_reference = cashReferenceNote.trim();
+      } else {
+        payload.razorpay_order_id = onlineVerifiedData!.razorpay_order_id;
+        payload.razorpay_payment_id = onlineVerifiedData!.razorpay_payment_id;
+        payload.razorpay_signature = onlineVerifiedData!.razorpay_signature;
+      }
+
+      const res = await opdService.registerWalkIn(payload);
       setShowWalkInModal(false);
-      setTokenReceipt(res.token_receipt);
+      setTokenReceipt(res.receipt || res.token_receipt);
       setShowReceiptModal(true);
       setWalkInComplaint('');
       setWalkInVitals({ bp: '', pulse: '', temp: '', spo2: '' });
+      resetPaymentState();
       fetchOPDData();
     } catch (err: any) {
       setBookingError(parseApiError(err).message);
     } finally {
       setBookingLoading(false);
     }
+  };
+
+  // Open Receipt Modal for any existing appointment in the queue
+  const handleOpenReceiptForAppointment = async (appointmentId: string) => {
+    try {
+      const rec = await opdService.getAppointmentReceipt(appointmentId);
+      setTokenReceipt(rec);
+      setShowReceiptModal(true);
+    } catch (err: any) {
+      setPageError(parseApiError(err).message);
+    }
+  };
+
+  // Download Printable HTML Receipt Slip
+  const handleDownloadReceipt = (rec: any) => {
+    if (!rec) return;
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Payment & Token Receipt - ${rec.receipt_number || rec.appointment_number}</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 32px; color: #0f172a; max-width: 680px; margin: 0 auto; }
+    .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px; }
+    .hospital-name { font-size: 22px; font-weight: 800; color: #0f172a; text-transform: uppercase; }
+    .sub { font-size: 12px; color: #475569; margin-top: 4px; }
+    .token-box { background: #f0f9ff; border: 2px dashed #0284c7; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 20px; }
+    .token-num { font-size: 32px; font-weight: 800; color: #0369a1; }
+    .grid { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .grid td { padding: 8px 4px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+    .label { color: #64748b; font-weight: 600; width: 42%; }
+    .val { color: #0f172a; font-weight: 700; text-align: right; }
+    .paid-badge { display: inline-block; background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 12px; }
+    .footer { text-align: center; font-size: 11px; color: #64748b; margin-top: 28px; border-top: 1px solid #cbd5e1; padding-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="hospital-name">${rec.hospital_name || 'AURA Multi-Specialty Hospital'}</div>
+    <div class="sub">${rec.branch_name || 'Main Branch'} • ${rec.hospital_address || ''}</div>
+    <div class="sub">Phone: ${rec.hospital_phone || '+91 40 2345 6789'} • Email: ${rec.hospital_email || 'billing@aurahospital.org'}</div>
+    <div style="margin-top:10px; font-weight:700; font-size:14px;">OFFICIAL OPD CONSULTATION & PAYMENT RECEIPT</div>
+  </div>
+  <div class="token-box">
+    <div style="font-size:11px; text-transform:uppercase; color:#0369a1; font-weight:700;">Queue Token Number</div>
+    <div class="token-num">${rec.token_number || '—'}</div>
+    <div style="font-size:12px; color:#334155; margin-top:4px;">Appointment Ref: <strong>${rec.appointment_number || ''}</strong> (${rec.appointment_type || 'OPD'})</div>
+  </div>
+  <table class="grid">
+    <tr><td class="label">Receipt Number</td><td class="val">${rec.receipt_number || '—'}</td></tr>
+    <tr><td class="label">Invoice Number</td><td class="val">${rec.invoice_number || '—'}</td></tr>
+    <tr><td class="label">Payment Date & Time</td><td class="val">${rec.payment_date_display || `${rec.date || ''} ${rec.check_in_time || ''}`}</td></tr>
+    <tr><td class="label">Patient Name & MRN</td><td class="val">${rec.patient_name} (${rec.patient_mrn})</td></tr>
+    <tr><td class="label">Consulting Doctor</td><td class="val">Dr. ${rec.doctor_name} (${rec.specialization || ''})</td></tr>
+    <tr><td class="label">Department</td><td class="val">${rec.department_name || 'General OPD'}</td></tr>
+    <tr><td class="label">Appointment Date / Slot</td><td class="val">${rec.appointment_date || rec.date} • ${rec.time_slot || rec.check_in_time}</td></tr>
+    <tr><td class="label">Consultation Fee</td><td class="val">₹${rec.consultation_fee}</td></tr>
+    <tr><td class="label">Amount Paid (INR)</td><td class="val" style="color:#15803d; font-size:15px;">₹${rec.amount_paid || rec.consultation_fee}</td></tr>
+    <tr><td class="label">Balance Due</td><td class="val">₹${rec.balance_amount || '0.00'}</td></tr>
+    <tr><td class="label">Payment Method</td><td class="val">${rec.payment_method || 'CASH'}</td></tr>
+    <tr><td class="label">Transaction / Ref ID</td><td class="val">${rec.transaction_reference || '—'}</td></tr>
+    <tr><td class="label">Payment Status</td><td class="val"><span class="paid-badge">${rec.payment_status || 'PAID'}</span></td></tr>
+    <tr><td class="label">Processed By (Receptionist)</td><td class="val">${rec.processed_by_name || 'Reception Desk'} ${rec.processed_by_employee_id ? `(${rec.processed_by_employee_id})` : ''}</td></tr>
+  </table>
+  <div class="footer">
+    Thank you for choosing ${rec.hospital_name || 'AURA Multi-Specialty Hospital'}. This is a computer-generated payment receipt.
+  </div>
+</body>
+</html>`;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Receipt_${rec.receipt_number || rec.appointment_number || 'OPD'}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // 6. Queue Actions Execution
@@ -268,12 +687,16 @@ export const AppointmentsPage: React.FC = () => {
       fetchOPDData();
     } catch (err: any) {
       setPageError(parseApiError(err).message);
-      
+
     }
   };
 
   // 7. Open Consultation Workspace
   const handleOpenConsultation = async (item: QueueItem) => {
+    if (!canConductConsultation) {
+      setPageError('Access Denied: Only attending doctors and clinical directors are authorized to conduct consultations.');
+      return;
+    }
     setActiveConsultAppointment(item);
     setShowConsultModal(true);
     setConsultLoading(true);
@@ -311,7 +734,7 @@ export const AppointmentsPage: React.FC = () => {
     const formatted = items.map((item) => {
       // Build dosage string
       const dosageStr = item.dosage_form ? `${item.dose_amount || '1'} ${item.dose_unit || 'Tablet'}` : (item.strength || '1 Tablet');
-      
+
       // Build timing and frequency instructions
       const timingParts = [];
       if (item.schedule?.morning) timingParts.push(`M:${item.schedule.morning_dose || '1'}`);
@@ -547,6 +970,11 @@ export const AppointmentsPage: React.FC = () => {
         header: t('appointments.slotCheckInHeader', 'Slot / Check-In'),
         render: (item) => (
           <div className="text-xs">
+            {item.appointment_date && (
+              <div className="text-[11px] text-cyan-400 font-semibold mb-0.5 font-mono">
+                {item.appointment_date}
+              </div>
+            )}
             <div className="text-slate-300 font-mono flex items-center gap-1">
               <Clock className="w-3 h-3 text-cyan-400" />
               {item.time_slot}
@@ -565,11 +993,10 @@ export const AppointmentsPage: React.FC = () => {
         render: (item) => (
           <div>
             {item.status === 'CHECKED_IN' ? (
-              <span className={`font-mono text-xs font-semibold px-2 py-0.5 rounded ${
-                item.wait_minutes > 30
+              <span className={`font-mono text-xs font-semibold px-2 py-0.5 rounded ${item.wait_minutes > 30
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                   : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-              }`}>
+                }`}>
                 {item.wait_minutes} min
               </span>
             ) : item.status === 'IN_CONSULTATION' ? (
@@ -594,13 +1021,20 @@ export const AppointmentsPage: React.FC = () => {
           <div className="text-xs">
             {item.invoice_number ? (
               <div>
-                <span className="font-mono text-[11px] text-slate-400">{item.invoice_number}</span>
-                <div>
-                  <span className={`text-[10px] font-semibold ${
-                    item.invoice_status === 'PAID' ? 'text-emerald-400' : 'text-amber-400'
-                  }`}>
+                <div className="font-mono text-[11px] text-slate-300 font-semibold">
+                  ₹{item.paid_amount || item.doctor_fee || '500.00'}
+                </div>
+                <span className="font-mono text-[10px] text-slate-400">{item.invoice_number}</span>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className={`text-[10px] font-semibold ${item.invoice_status === 'PAID' ? 'text-emerald-400' : 'text-amber-400'
+                    }`}>
                     {item.invoice_status}
                   </span>
+                  {item.payment_method && (
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-cyan-300 font-mono">
+                      {item.payment_method}
+                    </span>
+                  )}
                 </div>
               </div>
             ) : (
@@ -615,6 +1049,16 @@ export const AppointmentsPage: React.FC = () => {
         align: 'right',
         render: (item) => (
           <div className="flex items-center justify-end gap-1.5 flex-wrap">
+            {item.invoice_number && (
+              <button
+                onClick={() => handleOpenReceiptForAppointment(item.id)}
+                className="px-2 py-1 text-xs font-medium rounded-lg bg-slate-800/80 text-cyan-300 hover:bg-slate-700 border border-slate-700 transition flex items-center gap-1"
+                title="View / Print Payment & Token Receipt"
+              >
+                <Receipt className="w-3 h-3" /> Receipt
+              </button>
+            )}
+
             {item.status === 'SCHEDULED' && (
               <button
                 onClick={() => handleQueueAction(item.id, 'CHECK_IN')}
@@ -627,11 +1071,43 @@ export const AppointmentsPage: React.FC = () => {
             {item.status === 'CHECKED_IN' && (
               <>
                 <button
-                  onClick={() => handleOpenConsultation(item)}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition shadow-sm flex items-center gap-1"
+                  onClick={() => {
+                    setSelectedTriageItem(item);
+                    setTriageVitals({
+                      bp: item.vitals?.bp || '',
+                      pulse: item.vitals?.pulse || item.vitals?.heart_rate || '',
+                      temp: item.vitals?.temp || '',
+                      spo2: item.vitals?.spo2 || '',
+                      weight: item.vitals?.weight || '',
+                      height: item.vitals?.height || '',
+                      respRate: item.vitals?.respRate || ''
+                    });
+                    setShowTriageModal(true);
+                  }}
+                  className="px-2 py-1 text-xs text-amber-300 hover:text-white bg-amber-950/60 hover:bg-amber-900 border border-amber-800/60 rounded-lg transition shadow-sm flex items-center gap-1"
+                  title="Log / Update Pre-Consultation Triage Vitals"
                 >
-                  <Stethoscope className="w-3 h-3" /> {t('appointments.callInConsult', 'Call In & Consult')}
+                  <Activity className="w-3 h-3" /> Triage
                 </button>
+                <button
+                  onClick={() => handleDownloadReceipt(item.receipt || item)}
+                  className="px-2 py-1 text-xs text-cyan-300 hover:text-white bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-800/60 rounded-lg transition shadow-sm flex items-center gap-1"
+                  title="Print 80mm Queue Token Slip"
+                >
+                  <Printer className="w-3 h-3" /> Slip
+                </button>
+                {canConductConsultation ? (
+                  <button
+                    onClick={() => handleOpenConsultation(item)}
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition shadow-sm flex items-center gap-1"
+                  >
+                    <Stethoscope className="w-3 h-3" /> {t('appointments.callInConsult', 'Call In & Consult')}
+                  </button>
+                ) : (
+                  <span className="px-2 py-1 text-[11px] font-medium text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-amber-400" /> Waiting in Lounge
+                  </span>
+                )}
                 <button
                   onClick={() => handleQueueAction(item.id, 'NO_SHOW')}
                   className="px-2 py-1 text-xs text-slate-400 hover:text-rose-400 transition"
@@ -643,12 +1119,18 @@ export const AppointmentsPage: React.FC = () => {
             )}
 
             {item.status === 'IN_CONSULTATION' && (
-              <button
-                onClick={() => handleOpenConsultation(item)}
-                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 hover:brightness-110 transition shadow-sm flex items-center gap-1"
-              >
-                <FileText className="w-3 h-3" /> {t('appointments.resumeRx', 'Resume / Finalize Rx')}
-              </button>
+              canConductConsultation ? (
+                <button
+                  onClick={() => handleOpenConsultation(item)}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 hover:brightness-110 transition shadow-sm flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" /> {t('appointments.resumeRx', 'Resume / Finalize Rx')}
+                </button>
+              ) : (
+                <span className="px-2.5 py-1 text-[11px] font-medium text-cyan-300/90 bg-cyan-500/10 border border-cyan-500/20 rounded-lg flex items-center gap-1.5 animate-pulse">
+                  <Activity className="w-3 h-3 text-cyan-400" /> In Consultation
+                </span>
+              )
             )}
 
             {item.status === 'COMPLETED' && (
@@ -657,13 +1139,19 @@ export const AppointmentsPage: React.FC = () => {
               </span>
             )}
 
-            {['SCHEDULED', 'CHECKED_IN'].includes(item.status) && (
+            {item.status === 'CANCELLED' && (
+              <span className="text-xs text-rose-400/80 font-medium flex items-center gap-1">
+                <Ban className="w-3 h-3" /> {t('appointments.statusCancelled', 'Cancelled')}
+              </span>
+            )}
+
+            {['SCHEDULED', 'CHECKED_IN', 'IN_CONSULTATION'].includes(item.status) && (
               <button
                 onClick={() => {
-                  const reason = prompt('Please enter cancellation reason:');
-                  if (reason) handleQueueAction(item.id, 'CANCEL', { reason });
+                  setCancelModalItem(item);
+                  setCancelReason(item.status === 'IN_CONSULTATION' ? 'Consultation cancelled by doctor' : 'Cancelled by staff');
                 }}
-                className="px-2 py-1 text-xs text-slate-500 hover:text-rose-400 transition"
+                className="px-2 py-1 text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition"
                 title={t('common.cancel', 'Cancel')}
               >
                 {t('common.cancel', 'Cancel')}
@@ -678,6 +1166,15 @@ export const AppointmentsPage: React.FC = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {pageError && (
+        <AlertBanner
+          variant="error"
+          title="Authorization / Operation Notice"
+          message={pageError}
+          onClose={() => setPageError(null)}
+        />
+      )}
+
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
@@ -696,22 +1193,51 @@ export const AppointmentsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Action Buttons */}
+        {/* Quick Action Buttons — Strictly Receptionist Only for Booking & Token Issuing */}
         <div className="flex items-center gap-2 flex-wrap">
+          {isReceptionist && (
+            <>
+              <button
+                onClick={() => {
+                  setBookingError(null);
+                  resetPaymentState();
+                  setShowWalkInModal(true);
+                }}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-xs hover:bg-amber-500/25 transition shadow-sm"
+              >
+                <UserPlus className="w-4 h-4" />
+                {t('appointments.walkInToken', 'Walk-in Token')}
+              </button>
+              <button
+                onClick={() => {
+                  setBookingError(null);
+                  resetPaymentState();
+                  setShowBookModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition"
+              >
+                <Plus className="w-4 h-4" />
+                {t('appointments.bookAppointment', 'Book Appointment')}
+              </button>
+            </>
+          )}
           <button
-            onClick={() => setShowWalkInModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-xs hover:bg-amber-500/25 transition shadow-sm"
+            onClick={() => setShowLoungeTVModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold shadow-sm transition"
+            title="Launch Real-Time Lounge TV with Interactive Doctor Filters"
           >
-            <UserPlus className="w-4 h-4" />
-            {t('appointments.walkInToken', 'Walk-in Token')}
+            <Tv className="w-4 h-4 text-amber-400" />
+            <span>Lounge TV</span>
           </button>
-          <button
-            onClick={() => setShowBookModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition"
+          <a
+            href="/lounge-tv"
+            target="_blank"
+            rel="noreferrer"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+            title="Open Lounge TV in Dedicated Window / TV Display"
           >
-            <Plus className="w-4 h-4" />
-            {t('appointments.bookAppointment', 'Book Appointment')}
-          </button>
+            <Tv className="w-4 h-4 text-cyan-400" />
+          </a>
           <button
             onClick={fetchOPDData}
             className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
@@ -726,33 +1252,30 @@ export const AppointmentsPage: React.FC = () => {
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto custom-scrollbar whitespace-nowrap">
         <button
           onClick={() => setActiveTab('queue')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
-            activeTab === 'queue'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${activeTab === 'queue'
               ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-          }`}
+            }`}
         >
           <Activity className="w-4 h-4" />
           {t('appointments.liveQueueTab', 'Live OPD Queue & Dashboard')}
         </button>
         <button
           onClick={() => setActiveTab('schedules')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
-            activeTab === 'schedules'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${activeTab === 'schedules'
               ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-          }`}
+            }`}
         >
           <CalendarCheck className="w-4 h-4" />
           {t('appointments.schedulesTab', 'Doctor Availability & Rosters')}
         </button>
         <button
           onClick={() => setActiveTab('reports')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
-            activeTab === 'reports'
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${activeTab === 'reports'
               ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-          }`}
+            }`}
         >
           <TrendingUp className="w-4 h-4" />
           {t('appointments.reportsTab', 'Doctor & OPD Analytics Reports')}
@@ -799,14 +1322,46 @@ export const AppointmentsPage: React.FC = () => {
           {/* OPD Queue Filters Bar */}
           <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap flex-1">
-              {/* Date Selector */}
-              <div className="w-44">
+              {/* Date Selector & Quick Filters */}
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <input
                   type="date"
-                  value={selectedDate}
+                  value={selectedDate === 'UPCOMING' ? '' : selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-36 px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500/50"
                 />
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(getLocalTodayDateString())}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition ${selectedDate === getLocalTodayDateString()
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 font-semibold'
+                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                    }`}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDate(getLocalTodayDateString(1));
+                  }}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition ${selectedDate === getLocalTodayDateString(1)
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 font-semibold'
+                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                    }`}
+                >
+                  Tomorrow
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate('UPCOMING')}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition ${selectedDate === 'UPCOMING'
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 font-semibold shadow-sm'
+                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                    }`}
+                >
+                  All Upcoming
+                </button>
               </div>
 
               {/* Doctor Filter */}
@@ -819,7 +1374,7 @@ export const AppointmentsPage: React.FC = () => {
                   <option value="">All Doctors & Clinics</option>
                   {doctors.map((d) => (
                     <option key={d.id} value={d.id}>
-                      Dr. {d.user_profile?.full_name} ({d.specialization || 'General'})
+                      {getDoctorLabel(d)}
                     </option>
                   ))}
                 </select>
@@ -860,7 +1415,7 @@ export const AppointmentsPage: React.FC = () => {
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 shadow-xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
               <span className="text-xs font-semibold text-slate-300">
-                Patient Queue for {selectedDate} ({queue.length} Total Patients)
+                Patient Queue {selectedDate === 'UPCOMING' ? '— All Upcoming Consultations' : `for ${selectedDate}`} ({queue.length} Total Patients)
               </span>
               <span className="text-[11px] text-cyan-400 font-mono">
                 Auto-sorting: In Consultation &gt; Checked In &gt; Scheduled
@@ -897,7 +1452,7 @@ export const AppointmentsPage: React.FC = () => {
                 <option value="">All Doctors</option>
                 {doctors.map((d) => (
                   <option key={d.id} value={d.id}>
-                    Dr. {d.user_profile?.full_name} ({d.specialization || 'General'})
+                    {getDoctorLabel(d)}
                   </option>
                 ))}
               </select>
@@ -1067,244 +1622,894 @@ export const AppointmentsPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 1: Book Scheduled Appointment (with real available slots) */}
-      <Modal
-        isOpen={showBookModal}
-        onClose={() => setShowBookModal(false)}
-        title="Schedule Outpatient Appointment"
-        size="lg"
-      >
-        <form onSubmit={handleBookAppointment} className="space-y-4">
-          {bookingError && <AlertBanner variant="error" title="Booking Error" message={bookingError} />}
+      
+      {/* Triage Vitals Modal */}
+      {showTriageModal && selectedTriageItem && (
+        <Modal
+          isOpen={showTriageModal}
+          onClose={() => setShowTriageModal(false)}
+          title={`Pre-Consultation Nursing Triage Vitals — ${selectedTriageItem.patient_name} (Token #${String(selectedTriageItem.token_number || '-').replace(/^(token\s*#*|#)+/i, '').trim()})`}
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-slate-400">
+              Record vital signs before patient enters doctor consultation. These vitals automatically populate in the doctor's clinical workspace.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300">Blood Pressure</label>
+                <input
+                  type="text"
+                  placeholder="120/80"
+                  value={triageVitals.bp}
+                  onChange={(e) => setTriageVitals({ ...triageVitals, bp: e.target.value })}
+                  className="w-full mt-1 p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300">Pulse Rate (bpm)</label>
+                <input
+                  type="text"
+                  placeholder="72"
+                  value={triageVitals.pulse}
+                  onChange={(e) => setTriageVitals({ ...triageVitals, pulse: e.target.value })}
+                  className="w-full mt-1 p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300">Temperature (°F)</label>
+                <input
+                  type="text"
+                  placeholder="98.4"
+                  value={triageVitals.temp}
+                  onChange={(e) => setTriageVitals({ ...triageVitals, temp: e.target.value })}
+                  className="w-full mt-1 p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300">Oxygen SpO2 (%)</label>
+                <input
+                  type="text"
+                  placeholder="99"
+                  value={triageVitals.spo2}
+                  onChange={(e) => setTriageVitals({ ...triageVitals, spo2: e.target.value })}
+                  className="w-full mt-1 p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300">Weight (kg)</label>
+                <input
+                  type="number"
+                  placeholder="70"
+                  value={triageVitals.weight}
+                  onChange={(e) => setTriageVitals({ ...triageVitals, weight: e.target.value })}
+                  className="w-full mt-1 p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300">Height (cm)</label>
+                <input
+                  type="number"
+                  placeholder="170"
+                  value={triageVitals.height}
+                  onChange={(e) => setTriageVitals({ ...triageVitals, height: e.target.value })}
+                  className="w-full mt-1 p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white font-mono"
+                />
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Select Patient"
-              value={bookingPatientId}
-              onChange={(e) => setBookingPatientId(e.target.value)}
-              options={patients.map((p) => ({
-                value: p.id,
-                label: `${p.user_profile?.first_name} ${p.user_profile?.last_name} (${p.medical_record_number})`,
-              }))}
-              required
-            />
-
-            <Select
-              label="Consulting Doctor"
-              value={bookingDoctorId}
-              onChange={(e) => setBookingDoctorId(e.target.value)}
-              options={doctors.map((d) => ({
-                value: d.id,
-                label: `Dr. ${d.user_profile?.full_name} (${d.specialization || 'General'})`,
-              }))}
-              required
-            />
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowTriageModal(false)}
+                className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 text-xs hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={savingTriage}
+                onClick={handleSaveTriageVitals}
+                className="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs transition shadow-sm"
+              >
+                {savingTriage ? 'Saving...' : 'Save Triage Vitals'}
+              </button>
+            </div>
           </div>
+        </Modal>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <DateField
-              label="Appointment Date"
-              value={bookingDate}
-              onChange={(e) => setBookingDate(e.target.value)}
-              required
-            />
-            <Input
-              label="Chief Reason for Visit"
-              value={bookingReason}
-              onChange={(e) => setBookingReason(e.target.value)}
-              placeholder="e.g. Follow-up consultation, fever, hypertension"
-              required
-            />
-          </div>
+      {/* MODAL 1: Book Scheduled Appointment (Strictly Receptionist + Mandatory Payment) */}
+      {isReceptionist && (
+        <Modal
+          isOpen={showBookModal}
+          onClose={() => setShowBookModal(false)}
+          title="Schedule Outpatient Appointment & Collect Consultation Fee"
+          size="lg"
+        >
+          <form onSubmit={handleBookAppointment} className="space-y-4">
+            {bookingError && <AlertBanner variant="error" title="Booking / Payment Error" message={bookingError} />}
 
-          {/* Dynamic Available Slots Grid */}
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                Available Doctor Time Slots on {bookingDate}
-              </span>
-              {doctorSlots && (
-                <span className="text-[11px] text-cyan-400 font-mono">
-                  Fee: ₹{doctorSlots.consultation_fee || '500.00'}
-                </span>
+            {/* Step 1: Search Existing Patient or Register New Patient */}
+            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-cyan-400" />
+                  1. Select Existing Patient or Register New Patient
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowQuickRegForm(!showQuickRegForm)}
+                  className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/25 transition flex items-center gap-1"
+                >
+                  <UserPlus className="w-3 h-3" />
+                  {showQuickRegForm ? 'Use Existing Patient List' : '+ Register New Patient'}
+                </button>
+              </div>
+
+              {showQuickRegForm ? (
+                <div className="p-3 rounded-xl bg-slate-900 border border-cyan-500/30 space-y-3">
+                  <div className="text-xs font-semibold text-cyan-300">Quick Patient Registration</div>
+                  {quickRegError && <div className="text-xs text-rose-400">{quickRegError}</div>}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <input
+                      type="text"
+                      placeholder="First Name *"
+                      value={quickFirstName}
+                      onChange={(e) => setQuickFirstName(e.target.value)}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Last Name *"
+                      value={quickLastName}
+                      onChange={(e) => setQuickLastName(e.target.value)}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Phone Number *"
+                      value={quickPhone}
+                      onChange={(e) => setQuickPhone(e.target.value)}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <select
+                      value={quickGender}
+                      onChange={(e) => setQuickGender(e.target.value as 'MALE' | 'FEMALE' | 'OTHER')}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    >
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                    <input
+                      type="date"
+                      value={quickDob}
+                      onChange={(e) => setQuickDob(e.target.value)}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                    <button
+                      type="button"
+                      disabled={quickRegLoading}
+                      onClick={handleQuickPatientRegister}
+                      className="px-3 py-1.5 rounded-lg bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition disabled:opacity-50"
+                    >
+                      {quickRegLoading ? 'Registering...' : 'Save & Select Patient'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1">Filter Patient by Name / MRN / Phone</label>
+                    <input
+                      type="text"
+                      value={patientSearchQuery}
+                      onChange={(e) => setPatientSearchQuery(e.target.value)}
+                      placeholder="Type to search patient..."
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+                  <Select
+                    label="Select Patient"
+                    value={bookingPatientId}
+                    onChange={(e) => setBookingPatientId(e.target.value)}
+                    options={filteredModalPatients.map((p: any) => ({
+                      value: p.id,
+                      label: `${p.user_profile?.first_name} ${p.user_profile?.last_name} (${p.medical_record_number})`,
+                    }))}
+                    required
+                  />
+                </div>
               )}
             </div>
 
-            {loadingSlots ? (
-              <div className="p-4 text-center text-xs text-slate-400 animate-pulse">
-                Checking doctor availability and existing bookings...
-              </div>
-            ) : doctorSlots?.is_on_leave ? (
-              <div className="p-3 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs">
-                Dr. {doctorSlots.doctor_name} is on approved leave on this date: {doctorSlots.leave_reason}. Please select another date.
-              </div>
-            ) : doctorSlots && doctorSlots.slots.length === 0 ? (
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 text-xs">
-                {doctorSlots.message || 'No scheduled clinic hours on this day.'}
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
-                {doctorSlots?.slots.map((s) => (
-                  <button
-                    key={s.slot}
-                    type="button"
-                    disabled={s.is_booked}
-                    onClick={() => setSelectedSlot(s.slot)}
-                    className={`px-2.5 py-2 rounded-xl text-xs font-mono transition text-center ${
-                      s.is_booked
-                        ? 'bg-slate-900/60 border border-slate-800 text-slate-600 cursor-not-allowed line-through'
-                        : selectedSlot === s.slot
-                        ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/30 border border-cyan-400'
-                        : 'bg-slate-900 border border-slate-800 text-slate-300 hover:border-cyan-500/40 hover:text-white'
-                    }`}
-                  >
-                    {s.slot}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => setShowBookModal(false)}
-              className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={bookingLoading || !selectedSlot || doctorSlots?.is_on_leave}
-              className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold hover:brightness-110 disabled:opacity-50 transition"
-            >
-              {bookingLoading ? 'Reserving Slot...' : 'Confirm Appointment'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* MODAL 2: OPD Walk-in Registration & Queue Token */}
-      <Modal
-        isOpen={showWalkInModal}
-        onClose={() => setShowWalkInModal(false)}
-        title="OPD Walk-in Registration & Queue Token"
-        size="md"
-      >
-        <form onSubmit={handleWalkInRegistration} className="space-y-4">
-          {bookingError && <AlertBanner variant="error" title="Error" message={bookingError} />}
-
-          <Select
-            label="Select Patient"
-            value={walkInPatientId}
-            onChange={(e) => setWalkInPatientId(e.target.value)}
-            options={patients.map((p) => ({
-              value: p.id,
-              label: `${p.user_profile?.first_name} ${p.user_profile?.last_name} (${p.medical_record_number})`,
-            }))}
-            required
-          />
-
-          <Select
-            label="Attending Doctor / Clinic"
-            value={walkInDoctorId}
-            onChange={(e) => setWalkInDoctorId(e.target.value)}
-            options={doctors.map((d) => ({
-              value: d.id,
-              label: `Dr. ${d.user_profile?.full_name} (${d.specialization || 'General'})`,
-            }))}
-            required
-          />
-
-          <Input
-            label="Chief Complaint / Reason for Visit"
-            value={walkInComplaint}
-            onChange={(e) => setWalkInComplaint(e.target.value)}
-            placeholder="e.g. Acute high fever, breathlessness, earache"
-            required
-          />
-
-          {/* Quick Triage Vitals */}
-          <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-            <div className="text-xs font-semibold text-slate-400">Reception Triage Vitals (Optional)</div>
-            <div className="grid grid-cols-4 gap-2">
-              <input
-                type="text"
-                placeholder="BP (120/80)"
-                value={walkInVitals.bp}
-                onChange={(e) => setWalkInVitals({ ...walkInVitals, bp: e.target.value })}
-                className="px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+            {/* Step 2: Doctor, Date, and Visit Details */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Select
+                label="2. Consulting Doctor & Department"
+                value={bookingDoctorId}
+                onChange={(e) => {
+                  setBookingDoctorId(e.target.value);
+                  resetPaymentState();
+                }}
+                options={doctors.map((d) => ({
+                  value: d.id,
+                  label: getDoctorLabel(d),
+                }))}
+                required
               />
-              <input
-                type="text"
-                placeholder="Pulse (bpm)"
-                value={walkInVitals.pulse}
-                onChange={(e) => setWalkInVitals({ ...walkInVitals, pulse: e.target.value })}
-                className="px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+
+              <DateField
+                label="Appointment Date"
+                value={bookingDate}
+                onChange={(e) => setBookingDate(e.target.value)}
+                required
               />
-              <input
-                type="text"
-                placeholder="Temp (°F)"
-                value={walkInVitals.temp}
-                onChange={(e) => setWalkInVitals({ ...walkInVitals, temp: e.target.value })}
-                className="px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
-              />
-              <input
-                type="text"
-                placeholder="SpO2 (%)"
-                value={walkInVitals.spo2}
-                onChange={(e) => setWalkInVitals({ ...walkInVitals, spo2: e.target.value })}
-                className="px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+
+              <Input
+                label="Chief Reason for Visit"
+                value={bookingReason}
+                onChange={(e) => setBookingReason(e.target.value)}
+                placeholder="e.g. Follow-up consultation, fever"
+                required
               />
             </div>
-          </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => setShowWalkInModal(false)}
-              className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={bookingLoading}
-              className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold hover:brightness-110 disabled:opacity-50 transition"
-            >
-              {bookingLoading ? 'Generating Token...' : 'Issue Token & Check In'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+            {/* Dynamic Available Slots Grid */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                  Available Doctor Time Slots on {bookingDate}
+                </span>
+                <span className="text-xs font-bold text-emerald-400 font-mono">
+                  Applicable Consultation Fee: {consultationFeeInfo?.formatted_amount || `₹${doctorSlots?.consultation_fee || '500.00'}`}
+                </span>
+              </div>
 
-      {/* MODAL 3: Printable OPD Token Receipt */}
+              {loadingSlots ? (
+                <div className="p-4 text-center text-xs text-slate-400 animate-pulse">
+                  Checking doctor availability and existing bookings...
+                </div>
+              ) : doctorSlots?.is_on_leave ? (
+                <div className="p-3 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs">
+                  Dr. {doctorSlots.doctor_name} is on approved leave on this date: {doctorSlots.leave_reason}. Please select another date.
+                </div>
+              ) : doctorSlots && doctorSlots.slots.length === 0 ? (
+                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 text-xs">
+                  {doctorSlots.message || 'No scheduled clinic hours on this day.'}
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
+                  {doctorSlots?.slots.map((s) => (
+                    <button
+                      key={s.slot}
+                      type="button"
+                      disabled={s.is_booked}
+                      onClick={() => setSelectedSlot(s.slot)}
+                      className={`px-2.5 py-2 rounded-xl text-xs font-mono transition text-center ${s.is_booked
+                          ? 'bg-slate-900/60 border border-slate-800 text-slate-600 cursor-not-allowed line-through'
+                          : selectedSlot === s.slot
+                            ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/30 border border-cyan-400'
+                            : 'bg-slate-900 border border-slate-800 text-slate-300 hover:border-cyan-500/40 hover:text-white'
+                        }`}
+                    >
+                      {s.slot}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Step 3 & 4: Mandatory Consultation Fee & Payment Collection */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-emerald-500/30 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-emerald-400" />
+                    3. Mandatory Consultation Fee Collection
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {consultationFeeInfo?.department_name ? `${consultationFeeInfo.department_name} • ` : ''}
+                    Payment must be completed before confirming the appointment or generating a token.
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-wider text-slate-400">Payable Amount</div>
+                  <div className="text-lg font-extrabold text-emerald-400 font-mono">
+                    {loadingFee ? '...' : consultationFeeInfo?.formatted_amount || '₹500.00'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Method Selector: Cash or Online */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMethod('CASH');
+                    setBookingError(null);
+                  }}
+                  className={`p-3 rounded-xl border text-left transition flex items-center gap-3 ${paymentMethod === 'CASH'
+                      ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                >
+                  <Banknote className={`w-5 h-5 ${paymentMethod === 'CASH' ? 'text-emerald-400' : 'text-slate-500'}`} />
+                  <div>
+                    <div className="text-xs font-bold">Cash Payment</div>
+                    <div className="text-[10px] text-slate-400">Collect cash at reception counter</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMethod('ONLINE');
+                    setBookingError(null);
+                  }}
+                  className={`p-3 rounded-xl border text-left transition flex items-center gap-3 ${paymentMethod === 'ONLINE'
+                      ? 'bg-cyan-500/15 border-cyan-500 text-white shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                >
+                  <CreditCard className={`w-5 h-5 ${paymentMethod === 'ONLINE' ? 'text-cyan-400' : 'text-slate-500'}`} />
+                  <div>
+                    <div className="text-xs font-bold">Online Payment (Razorpay)</div>
+                    <div className="text-[10px] text-slate-400">UPI / Card / NetBanking gateway</div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Cash Payment Confirmation Box */}
+              {paymentMethod === 'CASH' && (
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2.5">
+                  <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={cashReceivedConfirmed}
+                      onChange={(e) => setCashReceivedConfirmed(e.target.checked)}
+                      className="mt-0.5 rounded border-slate-700 text-emerald-500 focus:ring-0"
+                    />
+                    <span>
+                      I confirm that <strong className="text-emerald-400 font-mono">{consultationFeeInfo?.formatted_amount || '₹500.00'}</strong> in Cash has been received from the patient at the reception counter.
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={cashReferenceNote}
+                    onChange={(e) => setCashReferenceNote(e.target.value)}
+                    placeholder="Optional cash receipt / counter voucher note"
+                    className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300"
+                  />
+                </div>
+              )}
+
+              {/* Online Payment Gateway Box */}
+              {paymentMethod === 'ONLINE' && (
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300 font-semibold flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                      Razorpay Gateway Verification Status:
+                    </span>
+                    <Badge
+                      variant={
+                        onlinePaymentStatus === 'VERIFIED'
+                          ? 'success'
+                          : onlinePaymentStatus === 'FAILED'
+                            ? 'danger'
+                            : onlinePaymentStatus === 'ORDER_CREATED'
+                              ? 'warning'
+                              : 'neutral'
+                      }
+                    >
+                      {onlinePaymentStatus}
+                    </Badge>
+                  </div>
+                  {onlinePaymentError && <div className="text-xs text-rose-400">{onlinePaymentError}</div>}
+
+                  {onlinePaymentStatus === 'IDLE' && (
+                    <button
+                      type="button"
+                      disabled={gatewayProcessing}
+                      onClick={() => handleGenerateOnlineOrder('APPOINTMENT')}
+                      className="w-full py-2 px-3 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 font-bold text-xs transition"
+                    >
+                      {gatewayProcessing ? 'Creating Gateway Order...' : `1. Generate Online Payment Order (${consultationFeeInfo?.formatted_amount || '₹500.00'})`}
+                    </button>
+                  )}
+
+                  {onlinePaymentStatus === 'ORDER_CREATED' && onlineOrderData && (
+                    <div className="space-y-2">
+                      <div className="text-[11px] text-slate-400 font-mono">
+                        Gateway Order ID: <span className="text-cyan-300">{onlineOrderData.razorpay_order_id}</span> • Amount: <span className="text-emerald-400">{onlineOrderData.formatted_amount}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          disabled={gatewayProcessing}
+                          onClick={() => handleCompleteOnlinePayment(false)}
+                          className="flex-1 py-2 px-3 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition"
+                        >
+                          {gatewayProcessing ? 'Verifying Signature...' : '2. Complete & Verify Online Payment'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={gatewayProcessing}
+                          onClick={() => handleCompleteOnlinePayment(true)}
+                          className="py-2 px-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold hover:bg-rose-500/25 transition"
+                        >
+                          Simulate Gateway Failure
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {onlinePaymentStatus === 'FAILED' && (
+                    <div className="space-y-2">
+                      <div className="text-xs text-rose-400">
+                        Online payment failed or was declined. Appointment booking is blocked until payment succeeds.
+                      </div>
+                      <button
+                        type="button"
+                        disabled={gatewayProcessing}
+                        onClick={() => handleGenerateOnlineOrder('APPOINTMENT')}
+                        className="py-1.5 px-3 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold hover:bg-amber-500/30 transition"
+                      >
+                        Retry Online Payment
+                      </button>
+                    </div>
+                  )}
+
+                  {onlinePaymentStatus === 'VERIFIED' && onlineVerifiedData && (
+                    <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+                      <span>
+                        Verified Payment Ref: <strong className="font-mono">{onlineVerifiedData.razorpay_payment_id}</strong>
+                      </span>
+                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowBookModal(false)}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={
+                  bookingLoading ||
+                  !selectedSlot ||
+                  doctorSlots?.is_on_leave ||
+                  (paymentMethod === 'CASH' && !cashReceivedConfirmed) ||
+                  (paymentMethod === 'ONLINE' && onlinePaymentStatus !== 'VERIFIED')
+                }
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold hover:brightness-110 disabled:opacity-50 transition"
+              >
+                {bookingLoading ? 'Processing Payment & Booking...' : `Confirm Payment (${consultationFeeInfo?.formatted_amount || '₹500.00'}) & Book Appointment`}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* MODAL 2: OPD Walk-in Registration & Queue Token (Strictly Receptionist + Mandatory Payment) */}
+      {isReceptionist && (
+        <Modal
+          isOpen={showWalkInModal}
+          onClose={() => setShowWalkInModal(false)}
+          title="OPD Walk-in Registration, Payment & Queue Token"
+          size="lg"
+        >
+          <form onSubmit={handleWalkInRegistration} className="space-y-4">
+            {bookingError && <AlertBanner variant="error" title="Walk-in / Payment Error" message={bookingError} />}
+
+            {/* Step 1: Search Existing Patient or Register New Patient */}
+            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-amber-400" />
+                  1. Select Existing Patient or Register New Patient
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowQuickRegForm(!showQuickRegForm)}
+                  className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 transition flex items-center gap-1"
+                >
+                  <UserPlus className="w-3 h-3" />
+                  {showQuickRegForm ? 'Use Existing Patient List' : '+ Register New Patient'}
+                </button>
+              </div>
+
+              {showQuickRegForm ? (
+                <div className="p-3 rounded-xl bg-slate-900 border border-amber-500/30 space-y-3">
+                  <div className="text-xs font-semibold text-amber-300">Quick Patient Registration</div>
+                  {quickRegError && <div className="text-xs text-rose-400">{quickRegError}</div>}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <input
+                      type="text"
+                      placeholder="First Name *"
+                      value={quickFirstName}
+                      onChange={(e) => setQuickFirstName(e.target.value)}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Last Name *"
+                      value={quickLastName}
+                      onChange={(e) => setQuickLastName(e.target.value)}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Phone Number *"
+                      value={quickPhone}
+                      onChange={(e) => setQuickPhone(e.target.value)}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <select
+                      value={quickGender}
+                      onChange={(e) => setQuickGender(e.target.value as 'MALE' | 'FEMALE' | 'OTHER')}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    >
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                    <input
+                      type="date"
+                      value={quickDob}
+                      onChange={(e) => setQuickDob(e.target.value)}
+                      className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                    <button
+                      type="button"
+                      disabled={quickRegLoading}
+                      onClick={handleQuickPatientRegister}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition disabled:opacity-50"
+                    >
+                      {quickRegLoading ? 'Registering...' : 'Save & Select Patient'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1">Filter Patient by Name / MRN / Phone</label>
+                    <input
+                      type="text"
+                      value={patientSearchQuery}
+                      onChange={(e) => setPatientSearchQuery(e.target.value)}
+                      placeholder="Type to search patient..."
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+                  <Select
+                    label="Select Patient"
+                    value={walkInPatientId}
+                    onChange={(e) => setWalkInPatientId(e.target.value)}
+                    options={filteredModalPatients.map((p: any) => ({
+                      value: p.id,
+                      label: `${p.user_profile?.first_name} ${p.user_profile?.last_name} (${p.medical_record_number})`,
+                    }))}
+                    required
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Select
+                label="2. Attending Doctor / Department"
+                value={walkInDoctorId}
+                onChange={(e) => {
+                  setWalkInDoctorId(e.target.value);
+                  resetPaymentState();
+                }}
+                options={doctors.map((d) => ({
+                  value: d.id,
+                  label: getDoctorLabel(d),
+                }))}
+                required
+              />
+
+              <Input
+                label="Chief Complaint / Reason for Visit"
+                value={walkInComplaint}
+                onChange={(e) => setWalkInComplaint(e.target.value)}
+                placeholder="e.g. Acute high fever, breathlessness, earache"
+                required
+              />
+            </div>
+
+            {/* Quick Triage Vitals */}
+            <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+              <div className="text-xs font-semibold text-slate-400">Reception Triage Vitals (Optional)</div>
+              <div className="grid grid-cols-4 gap-2">
+                <input
+                  type="text"
+                  placeholder="BP (120/80)"
+                  value={walkInVitals.bp}
+                  onChange={(e) => setWalkInVitals({ ...walkInVitals, bp: e.target.value })}
+                  className="px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Pulse (bpm)"
+                  value={walkInVitals.pulse}
+                  onChange={(e) => setWalkInVitals({ ...walkInVitals, pulse: e.target.value })}
+                  className="px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Temp (°F)"
+                  value={walkInVitals.temp}
+                  onChange={(e) => setWalkInVitals({ ...walkInVitals, temp: e.target.value })}
+                  className="px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="SpO2 (%)"
+                  value={walkInVitals.spo2}
+                  onChange={(e) => setWalkInVitals({ ...walkInVitals, spo2: e.target.value })}
+                  className="px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                />
+              </div>
+            </div>
+
+            {/* Step 3 & 4: Mandatory Consultation Fee & Payment Collection */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-emerald-500/30 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-emerald-400" />
+                    3. Mandatory Consultation / Token Fee Collection
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {consultationFeeInfo?.department_name ? `${consultationFeeInfo.department_name} • ` : ''}
+                    Payment must be verified before issuing the walk-in token.
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-wider text-slate-400">Payable Amount</div>
+                  <div className="text-lg font-extrabold text-emerald-400 font-mono">
+                    {loadingFee ? '...' : consultationFeeInfo?.formatted_amount || '₹500.00'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Method Selector: Cash or Online */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMethod('CASH');
+                    setBookingError(null);
+                  }}
+                  className={`p-3 rounded-xl border text-left transition flex items-center gap-3 ${paymentMethod === 'CASH'
+                      ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                >
+                  <Banknote className={`w-5 h-5 ${paymentMethod === 'CASH' ? 'text-emerald-400' : 'text-slate-500'}`} />
+                  <div>
+                    <div className="text-xs font-bold">Cash Payment</div>
+                    <div className="text-[10px] text-slate-400">Collect cash at reception counter</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMethod('ONLINE');
+                    setBookingError(null);
+                  }}
+                  className={`p-3 rounded-xl border text-left transition flex items-center gap-3 ${paymentMethod === 'ONLINE'
+                      ? 'bg-cyan-500/15 border-cyan-500 text-white shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                >
+                  <CreditCard className={`w-5 h-5 ${paymentMethod === 'ONLINE' ? 'text-cyan-400' : 'text-slate-500'}`} />
+                  <div>
+                    <div className="text-xs font-bold">Online Payment (Razorpay)</div>
+                    <div className="text-[10px] text-slate-400">UPI / Card / NetBanking gateway</div>
+                  </div>
+                </button>
+              </div>
+
+              {paymentMethod === 'CASH' && (
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2.5">
+                  <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={cashReceivedConfirmed}
+                      onChange={(e) => setCashReceivedConfirmed(e.target.checked)}
+                      className="mt-0.5 rounded border-slate-700 text-emerald-500 focus:ring-0"
+                    />
+                    <span>
+                      I confirm that <strong className="text-emerald-400 font-mono">{consultationFeeInfo?.formatted_amount || '₹500.00'}</strong> in Cash has been received from the patient at the reception counter.
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={cashReferenceNote}
+                    onChange={(e) => setCashReferenceNote(e.target.value)}
+                    placeholder="Optional cash receipt / counter voucher note"
+                    className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300"
+                  />
+                </div>
+              )}
+
+              {paymentMethod === 'ONLINE' && (
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300 font-semibold flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                      Razorpay Gateway Verification Status:
+                    </span>
+                    <Badge
+                      variant={
+                        onlinePaymentStatus === 'VERIFIED'
+                          ? 'success'
+                          : onlinePaymentStatus === 'FAILED'
+                            ? 'danger'
+                            : onlinePaymentStatus === 'ORDER_CREATED'
+                              ? 'warning'
+                              : 'neutral'
+                      }
+                    >
+                      {onlinePaymentStatus}
+                    </Badge>
+                  </div>
+                  {onlinePaymentError && <div className="text-xs text-rose-400">{onlinePaymentError}</div>}
+
+                  {onlinePaymentStatus === 'IDLE' && (
+                    <button
+                      type="button"
+                      disabled={gatewayProcessing}
+                      onClick={() => handleGenerateOnlineOrder('WALK_IN')}
+                      className="w-full py-2 px-3 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 font-bold text-xs transition"
+                    >
+                      {gatewayProcessing ? 'Creating Gateway Order...' : `1. Generate Online Payment Order (${consultationFeeInfo?.formatted_amount || '₹500.00'})`}
+                    </button>
+                  )}
+
+                  {onlinePaymentStatus === 'ORDER_CREATED' && onlineOrderData && (
+                    <div className="space-y-2">
+                      <div className="text-[11px] text-slate-400 font-mono">
+                        Gateway Order ID: <span className="text-cyan-300">{onlineOrderData.razorpay_order_id}</span> • Amount: <span className="text-emerald-400">{onlineOrderData.formatted_amount}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          disabled={gatewayProcessing}
+                          onClick={() => handleCompleteOnlinePayment(false)}
+                          className="flex-1 py-2 px-3 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition"
+                        >
+                          {gatewayProcessing ? 'Verifying Signature...' : '2. Complete & Verify Online Payment'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={gatewayProcessing}
+                          onClick={() => handleCompleteOnlinePayment(true)}
+                          className="py-2 px-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold hover:bg-rose-500/25 transition"
+                        >
+                          Simulate Gateway Failure
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {onlinePaymentStatus === 'FAILED' && (
+                    <div className="space-y-2">
+                      <div className="text-xs text-rose-400">
+                        Online payment failed or was declined. Token generation is blocked until payment succeeds.
+                      </div>
+                      <button
+                        type="button"
+                        disabled={gatewayProcessing}
+                        onClick={() => handleGenerateOnlineOrder('WALK_IN')}
+                        className="py-1.5 px-3 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold hover:bg-amber-500/30 transition"
+                      >
+                        Retry Online Payment
+                      </button>
+                    </div>
+                  )}
+
+                  {onlinePaymentStatus === 'VERIFIED' && onlineVerifiedData && (
+                    <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+                      <span>
+                        Verified Payment Ref: <strong className="font-mono">{onlineVerifiedData.razorpay_payment_id}</strong>
+                      </span>
+                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowWalkInModal(false)}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={
+                  bookingLoading ||
+                  (paymentMethod === 'CASH' && !cashReceivedConfirmed) ||
+                  (paymentMethod === 'ONLINE' && onlinePaymentStatus !== 'VERIFIED')
+                }
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold hover:brightness-110 disabled:opacity-50 transition"
+              >
+                {bookingLoading ? 'Generating Token & Receipt...' : `Confirm Payment (${consultationFeeInfo?.formatted_amount || '₹500.00'}) & Issue Token`}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* MODAL 3: Printable & Downloadable OPD Payment & Queue Token Receipt */}
       {tokenReceipt && (
         <Modal
           isOpen={showReceiptModal}
           onClose={() => setShowReceiptModal(false)}
-          title="OPD Queue Token Receipt"
-          size="sm"
+          title="Official OPD Payment & Queue Token Receipt"
+          size="md"
         >
           <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center space-y-4 font-mono">
-            <div className="text-xs uppercase tracking-widest text-slate-400">AURA Multi-Specialty Hospital</div>
+            <div>
+              <div className="text-sm font-extrabold uppercase tracking-wider text-white">
+                {tokenReceipt.hospital_name || 'AURA Multi-Specialty Hospital'}
+              </div>
+              <div className="text-[11px] text-slate-400">
+                {tokenReceipt.branch_name || 'Main Hospital Branch'} {tokenReceipt.hospital_address ? `• ${tokenReceipt.hospital_address}` : ''}
+              </div>
+            </div>
+
             <div className="py-3 border-y border-dashed border-slate-700">
+              <div className="text-[10px] uppercase tracking-widest text-slate-400">Queue Token Number</div>
               <div className="text-4xl font-extrabold text-cyan-400">{tokenReceipt.token_number}</div>
-              <div className="text-xs text-slate-400 mt-1">Outpatient Clinic Queue</div>
+              <div className="text-xs text-slate-400 mt-1">
+                Appointment Ref: <span className="text-white font-semibold">{tokenReceipt.appointment_number}</span>
+              </div>
             </div>
 
             <div className="text-xs text-left space-y-1.5 text-slate-300">
               <div className="flex justify-between">
-                <span className="text-slate-500">Patient:</span>
+                <span className="text-slate-500">Receipt Number:</span>
+                <span className="font-bold text-cyan-400">{tokenReceipt.receipt_number || '—'}</span>
+              </div>
+              {tokenReceipt.invoice_number && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Invoice Number:</span>
+                  <span className="text-slate-200">{tokenReceipt.invoice_number}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-slate-500">Patient Name:</span>
                 <span className="font-semibold text-white">{tokenReceipt.patient_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">MRN:</span>
+                <span className="text-slate-500">Patient MRN:</span>
                 <span>{tokenReceipt.patient_mrn}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Doctor:</span>
+                <span className="text-slate-500">Consulting Doctor:</span>
                 <span className="text-white">Dr. {tokenReceipt.doctor_name}</span>
               </div>
               <div className="flex justify-between">
@@ -1312,27 +2517,45 @@ export const AppointmentsPage: React.FC = () => {
                 <span>{tokenReceipt.department_name || tokenReceipt.specialization}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Time:</span>
+                <span className="text-slate-500">Date & Time:</span>
                 <span>{tokenReceipt.date} {tokenReceipt.check_in_time}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-slate-800">
-                <span className="text-slate-500">Consultation Fee:</span>
-                <span className="text-emerald-400 font-bold">₹{tokenReceipt.consultation_fee}</span>
+                <span className="text-slate-500">Consultation Fee Paid:</span>
+                <span className="text-emerald-400 font-bold text-sm">
+                  {tokenReceipt.formatted_amount || `₹${tokenReceipt.paid_amount || tokenReceipt.consultation_fee}`}
+                </span>
               </div>
-              {tokenReceipt.invoice_number && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Invoice:</span>
-                  <span className="text-cyan-400">{tokenReceipt.invoice_number}</span>
-                </div>
-              )}
+              <div className="flex justify-between">
+                <span className="text-slate-500">Payment Method:</span>
+                <span className="font-semibold text-white">{tokenReceipt.payment_method || 'CASH'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Transaction / Ref ID:</span>
+                <span className="text-cyan-300">{tokenReceipt.transaction_reference || '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Payment Status:</span>
+                <span className="text-emerald-400 font-bold">{tokenReceipt.payment_status || 'PAID'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Processed By (Receptionist):</span>
+                <span className="text-slate-200">{tokenReceipt.processed_by_name || 'Reception Desk'}</span>
+              </div>
             </div>
 
-            <div className="pt-2 flex justify-center gap-3 no-print">
+            <div className="pt-3 flex flex-wrap justify-center gap-2.5 no-print">
               <button
                 onClick={() => window.print()}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition"
               >
-                <Printer className="w-4 h-4" /> Print Token Slip
+                <Printer className="w-4 h-4" /> Print Receipt
+              </button>
+              <button
+                onClick={() => handleDownloadReceipt(tokenReceipt)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/30 transition"
+              >
+                <Download className="w-4 h-4" /> Download Receipt
               </button>
               <button
                 onClick={() => setShowReceiptModal(false)}
@@ -1587,13 +2810,13 @@ export const AppointmentsPage: React.FC = () => {
                               {(encounterData?.medicines && encounterData.medicines.length > 0
                                 ? encounterData.medicines
                                 : [
-                                    { id: 'fb3ef1cc-4d06-4f95-a9f5-6aaef3c50aa5', brand_name: 'Augmentin Duo / Amoxycillin', generic_name: 'Amoxicillin Trihydrate', strength: '500mg' },
-                                    { id: '644061a7-7d9f-480e-87be-a828852ee472', brand_name: 'Atorva 20', generic_name: 'Atorvastatin Calcium', strength: '20mg' },
-                                    { id: 'fe0a1f1b-d43c-4b31-919b-49da25beba11', brand_name: 'Monocef 1g', generic_name: 'Ceftriaxone Sodium Injection', strength: '1g Vial' },
-                                    { id: '6082f368-ed54-4181-9470-25535950820a', brand_name: 'Glycomet 500', generic_name: 'Metformin Hydrochloride', strength: '500mg' },
-                                    { id: '471b13da-2842-489e-8001-577def17ec4d', brand_name: 'Dolo 650', generic_name: 'Paracetamol', strength: '650mg' },
-                                    { id: '95fffc76-f447-467f-ab46-dbc55fcd3f7d', brand_name: 'Pan 40', generic_name: 'Pantoprazole Sodium', strength: '40mg' },
-                                  ]
+                                  { id: 'fb3ef1cc-4d06-4f95-a9f5-6aaef3c50aa5', brand_name: 'Augmentin Duo / Amoxycillin', generic_name: 'Amoxicillin Trihydrate', strength: '500mg' },
+                                  { id: '644061a7-7d9f-480e-87be-a828852ee472', brand_name: 'Atorva 20', generic_name: 'Atorvastatin Calcium', strength: '20mg' },
+                                  { id: 'fe0a1f1b-d43c-4b31-919b-49da25beba11', brand_name: 'Monocef 1g', generic_name: 'Ceftriaxone Sodium Injection', strength: '1g Vial' },
+                                  { id: '6082f368-ed54-4181-9470-25535950820a', brand_name: 'Glycomet 500', generic_name: 'Metformin Hydrochloride', strength: '500mg' },
+                                  { id: '471b13da-2842-489e-8001-577def17ec4d', brand_name: 'Dolo 650', generic_name: 'Paracetamol', strength: '650mg' },
+                                  { id: '95fffc76-f447-467f-ab46-dbc55fcd3f7d', brand_name: 'Pan 40', generic_name: 'Pantoprazole Sodium', strength: '40mg' },
+                                ]
                               ).map((m: any) => (
                                 <option key={m.id} value={m.id}>
                                   {m.brand_name} ({m.generic_name} • {m.strength})
@@ -1795,11 +3018,10 @@ export const AppointmentsPage: React.FC = () => {
                             setSelectedLabTestIds([...selectedLabTestIds, test.id]);
                           }
                         }}
-                        className={`p-2 rounded-xl text-left text-xs transition border flex items-center justify-between ${
-                          isSelected
+                        className={`p-2 rounded-xl text-left text-xs transition border flex items-center justify-between ${isSelected
                             ? 'bg-purple-500/20 border-purple-500 text-purple-300 font-semibold'
                             : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                        }`}
+                          }`}
                       >
                         <div>
                           <div className="truncate">{test.name}</div>
@@ -1812,22 +3034,16 @@ export const AppointmentsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Follow-up Scheduling Section */}
+              {/* Follow-up Recommendation Section */}
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-white flex items-center gap-1.5">
                     <CalendarCheck className="w-4 h-4 text-emerald-400" />
-                    Recommended Follow-up Consultation
+                    Recommended Follow-up Consultation (Clinical Advice)
                   </div>
-                  <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={bookFollowUp}
-                      onChange={(e) => setBookFollowUp(e.target.checked)}
-                      className="rounded bg-slate-900 border-slate-800 text-cyan-500 focus:ring-0"
-                    />
-                    <span>Automatically schedule follow-up slot</span>
-                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Reception desk will collect payment & book follow-up token
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1864,24 +3080,152 @@ export const AppointmentsPage: React.FC = () => {
               </div>
 
               {/* Submit Buttons */}
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setShowConsultModal(false)}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+                  onClick={() => {
+                    setCancelModalItem(activeConsultAppointment);
+                    setCancelReason('Consultation cancelled by doctor');
+                  }}
+                  className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition flex items-center justify-center gap-1.5"
                 >
-                  Save as Draft
+                  <Ban className="w-3.5 h-3.5" />
+                  Cancel Consultation
                 </button>
-                <button
-                  type="submit"
-                  disabled={finalizingConsult}
-                  className="px-5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 text-slate-950 hover:brightness-110 shadow-lg shadow-cyan-500/30 transition disabled:opacity-50"
-                >
-                  {finalizingConsult ? 'Finalizing Clinical Record...' : 'Complete Encounter & Sign Rx'}
-                </button>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowConsultModal(false)}
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+                  >
+                    Save as Draft
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={finalizingConsult}
+                    className="px-5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 text-slate-950 hover:brightness-110 shadow-lg shadow-cyan-500/30 transition disabled:opacity-50"
+                  >
+                    {finalizingConsult ? 'Finalizing Clinical Record...' : 'Complete Encounter & Sign Rx'}
+                  </button>
+                </div>
               </div>
             </form>
           )}
+        </Modal>
+      )}
+
+      {/* MODAL 5: Cancel Appointment Confirmation Modal */}
+      {cancelModalItem && (
+        <Modal
+          isOpen={!!cancelModalItem}
+          onClose={() => setCancelModalItem(null)}
+          title={`Cancel Appointment: ${cancelModalItem.patient_name}`}
+        >
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-rose-400">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Confirm Appointment Cancellation</span>
+              </div>
+              <p className="text-slate-300">
+                You are about to cancel the consultation for <strong className="text-white">{cancelModalItem.patient_name}</strong> (MRN: {cancelModalItem.patient_mrn}, Token: #{String(cancelModalItem.token_number || cancelModalItem.appointment_number).replace(/^(token\s*#*|#)+/i, '').trim()}).
+              </p>
+              <p className="text-slate-400 text-[11px]">
+                Current Status: <span className="font-mono text-cyan-400 font-semibold">{cancelModalItem.status}</span>. Once cancelled, this consultation will be removed from the active queue and marked as Cancelled in both staff records and the patient portal.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Reason for Cancellation <span className="text-rose-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g. Cancelled by doctor, Patient unavailable, Patient requested reschedule"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-rose-500/50"
+              />
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {[
+                  'Consultation cancelled by doctor',
+                  'Patient requested cancellation',
+                  'Patient did not show up',
+                  'Emergency case priority',
+                  'Duplicate token issued',
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setCancelReason(preset)}
+                    className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition"
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={() => setCancelModalItem(null)}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+              >
+                Keep Appointment
+              </button>
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={async () => {
+                  setCancelling(true);
+                  try {
+                    await handleQueueAction(cancelModalItem.id, 'CANCEL', { reason: cancelReason || 'Cancelled by doctor' });
+                    if (activeConsultAppointment?.id === cancelModalItem.id) {
+                      setShowConsultModal(false);
+                      setActiveConsultAppointment(null);
+                    }
+                    setCancelModalItem(null);
+                  } catch (err: any) {
+                    setPageError(parseApiError(err).message);
+                  } finally {
+                    setCancelling(false);
+                  }
+                }}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-rose-600/30"
+              >
+                {cancelling ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <Ban className="w-3.5 h-3.5" />
+                    Confirm Cancellation
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Interactive Lounge TV Modal for Receptionist */}
+      {showLoungeTVModal && (
+        <Modal
+          isOpen={showLoungeTVModal}
+          onClose={() => setShowLoungeTVModal(false)}
+          title="Hospital Outpatient Waiting Lounge TV • Interactive Doctor Queues"
+          size="full"
+        >
+          <div className="max-h-[85vh] overflow-y-auto custom-scrollbar -m-4">
+            <LoungeTVPage
+              isStaffView={true}
+              onClose={() => setShowLoungeTVModal(false)}
+            />
+          </div>
         </Modal>
       )}
     </div>

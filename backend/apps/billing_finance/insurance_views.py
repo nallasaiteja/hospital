@@ -377,6 +377,30 @@ class ClaimSettlementViewSet(viewsets.ModelViewSet):
                 claim.status = ClaimStatus.PARTIALLY_SETTLED
             claim.save()
 
+            # Financial integration: Reflect settlement on invoice and General Ledger
+            if claim.invoice:
+                claim.invoice.paid_amount += settlement.amount_settled
+                claim.invoice.recalculate_totals()
+
+            try:
+                from .general_ledger_service import GeneralLedgerService
+                GeneralLedgerService.auto_post_module_event(
+                    event_type='TPA_CLAIM_SETTLEMENT',
+                    payload={
+                        'source_id': str(settlement.id),
+                        'source_module': 'INSURANCE_SETTLEMENT',
+                        'amount': settlement.amount_settled,
+                        'reference': settlement.settlement_number,
+                        'bank_reference': getattr(settlement, 'bank_reference', ''),
+                        'narration': f"TPA Claim Settlement for {claim.claim_number} ({claim.provider.name if claim.provider else 'Insurer'})",
+                        'branch_id': claim.invoice.branch_id if (claim.invoice and claim.invoice.branch) else None,
+                        'date': settlement.settlement_date or timezone.localdate(),
+                    },
+                    staff_profile=staff
+                )
+            except Exception:
+                pass
+
 
 class CorporateInvoiceViewSet(viewsets.ModelViewSet):
     """

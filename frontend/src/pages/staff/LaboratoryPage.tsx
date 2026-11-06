@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { downloadOrPrintReport } from '../../utils/printReport';
 import {
   FlaskConical,
   AlertTriangle,
@@ -12,6 +13,7 @@ import {
   Cpu,
   ExternalLink,
   Printer,
+  Download,
   Send,
   RefreshCw,
   XCircle,
@@ -33,9 +35,12 @@ import { Select } from '../../components/common/Select';
 import { Input } from '../../components/common/Input';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const LaboratoryPage: React.FC = () => {
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<
     'orders' | 'samples' | 'results' | 'critical' | 'catalogue' | 'outsourced' | 'equipment' | 'financials'
   >('orders');
@@ -516,21 +521,25 @@ export const LaboratoryPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowSimulateModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 rounded-lg text-sm font-medium transition"
-            title="Launch Automated Analyzer Ingestion Simulator"
-          >
-            <Cpu className="w-4 h-4" />
-            Equipment Simulator
-          </button>
-          <button
-            onClick={() => setShowOrderModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-teal-900/30"
-          >
-            <Plus className="w-4 h-4" />
-            New Investigation
-          </button>
+          {!isReadOnlyRole && (
+            <>
+              <button
+                onClick={() => setShowSimulateModal(true)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 rounded-lg text-sm font-medium transition"
+                title="Launch Automated Analyzer Ingestion Simulator"
+              >
+                <Cpu className="w-4 h-4" />
+                Equipment Simulator
+              </button>
+              <button
+                onClick={() => setShowOrderModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-teal-900/30"
+              >
+                <Plus className="w-4 h-4" />
+                New Investigation
+              </button>
+            </>
+          )}
           <button
             onClick={loadAllData}
             className="p-2 border border-slate-700 hover:bg-slate-800 rounded-lg text-slate-300 transition"
@@ -788,10 +797,10 @@ export const LaboratoryPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4">
                         <span className="font-semibold text-slate-200">
-                          {ord.patient?.user_profile?.full_name || 'Direct Patient'}
+                          {ord.patient_name || ord.patient?.user_profile?.full_name || 'Direct Patient'}
                         </span>
                         <span className="block text-[10px] text-slate-400">
-                          {ord.patient?.medical_record_number}
+                          {ord.patient_mrn || ord.patient?.medical_record_number}
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -832,35 +841,47 @@ export const LaboratoryPage: React.FC = () => {
                         {(ord.items || []).map((it: any) => it.test?.name).join(', ')}
                       </td>
                       <td className="py-3 px-4 text-right space-x-1 whitespace-nowrap">
-                        {ord.status === 'ORDERED' && (
-                          <button
-                            onClick={() => {
-                              setSelectedOrder(ord);
-                              setShowCollectModal(true);
-                            }}
-                            className="px-2 py-1 bg-teal-600 hover:bg-teal-500 text-white rounded text-[11px] font-medium transition"
-                          >
-                            Collect Sample
-                          </button>
-                        )}
-                        {ord.status === 'IN_PROCESS' && (
-                          <button
-                            onClick={() => {
-                              setSelectedOrder(ord);
-                              setShowApprovalModal(true);
-                            }}
-                            className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] font-medium transition"
-                          >
-                            Approve
-                          </button>
-                        )}
-                        {ord.status === 'APPROVED' && (
-                          <button
-                            onClick={() => handleReleaseReport(ord.id)}
-                            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-medium transition"
-                          >
-                            Digital Release
-                          </button>
+                        {!isReadOnlyRole && (
+                          <>
+                            {ord.status === 'ORDERED' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(ord);
+                                  setShowCollectModal(true);
+                                }}
+                                className="px-2 py-1 bg-teal-600 hover:bg-teal-500 text-white rounded text-[11px] font-medium transition"
+                              >
+                                Collect Sample
+                              </button>
+                            )}
+                            {ord.status === 'SAMPLE_COLLECTED' && (
+                              <button
+                                onClick={() => setActiveTab('results')}
+                                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[11px] font-medium transition shadow-sm"
+                              >
+                                Enter Results
+                              </button>
+                            )}
+                            {['IN_PROCESS', 'AWAITING_APPROVAL', 'ENTERED', 'VALIDATED'].includes(ord.status) && (
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(ord);
+                                  setShowApprovalModal(true);
+                                }}
+                                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] font-medium transition shadow-sm"
+                              >
+                                Approve
+                              </button>
+                            )}
+                            {ord.status === 'APPROVED' && (
+                              <button
+                                onClick={() => handleReleaseReport(ord.id)}
+                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-medium transition"
+                              >
+                                Digital Release
+                              </button>
+                            )}
+                          </>
                         )}
                         {ord.status === 'RELEASED' && (
                           <button
@@ -916,7 +937,7 @@ export const LaboratoryPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4">
                         <span className="font-semibold text-slate-200">
-                          {ord.patient?.user_profile?.full_name}
+                          {ord.patient_name || ord.patient?.user_profile?.full_name || 'Direct Patient'}
                         </span>
                         <span className="block text-[10px] text-slate-400">
                           {ord.patient?.gender}, {ord.patient?.age || 'Adult'}
@@ -952,31 +973,35 @@ export const LaboratoryPage: React.FC = () => {
                         <Badge variant="neutral">{itm.status}</Badge>
                       </td>
                       <td className="py-3 px-4 text-right space-x-1">
-                        {itm.status !== 'RELEASED' && (
-                          <button
-                            onClick={() => {
-                              setSelectedItem(itm);
-                              setSelectedOrder(ord);
-                              setResultVal(itm.result_value || '');
-                              setShowResultModal(true);
-                            }}
-                            className="px-2.5 py-1 bg-teal-600 hover:bg-teal-500 text-white rounded text-[11px] font-medium transition"
-                          >
-                            Enter Result
-                          </button>
-                        )}
-                        {itm.status === 'RELEASED' && (
-                          <button
-                            onClick={() => {
-                              setSelectedOrder(ord);
-                              setSelectedItem(itm);
-                              setAmendedValue(itm.result_value);
-                              setShowAmendModal(true);
-                            }}
-                            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[11px] font-medium transition"
-                          >
-                            Amend Result
-                          </button>
+                        {!isReadOnlyRole && (
+                          <>
+                            {itm.status !== 'RELEASED' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedItem(itm);
+                                  setSelectedOrder(ord);
+                                  setResultVal(itm.result_value || '');
+                                  setShowResultModal(true);
+                                }}
+                                className="px-2.5 py-1 bg-teal-600 hover:bg-teal-500 text-white rounded text-[11px] font-medium transition"
+                              >
+                                Enter Result
+                              </button>
+                            )}
+                            {itm.status === 'RELEASED' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(ord);
+                                  setSelectedItem(itm);
+                                  setAmendedValue(itm.result_value);
+                                  setShowAmendModal(true);
+                                }}
+                                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[11px] font-medium transition"
+                              >
+                                Amend Result
+                              </button>
+                            )}
+                          </>
                         )}
                       </td>
                     </tr>
@@ -1080,12 +1105,14 @@ export const LaboratoryPage: React.FC = () => {
             <p className="text-xs text-slate-400">
               Database-backed investigation catalogue. Standard rates are captured at order time, ensuring historical financial invariance.
             </p>
-            <button
-              onClick={() => setShowCatalogueModal(true)}
-              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-medium transition"
-            >
-              + Add Investigation
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowCatalogueModal(true)}
+                className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-medium transition"
+              >
+                + Add Investigation
+              </button>
+            )}
           </div>
 
           <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto">
@@ -1170,7 +1197,7 @@ export const LaboratoryPage: React.FC = () => {
                       <td className="py-3 px-4 font-semibold text-slate-200">
                         {ord.external_provider?.name || 'Metropolis / SRL Diagnostics'}
                       </td>
-                      <td className="py-3 px-4">{ord.patient?.user_profile?.full_name}</td>
+                      <td className="py-3 px-4">{ord.patient_name || ord.patient?.user_profile?.full_name || 'Direct Patient'}</td>
                       <td className="py-3 px-4 font-mono text-slate-300">
                         {ord.external_reference_number || (
                           <span className="text-slate-500 italic">Not Dispatched</span>
@@ -1188,27 +1215,31 @@ export const LaboratoryPage: React.FC = () => {
                         <Badge variant="warning">{ord.status}</Badge>
                       </td>
                       <td className="py-3 px-4 text-right space-x-1">
-                        {!ord.external_dispatch_date && (
-                          <button
-                            onClick={() => {
-                              setSelectedOrder(ord);
-                              setShowDispatchModal(true);
-                            }}
-                            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[11px] font-medium transition"
-                          >
-                            Dispatch Sample
-                          </button>
-                        )}
-                        {ord.external_dispatch_date && ord.status !== 'RELEASED' && (
-                          <button
-                            onClick={() => {
-                              setSelectedOrder(ord);
-                              setShowReceiveModal(true);
-                            }}
-                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-medium transition"
-                          >
-                            Receive Results
-                          </button>
+                        {!isReadOnlyRole && (
+                          <>
+                            {!ord.external_dispatch_date && (
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(ord);
+                                  setShowDispatchModal(true);
+                                }}
+                                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[11px] font-medium transition"
+                              >
+                                Dispatch Sample
+                              </button>
+                            )}
+                            {ord.external_dispatch_date && ord.status !== 'RELEASED' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(ord);
+                                  setShowReceiveModal(true);
+                                }}
+                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-medium transition"
+                              >
+                                Receive Results
+                              </button>
+                            )}
+                          </>
                         )}
                       </td>
                     </tr>
@@ -1227,13 +1258,15 @@ export const LaboratoryPage: React.FC = () => {
             <p className="text-xs text-slate-400">
               Laboratory equipment connectivity: ASTM / HL7 serial-over-IP and HTTP REST ingestion endpoints with automated result telemetry.
             </p>
-            <button
-              onClick={() => setShowSimulateModal(true)}
-              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
-            >
-              <Cpu className="w-4 h-4" />
-              Simulate Ingestion
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowSimulateModal(true)}
+                className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
+              >
+                <Cpu className="w-4 h-4" />
+                Simulate Ingestion
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2139,11 +2172,11 @@ export const LaboratoryPage: React.FC = () => {
             )}
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => window.print()}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-medium flex items-center gap-1.5 transition"
+                onClick={() => downloadOrPrintReport(reportDetail)}
+                className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded text-xs font-semibold flex items-center gap-1.5 transition shadow"
               >
-                <Printer className="w-4 h-4" />
-                Print Verified Report
+                <Download className="w-4 h-4" />
+                Download / Print Official PDF
               </button>
               <button
                 onClick={() => setShowReportDetailModal(false)}

@@ -11,7 +11,12 @@ from .views import (
     ICUObservationRecordViewSet, AmbulanceViewSet, AmbulanceDispatchViewSet,
     BloodBankStockViewSet, HousekeepingTaskViewSet, BiomedicalWasteRecordViewSet,
     HRDashboardView, AssetDashboardView, OperationsDashboardView,
-    HospitalSettingViewSet, OperationsAnalyticsOverview, AuditLogListView
+    BranchOperationsDashboardView,
+    HospitalSettingViewSet, OperationsAnalyticsOverview, AuditLogListView,
+    JobVacancyViewSet, JobApplicationViewSet, StaffRequirementRequestViewSet,
+    PerformanceAppraisalViewSet, TrainingProgramViewSet, EmployeeTrainingEnrollmentViewSet,
+    EmployeeGrievanceViewSet, DepartmentOperationalIssueViewSet,
+    ComprehensiveHRDashboardView, DepartmentHeadDashboardView
 )
 
 app_name = 'operations_hr'
@@ -53,13 +58,26 @@ router.register(r'biomedical-waste', BiomedicalWasteRecordViewSet, basename='bio
 # Settings
 router.register(r'settings', HospitalSettingViewSet, basename='hospital-setting')
 
+# Recruitment, Appraisals, Grievances, Workforce Requests (Phase 2-6)
+router.register(r'vacancies', JobVacancyViewSet, basename='vacancies')
+router.register(r'applications', JobApplicationViewSet, basename='applications')
+router.register(r'staff-requirements', StaffRequirementRequestViewSet, basename='staff-requirements')
+router.register(r'appraisals', PerformanceAppraisalViewSet, basename='appraisals')
+router.register(r'training-programs', TrainingProgramViewSet, basename='training-programs')
+router.register(r'training-enrollments', EmployeeTrainingEnrollmentViewSet, basename='training-enrollments')
+router.register(r'grievances', EmployeeGrievanceViewSet, basename='grievances')
+router.register(r'operational-issues', DepartmentOperationalIssueViewSet, basename='operational-issues')
+
 urlpatterns = [
     path('', include(router.urls)),
     
     # Real-Time Dashboards
     path('dashboards/hr/', HRDashboardView.as_view(), name='dashboard-hr'),
+    path('dashboards/comprehensive-hr/', ComprehensiveHRDashboardView.as_view(), name='dashboard-comprehensive-hr'),
+    path('dashboards/department-head/', DepartmentHeadDashboardView.as_view(), name='dashboard-department-head'),
     path('dashboards/assets/', AssetDashboardView.as_view(), name='dashboard-assets'),
     path('dashboards/operations/', OperationsDashboardView.as_view(), name='dashboard-operations'),
+    path('dashboards/branch-operations/', BranchOperationsDashboardView.as_view(), name='dashboard-branch-operations'),
 
     # Legacy & Specific routes
     path('leaves/<uuid:pk>/approve/', ApproveLeaveView.as_view(), name='leave-approve'),

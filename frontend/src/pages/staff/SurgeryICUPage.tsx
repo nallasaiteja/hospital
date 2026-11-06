@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { operationsHrService, authService } from '../../services/api';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
@@ -32,6 +33,8 @@ import { parseApiError } from '../../utils/errorHandler';
 
 export const SurgeryICUPage: React.FC = () => {
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'OT' | 'ICU' | 'AMBULANCE' | 'BLOOD_BANK' | 'HOUSEKEEPING' | 'WASTE'>('DASHBOARD');
   
   // Data States
@@ -279,24 +282,28 @@ export const SurgeryICUPage: React.FC = () => {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setIsOTModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <Scissors className="w-4 h-4" /> Book OT Surgery
-          </button>
-          <button
-            onClick={() => setIsICUModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-sm font-medium transition-colors"
-          >
-            <HeartPulse className="w-4 h-4" /> Record ICU Vitals
-          </button>
-          <button
-            onClick={() => setIsDispatchModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-          >
-            <Truck className="w-4 h-4" /> Emergency Dispatch
-          </button>
+          {!isReadOnlyRole && (
+            <>
+              <button
+                onClick={() => setIsOTModalOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <Scissors className="w-4 h-4" /> Book OT Surgery
+              </button>
+              <button
+                onClick={() => setIsICUModalOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                <HeartPulse className="w-4 h-4" /> Record ICU Vitals
+              </button>
+              <button
+                onClick={() => setIsDispatchModalOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              >
+                <Truck className="w-4 h-4" /> Emergency Dispatch
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -592,7 +599,7 @@ export const SurgeryICUPage: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="p-3 text-right">
-                      {b.status === 'AVAILABLE' && (
+                      {!isReadOnlyRole && b.status === 'AVAILABLE' && (
                         <button
                           onClick={() => {
                             setSelectedBloodBag(b);
@@ -643,29 +650,33 @@ export const SurgeryICUPage: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="p-3 text-right space-x-2">
-                      {hk.status === 'PENDING' && (
-                        <button
-                          onClick={() => handleHousekeepingAction(hk.id, 'start')}
-                          className="px-2 py-1 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded"
-                        >
-                          Start Cleaning
-                        </button>
-                      )}
-                      {hk.status === 'IN_PROGRESS' && (
-                        <button
-                          onClick={() => handleHousekeepingAction(hk.id, 'complete')}
-                          className="px-2 py-1 text-xs bg-amber-600 hover:bg-amber-500 text-white rounded"
-                        >
-                          Complete
-                        </button>
-                      )}
-                      {hk.status === 'COMPLETED' && (
-                        <button
-                          onClick={() => handleHousekeepingAction(hk.id, 'inspect')}
-                          className="px-2 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium"
-                        >
-                          Supervisor Verify
-                        </button>
+                      {!isReadOnlyRole && (
+                        <>
+                          {hk.status === 'PENDING' && (
+                            <button
+                              onClick={() => handleHousekeepingAction(hk.id, 'start')}
+                              className="px-2 py-1 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded"
+                            >
+                              Start Cleaning
+                            </button>
+                          )}
+                          {hk.status === 'IN_PROGRESS' && (
+                            <button
+                              onClick={() => handleHousekeepingAction(hk.id, 'complete')}
+                              className="px-2 py-1 text-xs bg-amber-600 hover:bg-amber-500 text-white rounded"
+                            >
+                              Complete
+                            </button>
+                          )}
+                          {hk.status === 'COMPLETED' && (
+                            <button
+                              onClick={() => handleHousekeepingAction(hk.id, 'inspect')}
+                              className="px-2 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium"
+                            >
+                              Supervisor Verify
+                            </button>
+                          )}
+                        </>
                       )}
                     </td>
                   </tr>

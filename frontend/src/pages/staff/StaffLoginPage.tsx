@@ -93,11 +93,46 @@ export const StaffLoginPage: React.FC = () => {
             return;
           }
 
-          navigate('/staff/dashboard');
+          if (profile.role === 'DOCTOR') {
+            navigate('/staff/doctor-workspace');
+          } else if (profile.role === 'LAB_TECHNICIAN') {
+            navigate('/staff/laboratory');
+          } else if (profile.role === 'PHARMACIST') {
+            navigate('/staff/pharmacy');
+          } else if (profile.role === 'FINANCE_MANAGER' || profile.role === 'ACCOUNTANT') {
+            navigate('/staff/profit-loss');
+          } else if (profile.role === 'INSURANCE_COORDINATOR') {
+            navigate('/staff/insurance');
+          } else if (profile.role === 'BILLING_EXECUTIVE' || profile.role === 'CASHIER') {
+            navigate('/staff/billing?tab=invoices');
+          } else if (profile.role === 'AUDITOR') {
+            navigate('/staff/settings-audit');
+          } else if (profile.role === 'HOSPITAL_ADMIN') {
+            navigate('/staff/reports?tab=FINANCE');
+          } else if (profile.role === 'SUPER_ADMIN' || profile.role === 'BRANCH_MANAGER') {
+            navigate('/staff/branch-manager');
+          } else if (profile.role === 'DEPARTMENT_HEAD') {
+            navigate('/staff/department-head');
+          } else if (profile.role === 'HR_MANAGER') {
+            navigate('/staff/hr-management');
+          } else if (profile.role === 'INVENTORY_MANAGER' || profile.role === 'PROCUREMENT_OFFICER') {
+            navigate('/staff/inventory');
+          } else {
+            navigate('/staff/dashboard');
+          }
         } catch (apiErr: any) {
           // If server error or offline mode, allow local development fallback
           console.warn('Backend staff role check could not be completed:', apiErr);
-          navigate('/staff/dashboard');
+          const lowerEmail = email.toLowerCase();
+          if (lowerEmail.includes('doctor') || lowerEmail.includes('surgeon') || lowerEmail.includes('anesthesia')) {
+            navigate('/staff/doctor-workspace');
+          } else if (lowerEmail.includes('inventory') || lowerEmail.includes('procurement')) {
+            navigate('/staff/inventory');
+          } else if (lowerEmail.includes('insurance')) {
+            navigate('/staff/insurance');
+          } else {
+            navigate('/staff/dashboard');
+          }
         }
       }
     } catch (err: any) {
@@ -139,16 +174,16 @@ export const StaffLoginPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Quick Demo Accounts Selector (All 21 Staff Roles) */}
+          {/* Quick Demo Accounts Selector (All Staff Roles & Doctors) */}
           <div className="mb-6 p-4 rounded-xl bg-slate-950/90 border border-cyan-900/50 shadow-inner">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-3">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                 <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider">
-                  All 21 Demo Staff Roles
+                  Verified Demo Staff Accounts
                 </span>
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-950 border border-cyan-800 text-cyan-400">
-                  21 Roles
+                  19 Accounts
                 </span>
               </div>
               <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
@@ -160,22 +195,21 @@ export const StaffLoginPage: React.FC = () => {
             {/* Category Filter Tabs */}
             <div className="flex flex-wrap gap-1 mb-2.5 pb-2 border-b border-slate-800/80 text-[11px]">
               {[
-                { key: 'ALL', label: 'All Roles (21)' },
-                { key: 'EXECUTIVE', label: 'Executive (4)' },
-                { key: 'CLINICAL', label: 'Clinical (3)' },
+                { key: 'ALL', label: 'All Roles (19)' },
+                { key: 'CLINICAL', label: 'Doctors & Nursing (6)' },
+                { key: 'EXECUTIVE', label: 'Executive (3)' },
                 { key: 'DIAGNOSTICS', label: 'Diagnostics & Pharm (4)' },
-                { key: 'FINANCE', label: 'Finance & Billing (7)' },
+                { key: 'FINANCE', label: 'Finance & Billing (4)' },
                 { key: 'OPERATIONS', label: 'Operations & HR (3)' },
               ].map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setSelectedCategory(tab.key)}
-                  className={`px-2 py-0.5 rounded-md font-medium transition ${
-                    selectedCategory === tab.key
+                  className={`px-2 py-0.5 rounded-md font-medium transition ${selectedCategory === tab.key
                       ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm font-semibold'
                       : 'bg-slate-900/40 text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -185,29 +219,27 @@ export const StaffLoginPage: React.FC = () => {
             {/* Accounts Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
               {[
-                { label: '👑 Super Admin', role: 'Chief Administrator', category: 'EXECUTIVE', email: 'admin.demo@aurahospital.com' },
-                { label: '🏛️ Hospital Admin', role: 'Hospital COO', category: 'EXECUTIVE', email: 'hospital.admin@aurahospital.com' },
-                { label: '🏢 Branch Manager', role: 'Branch Operations', category: 'EXECUTIVE', email: 'branch.manager@aurahospital.com' },
-                { label: '🩺 Medical Director', role: 'Chief Medical Head', category: 'EXECUTIVE', email: 'medical.director@aurahospital.com' },
-                { label: '👨‍⚕️ Doctor', role: 'Internal Medicine', category: 'CLINICAL', email: 'doctor.demo@aurahospital.com' },
-                { label: '💉 Nurse', role: 'Head Nursing Officer', category: 'CLINICAL', email: 'nurse.demo@aurahospital.com' },
-                { label: '🎖️ Dept Head', role: 'Clinical Department HOD', category: 'CLINICAL', email: 'dept.head@aurahospital.com' },
-                { label: '🔬 Lab Tech', role: 'Pathology & Lab', category: 'DIAGNOSTICS', email: 'lab.demo@aurahospital.com' },
-                { label: '🩻 Radiology Tech', role: 'Imaging & Scans', category: 'DIAGNOSTICS', email: 'radiology.demo@aurahospital.com' },
-                { label: '💊 Pharmacist', role: 'Formulary & Dispensary', category: 'DIAGNOSTICS', email: 'pharmacist.demo@aurahospital.com' },
-                { label: '📦 Inventory Mgr', role: 'Materials & Stock', category: 'DIAGNOSTICS', email: 'inventory.demo@aurahospital.com' },
-                { label: '💼 Finance Mgr', role: 'Finance Head', category: 'FINANCE', email: 'finance.manager@aurahospital.com' },
-                { label: '💳 Billing Exec', role: 'Patient Billing & Invoices', category: 'FINANCE', email: 'billing.demo@aurahospital.com' },
-                { label: '💵 Cashier', role: 'Cash Counter Desk', category: 'FINANCE', email: 'cashier.demo@aurahospital.com' },
-                { label: '📊 Accountant', role: 'General Ledger & Audit', category: 'FINANCE', email: 'accountant.demo@aurahospital.com' },
-                { label: '📈 Investment Mgr', role: 'Treasury & Yields', category: 'FINANCE', email: 'investment.demo@aurahospital.com' },
-                { label: '📑 Insurance Coord', role: 'TPA & Cashless Claims', category: 'FINANCE', email: 'insurance.demo@aurahospital.com' },
-                { label: '🔍 Auditor', role: 'Compliance & Audit', category: 'FINANCE', email: 'auditor.demo@aurahospital.com' },
-                { label: '📋 Receptionist', role: 'Front Desk Lead', category: 'OPERATIONS', email: 'receptionist.demo@aurahospital.com' },
-                { label: '🛍️ Procurement', role: 'Vendor & Purchasing', category: 'OPERATIONS', email: 'procurement.demo@aurahospital.com' },
-                { label: '👥 HR Manager', role: 'Human Resources & Roster', category: 'OPERATIONS', email: 'hr.manager@aurahospital.com' },
+                { label: '🏛️ Hospital Admin', role: 'Hospital Network Admin', category: ['EXECUTIVE'], email: 'hospital.admin@aurahospital.com' },
+                { label: '🏢 Branch Manager', role: 'Branch Operations', category: ['EXECUTIVE'], email: 'branch.manager@aurahospital.com' },
+                { label: '🩺 Dr. Bhaskar (Medical Dir)', role: 'General & Lap Surgery', category: ['EXECUTIVE', 'CLINICAL'], email: 'medical.director@aurahospital.com' },
+                { label: '👨‍⚕️ Dr. Ananya (Physician)', role: 'Internal Medicine', category: ['CLINICAL'], email: 'doctor.demo@aurahospital.com' },
+                { label: '🫀 Dr. Alok (Lead Surgeon)', role: 'Chief Cardio Surgeon', category: ['CLINICAL'], email: 'surgeon.drsharma@hospital.com' },
+                { label: '💉 Dr. Priya (Anesthetist)', role: 'Critical Care & Anesthesia', category: ['CLINICAL'], email: 'anesthesia.drpriya@hospital.com' },
+                { label: '🎖️ Dr. Sanjay (Dept Head)', role: 'Interventional Cardiology', category: ['CLINICAL'], email: 'dept.head@aurahospital.com' },
+                { label: '👩‍⚕️ Nurse Mary', role: 'Head Nursing Officer', category: ['CLINICAL'], email: 'nurse.demo@aurahospital.com' },
+                { label: '🔬 Lab Tech', role: 'Pathology & Lab', category: ['DIAGNOSTICS'], email: 'lab.demo@aurahospital.com' },
+                { label: '🩻 Radiology Tech', role: 'Imaging & Scans', category: ['DIAGNOSTICS'], email: 'radiology.demo@aurahospital.com' },
+                { label: '💊 Pharmacist', role: 'Formulary & Dispensary', category: ['DIAGNOSTICS'], email: 'pharmacist.demo@aurahospital.com' },
+                { label: '📦 Inventory Mgr', role: 'Materials & Stock', category: ['DIAGNOSTICS'], email: 'inventory.demo@aurahospital.com' },
+                { label: '💼 Finance Mgr', role: 'Finance & Accounting Head', category: ['FINANCE'], email: 'finance.manager@aurahospital.com' },
+                { label: '💳 Billing & Cashier Exec', role: 'Patient Billing & Cash Desk', category: ['FINANCE'], email: 'billing.demo@aurahospital.com' },
+                { label: '📈 Investment Mgr', role: 'Treasury & Yields', category: ['FINANCE'], email: 'investment.demo@aurahospital.com' },
+                { label: '📑 Insurance Coord', role: 'TPA & Cashless Claims', category: ['FINANCE'], email: 'insurance.demo@aurahospital.com' },
+                { label: '📋 Receptionist', role: 'Front Desk Lead', category: ['OPERATIONS'], email: 'receptionist.demo@aurahospital.com' },
+                { label: '🛍️ Procurement', role: 'Vendor & Purchasing', category: ['OPERATIONS'], email: 'procurement.demo@aurahospital.com' },
+                { label: '👥 HR Manager', role: 'Human Resources & Roster', category: ['OPERATIONS'], email: 'hr.manager@aurahospital.com' },
               ]
-                .filter((acc) => selectedCategory === 'ALL' || acc.category === selectedCategory)
+                .filter((acc) => selectedCategory === 'ALL' || acc.category.includes(selectedCategory))
                 .map((acc) => (
                   <button
                     key={acc.email}
@@ -216,11 +248,10 @@ export const StaffLoginPage: React.FC = () => {
                       setEmail(acc.email);
                       setPassword('HospitalDemo@123');
                     }}
-                    className={`px-2 py-1.5 rounded-lg text-left border transition flex items-center justify-between ${
-                      email === acc.email
+                    className={`px-2 py-1.5 rounded-lg text-left border transition flex items-center justify-between ${email === acc.email
                         ? 'bg-cyan-500/20 border-cyan-500 text-cyan-200 shadow-sm'
                         : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
-                    }`}
+                      }`}
                     title={`${acc.label} (${acc.role}): ${acc.email}`}
                   >
                     <div className="truncate">

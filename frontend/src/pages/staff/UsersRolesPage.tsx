@@ -43,35 +43,40 @@ import {
   Role,
   Permission
 } from '../../types';
+import { HR_ASSIGNABLE_ROLES } from '../../config/rbacMatrix';
 
-// The 21 exact roles from the PDF specification
+// The 22 exact roles from the Master RBAC Specification
 export const PDF_ROLES: { name: string; display_name: string; description: string; category: string }[] = [
   { name: 'SUPER_ADMIN', display_name: 'Super Administrator', description: 'Manage system-wide configuration, roles, permissions, branches, and security events.', category: 'Governance' },
-  { name: 'HOSPITAL_ADMIN', display_name: 'Hospital Administrator', description: 'Manage hospital operations, staff access within authorized scope, and hospital settings.', category: 'Governance' },
+  { name: 'BRANCH_MANAGER', display_name: 'Branch Manager', description: 'Read-only supervisory monitoring across all 9 branch operational domains and branch activity logs.', category: 'Branch Supervision' },
+  { name: 'HOSPITAL_ADMIN', display_name: 'Hospital Administrator', description: 'Read-only supervisory monitoring across assigned hospital branch operations and activity logs.', category: 'Branch Supervision' },
   { name: 'MEDICAL_DIRECTOR', display_name: 'Medical Director', description: 'Oversee authorized clinical operations, review clinical performance, and approve clinical protocols.', category: 'Clinical Leadership' },
   { name: 'DOCTOR', display_name: 'Doctor', description: 'Access assigned patient records, consultations, diagnoses, treatment plans, and prescriptions.', category: 'Clinical' },
   { name: 'NURSE', display_name: 'Nurse', description: 'Access assigned patient-care workflows, record authorized nursing observations, vitals, and care activities.', category: 'Clinical' },
   { name: 'RECEPTIONIST', display_name: 'Receptionist', description: 'Register patients, manage appointments, and handle front-desk operational tasks.', category: 'Front Desk' },
-  { name: 'BILLING_EXECUTIVE', display_name: 'Billing Executive', description: 'Prepare and manage authorized invoices, charges, billing adjustments, and cashier settlements.', category: 'Finance' },
+  { name: 'BILLING_EXECUTIVE', display_name: 'Billing & Cashier Executive', description: 'Unified billing and cash counter desk: patient invoicing, discharge billing, advance deposits, payment receipts, tariffs, and daily cash drawer shifts.', category: 'Revenue & Billing' },
   { name: 'LAB_TECHNICIAN', display_name: 'Laboratory Technician', description: 'Manage authorized laboratory orders, sample tracking, processing, and lab results entry.', category: 'Diagnostics' },
   { name: 'RADIOLOGY_TECHNICIAN', display_name: 'Radiology Technician', description: 'Manage authorized imaging workflows, technical records, and DICOM study attachments.', category: 'Diagnostics' },
   { name: 'PHARMACIST', display_name: 'Pharmacist', description: 'Manage permitted prescriptions, dispensing, batch expiry tracking, and pharmacy stock.', category: 'Pharmacy' },
   { name: 'INVENTORY_MANAGER', display_name: 'Inventory Manager', description: 'Manage hospital stock, batches, movements, and inventory adjustments and write-offs.', category: 'Supply Chain' },
   { name: 'PROCUREMENT_OFFICER', display_name: 'Procurement Officer', description: 'Prepare purchase requests, supplier records, and purchase orders with separated approval.', category: 'Supply Chain' },
-  { name: 'ACCOUNTANT', display_name: 'Accountant', description: 'Manage authorized accounting records, reconciliations, journal entries, and financial statements.', category: 'Finance' },
-  { name: 'FINANCE_MANAGER', display_name: 'Finance Manager', description: 'Review financial performance, enforce transaction limits, and manage multi-level approvals.', category: 'Finance' },
+  { name: 'FINANCE_MANAGER', display_name: 'Finance Manager', description: 'Complete financial management & accounting: General Ledger, journal vouchers, Chart of Accounts, bank reconciliation, P&L, budgeting, liabilities, and multi-level financial approvals.', category: 'Finance' },
   { name: 'INVESTMENT_MANAGER', display_name: 'Investment Manager', description: 'Manage authorized investment records, valuations, maturities, and investment reports.', category: 'Finance' },
-  { name: 'CASHIER', display_name: 'Cashier', description: 'Record authorized receipts, patient collections, and day-end cash desk reconciliation.', category: 'Finance' },
   { name: 'INSURANCE_COORDINATOR', display_name: 'Insurance Coordinator', description: 'Manage authorized insurance and corporate billing workflows, pre-auth, and claim documentation.', category: 'Finance' },
-  { name: 'HR_MANAGER', display_name: 'HR Manager', description: 'Manage authorized employee records, attendance, leaves, and staff performance workflows.', category: 'Human Resources' },
+  { name: 'HR_MANAGER', display_name: 'HR Manager', description: 'Onboard staff, assign approved operational roles, and manage employee records, attendance, leaves, and payroll preparation.', category: 'Human Resources' },
   { name: 'DEPARTMENT_HEAD', display_name: 'Department Head', description: 'Access and manage permitted departmental clinical and operational services and duty rosters.', category: 'Leadership' },
-  { name: 'AUDITOR', display_name: 'Auditor', description: 'Read-only access to authorized financial, clinical, and administrative audit trails and reports.', category: 'Compliance' },
   { name: 'PATIENT', display_name: 'Patient', description: 'Strictly restricted to own profile, medical records, appointments, prescriptions, and invoices.', category: 'Patient Portal' },
 ];
 
 export const UsersRolesPage: React.FC = () => {
   const { currentBranch, branches } = useBranch();
-  const { userProfile } = useAuth();
+  const { userProfile, role } = useAuth();
+  const isSuperAdmin = role === 'SUPER_ADMIN';
+  const isHrManager = role === 'HR_MANAGER';
+  const canProvisionStaff = isSuperAdmin || isHrManager;
+  const assignableRoles = isSuperAdmin
+    ? PDF_ROLES.filter((r) => r.name !== 'PATIENT')
+    : PDF_ROLES.filter((r) => HR_ASSIGNABLE_ROLES.includes(r.name as any));
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<'accounts' | 'roles_directory' | 'matrix' | 'financial_approvals' | 'audit_trail'>('accounts');
@@ -429,12 +434,14 @@ export const UsersRolesPage: React.FC = () => {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setIsProvisionModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-semibold rounded-lg text-sm transition shadow-lg shadow-cyan-500/20"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" /> Provision Staff Account
-          </button>
+          {canProvisionStaff && (
+            <button
+              onClick={() => setIsProvisionModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-semibold rounded-lg text-sm transition shadow-lg shadow-cyan-500/20"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" /> Provision Staff Account
+            </button>
+          )}
         </div>
       </div>
 
@@ -607,13 +614,17 @@ export const UsersRolesPage: React.FC = () => {
                           {u.employee_id && <div className="text-[10px] font-mono text-slate-500">ID: {u.employee_id}</div>}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => handleOpenEditUser(u)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 border border-slate-700 transition"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                            <span>Edit Scope</span>
-                          </button>
+                          {canProvisionStaff && (isSuperAdmin || HR_ASSIGNABLE_ROLES.includes(u.role_name as any)) ? (
+                            <button
+                              onClick={() => handleOpenEditUser(u)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 border border-slate-700 transition"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                              <span>Edit Scope</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] font-mono text-slate-500">Protected</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -745,20 +756,26 @@ export const UsersRolesPage: React.FC = () => {
                   {selectedRolePermissions.length} / {permissionsCatalog.permissions.length}
                 </span>
               </div>
-              <button
-                onClick={handleSaveRolePermissions}
-                disabled={savingPermissions}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-slate-950 font-bold rounded-lg text-xs uppercase tracking-wider transition shadow-md"
-              >
-                {savingPermissions ? (
-                  <span>Saving Matrix...</span>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-                    <span>Save Configuration</span>
-                  </>
-                )}
-              </button>
+              {isSuperAdmin ? (
+                <button
+                  onClick={handleSaveRolePermissions}
+                  disabled={savingPermissions}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-slate-950 font-bold rounded-lg text-xs uppercase tracking-wider transition shadow-md"
+                >
+                  {savingPermissions ? (
+                    <span>Saving Matrix...</span>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                      <span>Save Configuration</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <span className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-amber-400">
+                  Read-Only Matrix (Super Admin Only)
+                </span>
+              )}
             </div>
           </div>
 
@@ -1149,14 +1166,14 @@ export const UsersRolesPage: React.FC = () => {
           <form onSubmit={handleSaveUser} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Assign System Role (From 21 PDF Roles)
+                Assign System Role ({isSuperAdmin ? 'All System Roles' : 'HR Approved Operational Roles'})
               </label>
               <select
                 value={editUserData.role}
                 onChange={(e) => setEditUserData({ ...editUserData, role: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
               >
-                {PDF_ROLES.map((r) => (
+                {assignableRoles.map((r) => (
                   <option key={r.name} value={r.name}>
                     {r.display_name} ({r.name})
                   </option>
@@ -1276,7 +1293,7 @@ export const UsersRolesPage: React.FC = () => {
                   onChange={(e) => setProvisionData({ ...provisionData, role: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-200"
                 >
-                  {PDF_ROLES.filter(r => r.name !== 'PATIENT').map((r) => (
+                  {assignableRoles.map((r) => (
                     <option key={r.name} value={r.name}>
                       {r.display_name}
                     </option>

@@ -390,4 +390,8 @@ class SecurityAuditEvent(BaseUUIDModel):
     def __str__(self):
         return f"[{self.created_at}] {self.event_type} by {self.actor_email}"
 
+    def delete(self, *args, **kwargs):
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied("Security audit events are immutable and cannot be deleted.")
+
 

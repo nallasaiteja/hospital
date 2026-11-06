@@ -2,20 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Calendar,
   Clock,
-  Plus,
   Search,
-  User,
-  CheckCircle2,
-  AlertCircle,
   RefreshCw,
-  Filter,
-  FileText
+  Tv,
+  Users,
+  Sparkles,
 } from 'lucide-react';
-import { clinicalService, authService } from '../../services/api';
+import { clinicalService } from '../../services/api';
 import { Badge } from '../../components/common/Badge';
-import { Modal } from '../../components/common/Modal';
-import { Input } from '../../components/common/Input';
-import { Select } from '../../components/common/Select';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +17,9 @@ import { useTranslation } from 'react-i18next';
 interface Appointment {
   id: string;
   appointment_number: string;
-  token_number: number;
+  token_number: number | string;
+  doctor_id?: string;
+  doctor?: any;
   doctor_name: string;
   department_name: string;
   appointment_date: string;
@@ -32,42 +28,38 @@ interface Appointment {
   status: string;
   symptoms?: string;
   consultation_notes?: string;
+  cancellation_reason?: string;
+  paid_amount?: string;
+  receipt_number?: string;
+  payment_method?: string;
+  lounge_waiting_count?: number;
+  serving_token?: string;
+  tokens_ahead?: number;
 }
+
+const getTodayDateStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export const PatientAppointmentsPage: React.FC = () => {
   const { t } = useTranslation();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Booking Modal
-  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [patientProfile, setPatientProfile] = useState<any | null>(null);
-  const [bookForm, setBookForm] = useState({
-    doctor_id: '',
-    appointment_date: new Date().toISOString().split('T')[0],
-    appointment_time: '10:00:00',
-    type: 'NEW_CONSULTATION',
-    symptoms: '',
-  });
-
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [userRes, apptData, docData] = await Promise.all([
-        authService.getCurrentUser(),
-        clinicalService.getAppointments(),
-        authService.getStaffDirectory({ role: 'DOCTOR' }).catch(() => []),
-      ]);
-      setPatientProfile(userRes?.patient_profile || null);
+      const apptData = await clinicalService.getAppointments();
       setAppointments(apptData || []);
-      setDoctors(docData || []);
     } catch (err: any) {
       setError(parseApiError(err).message);
     } finally {
@@ -79,37 +71,6 @@ export const PatientAppointmentsPage: React.FC = () => {
     loadData();
   }, []);
 
-  const handleBookAppointment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!patientProfile) {
-      setError('Patient record could not be identified. Please sign in again.');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      setError(null);
-      await clinicalService.bookAppointment({
-        patient_id: patientProfile.id,
-        ...bookForm,
-      });
-      setSuccessMsg('Your appointment slot has been successfully booked!');
-      setIsBookModalOpen(false);
-      setBookForm({
-        doctor_id: '',
-        appointment_date: new Date().toISOString().split('T')[0],
-        appointment_time: '10:00:00',
-        type: 'NEW_CONSULTATION',
-        symptoms: '',
-      });
-      loadData();
-    } catch (err: any) {
-      setError(parseApiError(err).message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const filtered = appointments.filter((a) => {
     const doctorMatch = (a.doctor_name || '').toLowerCase().includes(searchTerm.toLowerCase());
     const deptMatch = (a.department_name || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -118,7 +79,11 @@ export const PatientAppointmentsPage: React.FC = () => {
     return matchSearch && matchStatus;
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, appointmentDate?: string) => {
+    const todayStr = getTodayDateStr();
+    if (appointmentDate && appointmentDate < todayStr && (status === 'SCHEDULED' || status === 'CHECKED_IN')) {
+      return <Badge variant="danger">{t('appointments.statusNoShow', 'No Show / Lapsed')}</Badge>;
+    }
     switch (status) {
       case 'CONFIRMED':
       case 'SCHEDULED':
@@ -131,6 +96,8 @@ export const PatientAppointmentsPage: React.FC = () => {
         return <Badge variant="success">{t('appointments.statusCompleted', 'Completed')}</Badge>;
       case 'CANCELLED':
         return <Badge variant="danger">{t('appointments.statusCancelled', 'Cancelled')}</Badge>;
+      case 'NO_SHOW':
+        return <Badge variant="danger">{t('appointments.statusNoShow', 'No Show / Lapsed')}</Badge>;
       default:
         return <Badge variant="neutral">{status}</Badge>;
     }
@@ -146,7 +113,7 @@ export const PatientAppointmentsPage: React.FC = () => {
             {t('navigation.myAppointments', 'My Doctor Appointments')}
           </h1>
           <p className="text-sm text-slate-400">
-            {t('patient.confirmedOPD', 'Book outpatient appointments, track queue tokens, and review doctor consultation notes.')}
+            {t('patient.confirmedOPD', 'Track your confirmed outpatient appointments, queue tokens, payment receipts, and doctor consultation notes. Please contact the Hospital Reception Desk to book a new appointment or token.')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -156,13 +123,6 @@ export const PatientAppointmentsPage: React.FC = () => {
             title={t('common.refresh', 'Refresh Appointments')}
           >
             <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setIsBookModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-lg text-sm font-bold transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            {t('patient.bookAppointment', 'Book New Appointment')}
           </button>
         </div>
       </div>
@@ -209,7 +169,7 @@ export const PatientAppointmentsPage: React.FC = () => {
             <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
             <p className="text-base font-semibold text-slate-300">No appointments found</p>
             <p className="text-xs text-slate-500 mt-1">
-              You haven't booked any consultations yet. Click "Book New Appointment" above to schedule a visit with our medical specialists.
+              No appointments or OPD tokens are currently on record. Please visit or call the Hospital Reception Desk to schedule a consultation and obtain a queue token.
             </p>
           </div>
         ) : (
@@ -221,16 +181,101 @@ export const PatientAppointmentsPage: React.FC = () => {
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex flex-col items-center justify-center shrink-0">
                   <span className="text-[10px] uppercase font-bold text-slate-400">Token</span>
-                  <span className="text-sm font-extrabold text-teal-400">#{a.token_number}</span>
+                  <span className="text-sm font-extrabold text-teal-400">
+                    #{String(a.token_number || '').replace(/^(token\s*#*|#)+/i, '').trim()}
+                  </span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-white text-base">Dr. {a.doctor_name || 'Consultant'}</h3>
-                    {getStatusBadge(a.status)}
+                    {getStatusBadge(a.status, a.appointment_date)}
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
                     {a.department_name || 'General OPD'} &bull; Ref: <span className="font-mono text-slate-300">{a.appointment_number}</span>
+                    {a.paid_amount && (
+                      <>
+                        {' '}&bull; Paid: <span className="font-mono text-emerald-400 font-semibold">₹{a.paid_amount}</span>
+                      </>
+                    )}
+                    {a.receipt_number && (
+                      <>
+                        {' '}&bull; Receipt: <span className="font-mono text-cyan-400">{a.receipt_number}</span>
+                      </>
+                    )}
                   </p>
+
+                  {/* Real-time Waiting Lounge Telemetry for this Token (STRICTLY FOR TODAY'S ACTIVE CONSULTATIONS) */}
+                  {(() => {
+                    const todayStr = getTodayDateStr();
+                    const isTodayActive =
+                      a.appointment_date === todayStr &&
+                      Boolean(a.token_number) &&
+                      ['SCHEDULED', 'CHECKED_IN', 'IN_CONSULTATION'].includes(a.status);
+                    if (!isTodayActive) return null;
+
+                    const waitingCount = a.lounge_waiting_count ?? 0;
+
+                    return (
+                      <div className="mt-3 p-3 rounded-xl bg-slate-950 border border-teal-500/30 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold shrink-0">
+                            <Tv className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-white flex items-center gap-1.5">
+                              <span className="text-slate-300">Lounge Telemetry:</span>
+                              {a.status === 'IN_CONSULTATION' ? (
+                                <span className="text-emerald-400 font-extrabold flex items-center gap-1 animate-pulse">
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                  It's Your Turn! Please proceed inside doctor's cabin
+                                </span>
+                              ) : a.status === 'CHECKED_IN' ? (
+                                <span className="text-amber-300 font-semibold">
+                                  {a.tokens_ahead !== undefined && a.tokens_ahead > 0
+                                    ? `${a.tokens_ahead} patients ahead of you in lounge`
+                                    : waitingCount > 1
+                                    ? 'You are next in line in the lounge!'
+                                    : waitingCount === 1
+                                    ? 'You are next in line in the lounge!'
+                                    : 'You have checked in for today\'s consultation.'}
+                                </span>
+                              ) : (
+                                <span className="text-teal-300 font-medium">
+                                  Appointment Confirmed for Today &bull; Please check in at Reception upon arrival
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-2">
+                              {a.status === 'CHECKED_IN' ? (
+                                <span>
+                                  {waitingCount > 0
+                                    ? `Total ${waitingCount} ${waitingCount === 1 ? 'person' : 'people'} waiting for Dr. ${a.doctor_name}`
+                                    : 'Queue currently clear'}
+                                </span>
+                              ) : null}
+                              {a.serving_token && (
+                                <>
+                                  <span>&bull;</span>
+                                  <span className="font-mono text-teal-300">
+                                    Currently Calling: Token #{String(a.serving_token).replace(/^(token\s*#*|#)+/i, '').trim()}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <a
+                          href={`/lounge-tv?doctor_id=${a.doctor || a.doctor_id || ''}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:brightness-110 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow"
+                        >
+                          <Tv className="w-3.5 h-3.5" />
+                          <span>Watch Lounge TV</span>
+                        </a>
+                      </div>
+                    );
+                  })()}
                   {a.symptoms && (
                     <p className="text-xs text-slate-400 mt-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800/80">
                       Reason / Symptoms: <span className="text-slate-200">{a.symptoms}</span>
@@ -242,6 +287,12 @@ export const PatientAppointmentsPage: React.FC = () => {
                       {a.consultation_notes}
                     </div>
                   )}
+                  {a.status === 'CANCELLED' && a.cancellation_reason && (
+                    <div className="mt-2 text-xs text-rose-300 bg-rose-950/30 p-2.5 rounded-lg border border-rose-900/40">
+                      <strong className="block text-rose-400 font-semibold mb-0.5">Cancellation Note:</strong>
+                      {a.cancellation_reason}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -249,82 +300,35 @@ export const PatientAppointmentsPage: React.FC = () => {
                 <div className="flex items-center gap-1.5 font-medium text-slate-200">
                   <Clock className="w-3.5 h-3.5 text-teal-400" />
                   <span>
-                    {a.appointment_date} at {a.appointment_time}
+                    {a.appointment_date} at {a.appointment_time || (a as any).time_slot || '10:00 AM'}
                   </span>
                 </div>
                 <span className="text-[11px] text-slate-500 mt-1 capitalize">
                   {a.type?.replace('_', ' ').toLowerCase()}
                 </span>
+                {a.status === 'SCHEDULED' && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (window.confirm('Are you sure you want to cancel this appointment?')) {
+                        try {
+                          await clinicalService.cancelAppointment(a.id, 'Cancelled by patient');
+                          loadData();
+                        } catch (err: any) {
+                          setError(parseApiError(err).message);
+                        }
+                      }
+                    }}
+                    className="mt-2 px-2.5 py-1 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg border border-rose-500/20 transition self-start md:self-end"
+                  >
+                    Cancel Appointment
+                  </button>
+                )}
               </div>
             </div>
           ))
         )}
       </div>
-
-      {/* Booking Modal */}
-      <Modal
-        isOpen={isBookModalOpen}
-        onClose={() => setIsBookModalOpen(false)}
-        title="Schedule OPD Consultation Slot"
-      >
-        <form onSubmit={handleBookAppointment} className="space-y-4">
-          <Select
-            label="Consulting Doctor / Specialist"
-            required
-            value={bookForm.doctor_id}
-            onChange={(e) => setBookForm({ ...bookForm, doctor_id: e.target.value })}
-            options={[
-              { value: '', label: '-- Choose Doctor --' },
-              ...doctors.map((d) => ({
-                value: d.id,
-                label: `Dr. ${d.user_profile?.first_name} ${d.user_profile?.last_name} (${d.specialty || 'General Physician'})`,
-              })),
-            ]}
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Consultation Date"
-              type="date"
-              required
-              value={bookForm.appointment_date}
-              onChange={(e) => setBookForm({ ...bookForm, appointment_date: e.target.value })}
-            />
-            <Input
-              label="Preferred Time Slot"
-              type="time"
-              required
-              value={bookForm.appointment_time}
-              onChange={(e) => setBookForm({ ...bookForm, appointment_time: e.target.value })}
-            />
-          </div>
-
-          <Input
-            label="Current Symptoms / Reason for Visit"
-            placeholder="e.g. Chest discomfort, recurrent fever, routine checkup"
-            required
-            value={bookForm.symptoms}
-            onChange={(e) => setBookForm({ ...bookForm, symptoms: e.target.value })}
-          />
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => setIsBookModalOpen(false)}
-              className="px-4 py-2 border border-slate-700 text-slate-300 hover:bg-slate-800 rounded-lg text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg text-sm disabled:opacity-50"
-            >
-              {submitting ? 'Confirming Slot...' : 'Confirm Appointment'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 };

@@ -100,6 +100,7 @@ export interface UserProfile {
   email: string;
   first_name: string;
   last_name: string;
+  full_name?: string;
   phone_number?: string;
   role: Role | { name: UserRole; display_name?: string };
   preferred_language?: string;
@@ -457,6 +458,12 @@ export interface Appointment {
   cancellation_reason?: string;
   invoice_number?: string;
   invoice_status?: string;
+  paid_amount?: string;
+  receipt_number?: string;
+  payment_method?: string;
+  receipt?: any;
+  transaction_reference?: string;
+  processed_by_name?: string;
 }
 
 export interface OPDDashboardStats {
@@ -508,6 +515,7 @@ export interface QueueItem {
   token_number: string;
   appointment_type: 'SCHEDULED' | 'WALK_IN';
   status: 'SCHEDULED' | 'CHECKED_IN' | 'IN_CONSULTATION' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  appointment_date?: string;
   time_slot: string;
   patient_id: string;
   patient_name: string;
@@ -522,12 +530,19 @@ export interface QueueItem {
   department_name?: string;
   reason_for_visit?: string;
   chief_complaint?: string;
+  vitals?: Record<string, any>;
   checked_in_at?: string;
   consultation_started_at?: string;
   consultation_ended_at?: string;
   wait_minutes: number;
   invoice_number?: string;
   invoice_status?: string;
+  paid_amount?: string;
+  receipt_number?: string;
+  payment_method?: string;
+  receipt?: any;
+  transaction_reference?: string;
+  processed_by_name?: string;
 }
 
 export interface DoctorScheduleRecord {
@@ -764,6 +779,78 @@ export interface InpatientRunningBill {
   estimated_balance_due: number;
   invoice_number?: string;
   invoice_status?: string;
+  paid_amount?: string;
+  receipt_number?: string;
+  payment_method?: string;
+  receipt?: any;
+  transaction_reference?: string;
+  processed_by_name?: string;
+}
+
+export interface LoungeDoctorInfo {
+  doctor_id: string;
+  doctor_name: string;
+  specialization: string;
+  department_name: string;
+  cabin_number: string;
+  total_tokens: number;
+  waiting_in_lounge_count: number;
+  currently_serving_token: string | null;
+  currently_serving_patient: string | null;
+  consultation_started_at: string | null;
+  next_tokens: string[];
+  completed_count: number;
+}
+
+export interface LoungeQueueItem {
+  id: string;
+  appointment_number: string;
+  token_number: string;
+  status: string;
+  time_slot: string;
+  patient_id: string;
+  patient_display_name: string;
+  doctor_id: string;
+  doctor_name: string;
+  doctor_specialization: string;
+  department_name: string;
+  cabin_number: string;
+  checked_in_at: string | null;
+  consultation_started_at: string | null;
+  wait_minutes: number;
+}
+
+export interface PatientLoungeTelemetry {
+  appointment_id: string;
+  appointment_number: string;
+  token_number: string;
+  status: string;
+  doctor_id: string;
+  doctor_name: string;
+  specialization: string;
+  cabin_number: string;
+  department_name: string;
+  tokens_ahead: number;
+  total_waiting_for_doctor: number;
+  currently_serving_token: string | null;
+  currently_serving_patient?: string | null;
+  estimated_wait_minutes: number;
+}
+
+export interface LoungeTVData {
+  hospital_name: string;
+  branch_name: string;
+  date: string;
+  current_time: string;
+  summary: {
+    total_tokens_today: number;
+    total_waiting_in_lounge: number;
+    total_in_consultation: number;
+    total_completed: number;
+  };
+  doctors: LoungeDoctorInfo[];
+  queue: LoungeQueueItem[];
+  patient_telemetry?: PatientLoungeTelemetry | null;
 }
 
 

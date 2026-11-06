@@ -1,4 +1,5 @@
 import uuid
+import re
 from datetime import datetime, timedelta, date, time
 from decimal import Decimal
 from django.db import transaction
@@ -6,18 +7,27 @@ from django.db.models import Q, Count, Sum, Avg, F
 from django.utils import timezone
 from rest_framework import status, views, viewsets
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from apps.authentication.permissions import IsStaffMember
-from apps.core.models import Branch, Department, AuditLog
-from apps.authentication.models import PatientProfile, StaffProfile, UserProfile
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from apps.authentication.permissions import IsStaffMember, IsReceptionistOnly, resolve_user_profile
+from apps.core.models import Branch, Department, AuditLog, Hospital
+from apps.authentication.models import PatientProfile, StaffProfile, UserProfile, RoleEnum
 from apps.authentication.utils import get_staff_profile, get_patient_profile
 from apps.billing_finance.models import Invoice, InvoiceItem, InvoiceStatus, ChargeItemType
 from apps.pharmacy_inventory.models import Medicine, Prescription, PrescriptionItem
+from .opd_payment_service import (
+    OPDPaymentError,
+    resolve_consultation_fee,
+    create_opd_online_payment_order,
+    authorize_sandbox_opd_payment,
+    validate_opd_payment_payload,
+    settle_opd_appointment_and_payment,
+)
 from .models import (
     Appointment, AppointmentStatus, AppointmentType,
     DoctorSchedule, DoctorLeave,
     LabTestCatalogue, LabOrder, LabOrderItem, LabOrderStatus,
-    RadiologyOrder, ModalityEnum
+    RadiologyOrder, ModalityEnum,
+    DoctorNotification, DoctorNotificationType
 )
 from .serializers import (
     AppointmentSerializer, DoctorScheduleSerializer, DoctorLeaveSerializer,
@@ -93,9 +103,9 @@ class OPDDashboardStatsView(views.APIView):
             try:
                 target_date = datetime.strptime(query_date_str, '%Y-%m-%d').date()
             except ValueError:
-                target_date = timezone.now().date()
+                target_date = timezone.localdate()
         else:
-            target_date = timezone.now().date()
+            target_date = timezone.localdate()
 
         branch_id = request.query_params.get('branch_id')
         doctor_id = request.query_params.get('doctor_id')
@@ -324,11 +334,127 @@ class DoctorLeaveViewSet(viewsets.ModelViewSet):
         return qs
 
 
+class OPDConsultationFeePreviewView(views.APIView):
+    """
+    Returns the authoritative consultation fee in Indian Rupees (₹) from the hospital's
+    existing fee configuration (TariffPlan -> Doctor Profile -> Service Catalogue)
+    before booking an appointment or issuing a token.
+    Restricted strictly to Receptionist role.
+    """
+    permission_classes = [IsAuthenticated, IsReceptionistOnly]
+
+    def get(self, request):
+        doctor_id = request.query_params.get('doctor_id')
+        patient_id = request.query_params.get('patient_id')
+        department_id = request.query_params.get('department_id')
+
+        if not doctor_id:
+            return Response({'error': 'doctor_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        doctor = StaffProfile.objects.select_related('user_profile', 'department', 'branch').filter(id=doctor_id).first()
+        if not doctor:
+            return Response({'error': 'Doctor not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        patient = PatientProfile.objects.filter(id=patient_id).first() if patient_id else None
+        department = Department.objects.filter(id=department_id).first() if department_id else doctor.department
+
+        fee_info = resolve_consultation_fee(doctor=doctor, department=department, patient=patient)
+        return Response({
+            'doctor_id': str(doctor.id),
+            'doctor_name': doctor.user_profile.full_name,
+            'specialization': doctor.specialization or 'General Medicine',
+            'department_name': department.name if department else 'General OPD',
+            'consultation_fee': f"{fee_info['amount']:.2f}",
+            'formatted_amount': fee_info['formatted_amount'],
+            'currency': 'INR',
+            'currency_symbol': '₹',
+            'fee_source': fee_info['fee_source'],
+            'allowed_payment_methods': ['CASH', 'ONLINE'],
+        })
+
+
+class OPDPaymentOrderCreateView(views.APIView):
+    """
+    Generates a Razorpay online payment order for OPD Appointment Booking or Walk-in Token Issuing.
+    Restricted strictly to Receptionist role.
+    """
+    permission_classes = [IsAuthenticated, IsReceptionistOnly]
+
+    @transaction.atomic
+    def post(self, request):
+        data = request.data
+        patient_id = data.get('patient_id')
+        doctor_id = data.get('doctor_id')
+        department_id = data.get('department_id')
+        booking_type = str(data.get('booking_type') or 'APPOINTMENT').upper()
+        idempotency_key = data.get('idempotency_key')
+
+        if not patient_id or not doctor_id:
+            return Response({'error': 'Both patient_id and doctor_id are required to generate an online payment order.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        patient = PatientProfile.objects.select_related('user_profile').filter(id=patient_id).first()
+        if not patient:
+            return Response({'error': 'Patient not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        doctor = StaffProfile.objects.select_related('user_profile', 'department').filter(id=doctor_id).first()
+        if not doctor:
+            return Response({'error': 'Doctor not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        department = Department.objects.filter(id=department_id).first() if department_id else doctor.department
+        rec_profile = resolve_user_profile(request)
+        rec_staff = getattr(rec_profile, 'staff_profile', None) or get_staff_profile(request.user)
+
+        try:
+            order_payload = create_opd_online_payment_order(
+                request=request,
+                patient=patient,
+                doctor=doctor,
+                department=department,
+                booking_type=booking_type,
+                idempotency_key=idempotency_key,
+                receptionist_staff=rec_staff,
+            )
+            return Response(order_payload, status=status.HTTP_201_CREATED)
+        except OPDPaymentError as exc:
+            return Response({'error': exc.message, **exc.extra}, status=exc.status_code)
+
+
+class OPDPaymentOrderAuthorizeSandboxView(views.APIView):
+    """
+    Server-side Razorpay sandbox authorization endpoint for OPD online payments.
+    Produces a cryptographically signed (razorpay_order_id, razorpay_payment_id, razorpay_signature)
+    using HMAC-SHA256 on the server or simulates a failed payment so retry can be tested.
+    Restricted strictly to Receptionist role.
+    """
+    permission_classes = [IsAuthenticated, IsReceptionistOnly]
+
+    @transaction.atomic
+    def post(self, request):
+        data = request.data
+        razorpay_order_id = data.get('razorpay_order_id') or data.get('order_id')
+        simulate_failure = bool(data.get('simulate_failure', False))
+        rec_profile = resolve_user_profile(request)
+        rec_staff = getattr(rec_profile, 'staff_profile', None) or get_staff_profile(request.user)
+
+        try:
+            auth_payload = authorize_sandbox_opd_payment(
+                request=request,
+                razorpay_order_id=razorpay_order_id,
+                simulate_failure=simulate_failure,
+                receptionist_staff=rec_staff,
+            )
+            return Response(auth_payload, status=status.HTTP_200_OK)
+        except OPDPaymentError as exc:
+            return Response({'error': exc.message, **exc.extra}, status=exc.status_code)
+
+
 class OPDWalkInRegistrationView(views.APIView):
     """
     Walk-in Patient OPD Registration and Atomic Queue Token Generation.
+    Strictly restricted to RECEPTIONIST role ONLY and requires mandatory payment (CASH or verified ONLINE)
+    before confirming the walk-in registration or generating a queue token.
     """
-    permission_classes = [IsAuthenticated, IsStaffMember]
+    permission_classes = [IsAuthenticated, IsReceptionistOnly]
 
     def post(self, request):
         data = request.data
@@ -345,79 +471,251 @@ class OPDWalkInRegistrationView(views.APIView):
         if not doctor_id:
             return Response({'error': 'Doctor is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        patient = PatientProfile.objects.filter(id=patient_id).first()
+        patient = PatientProfile.objects.select_related('user_profile', 'primary_branch').filter(id=patient_id).first()
         if not patient:
             return Response({'error': 'Patient not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        doctor = StaffProfile.objects.filter(id=doctor_id).first()
+        doctor = StaffProfile.objects.select_related('user_profile', 'branch', 'department').filter(id=doctor_id).first()
         if not doctor:
             return Response({'error': 'Doctor not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        branch = Branch.objects.filter(id=branch_id).first() or doctor.branch or Branch.objects.first()
+        receptionist_profile = resolve_user_profile(request)
+        receptionist_staff = getattr(receptionist_profile, 'staff_profile', None) or get_staff_profile(request.user)
+        if not receptionist_staff:
+            return Response({'error': 'Active Receptionist staff profile is required.'}, status=status.HTTP_403_FORBIDDEN)
+
+        branch = (
+            Branch.objects.filter(id=branch_id).first()
+            or doctor.branch
+            or receptionist_staff.branch
+            or getattr(patient, 'primary_branch', None)
+            or Branch.objects.first()
+        )
         department = Department.objects.filter(id=department_id).first() or doctor.department
 
-        today = timezone.now().date()
+        today = timezone.localdate()
         now_time_str = timezone.now().strftime('%H:%M')
 
-        with transaction.atomic():
-            # Generate atomic daily token number for this doctor queue
-            daily_count = Appointment.objects.filter(
-                doctor=doctor,
-                appointment_date=today
-            ).count()
-
-            token_str = f"Token #{daily_count + 1}"
-            slot_label = f"Walk-in ({now_time_str})"
-            apt_number = f"APT-WI-{today.strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-
-            appointment = Appointment.objects.create(
-                appointment_number=apt_number,
-                appointment_type=AppointmentType.WALK_IN,
-                booking_source='FRONT_DESK',
-                patient=patient,
-                doctor=doctor,
-                department=department,
-                branch=branch,
-                appointment_date=today,
-                time_slot=slot_label,
-                token_number=token_str,
-                status=AppointmentStatus.CHECKED_IN,
-                checked_in_at=timezone.now(),
-                reason_for_visit=reason_for_visit,
-                chief_complaint=chief_complaint,
-                vitals=vitals
+        # Check if doctor is on approved leave today
+        doctor_leave_today = DoctorLeave.objects.filter(
+            doctor=doctor,
+            start_date__lte=today,
+            end_date__gte=today,
+            is_approved=True
+        ).exists()
+        if doctor_leave_today:
+            return Response(
+                {'error': f"Dr. {doctor.user_profile.full_name} is on approved leave today and cannot take walk-in patients."},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-            # Auto-generate consultation fee invoice
-            invoice = get_or_create_consultation_invoice(appointment, created_by=request.user)
-
-            log_audit(
-                request.user,
-                action='OPD_WALK_IN_REGISTERED',
-                entity_type='Appointment',
-                entity_id=appointment.id,
-                branch=branch,
-                new_val={'token': token_str, 'patient_mrn': patient.medical_record_number, 'doctor': doctor.user_profile.full_name}
+        # Prevent duplicate active walk-in token for same patient & doctor on the same day
+        duplicate_walkin = Appointment.objects.filter(
+            patient=patient,
+            doctor=doctor,
+            appointment_date=today,
+            appointment_type=AppointmentType.WALK_IN,
+            status__in=[AppointmentStatus.CHECKED_IN, AppointmentStatus.IN_CONSULTATION]
+        ).first()
+        if duplicate_walkin:
+            return Response(
+                {
+                    'error': (
+                        f"Duplicate token prevented: {patient.user_profile.full_name} already has an active walk-in token "
+                        f"({duplicate_walkin.token_number}) with Dr. {doctor.user_profile.full_name} today."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT
             )
+
+        try:
+            with transaction.atomic():
+                # Lock check for duplicate active walk-in
+                locked_dup = Appointment.objects.select_for_update().filter(
+                    patient=patient,
+                    doctor=doctor,
+                    appointment_date=today,
+                    appointment_type=AppointmentType.WALK_IN,
+                    status__in=[AppointmentStatus.CHECKED_IN, AppointmentStatus.IN_CONSULTATION]
+                ).exists()
+                if locked_dup:
+                    return Response(
+                        {'error': 'Duplicate walk-in token detected for this patient and doctor today.'},
+                        status=status.HTTP_409_CONFLICT
+                    )
+
+                # Validate mandatory payment BEFORE generating token or appointment
+                validated_payment = validate_opd_payment_payload(
+                    data=data,
+                    patient=patient,
+                    doctor=doctor,
+                    department=department,
+                    receptionist_staff=receptionist_staff,
+                    request=request,
+                )
+
+                # Generate atomic daily token number for this doctor queue
+                daily_count = Appointment.objects.select_for_update().filter(
+                    doctor=doctor,
+                    appointment_date=today
+                ).count()
+
+                token_str = f"Token #{daily_count + 1}"
+                slot_label = f"Walk-in ({now_time_str})"
+                apt_number = f"APT-WI-{today.strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+
+                appointment = Appointment.objects.create(
+                    appointment_number=apt_number,
+                    appointment_type=AppointmentType.WALK_IN,
+                    booking_source='FRONT_DESK',
+                    patient=patient,
+                    doctor=doctor,
+                    department=department,
+                    branch=branch,
+                    appointment_date=today,
+                    time_slot=slot_label,
+                    token_number=token_str,
+                    status=AppointmentStatus.CHECKED_IN,
+                    checked_in_at=timezone.now(),
+                    reason_for_visit=reason_for_visit,
+                    chief_complaint=chief_complaint,
+                    vitals=vitals
+                )
+
+                settlement = settle_opd_appointment_and_payment(
+                    appointment=appointment,
+                    validated_payment=validated_payment,
+                    receptionist_staff=receptionist_staff,
+                    request=request,
+                )
+
+                if appointment.doctor:
+                    try:
+                        DoctorNotification.objects.create(
+                            recipient_doctor=appointment.doctor,
+                            branch=branch,
+                            notification_type=DoctorNotificationType.PATIENT_CHECKED_IN,
+                            title=f"Walk-in Checked In: {patient.user_profile.full_name}",
+                            message=f"Walk-in Token {token_str} ({patient.user_profile.full_name}) has checked in and is waiting in the lounge.",
+                            priority='ROUTINE',
+                            patient=patient,
+                            target_url=f"/staff/doctor-workspace?tab=queue",
+                            metadata={'appointment_id': str(appointment.id), 'token_number': token_str}
+                        )
+                    except Exception:
+                        pass
+
+                log_audit(
+                    request.user,
+                    action='OPD_WALK_IN_REGISTERED',
+                    entity_type='Appointment',
+                    entity_id=appointment.id,
+                    branch=branch,
+                    new_val={
+                        'token': token_str,
+                        'patient_mrn': patient.medical_record_number,
+                        'doctor': doctor.user_profile.full_name,
+                        'payment_method': validated_payment['payment_method_display'],
+                        'amount_paid': str(validated_payment['amount']),
+                        'receipt_number': settlement['receipt'].receipt_number,
+                    }
+                )
+        except OPDPaymentError as exc:
+            err_payload = {'error': exc.message, **exc.extra}
+            return Response(err_payload, status=exc.status_code)
 
         serializer = AppointmentSerializer(appointment)
         return Response({
-            'message': f"Walk-in registered successfully. {token_str} issued.",
+            'message': f"Walk-in registered and payment (₹{validated_payment['amount']:.2f}) verified. {token_str} issued.",
             'appointment': serializer.data,
-            'token_receipt': {
-                'token_number': token_str,
-                'appointment_number': apt_number,
-                'patient_name': patient.user_profile.full_name,
-                'patient_mrn': patient.medical_record_number,
-                'doctor_name': doctor.user_profile.full_name,
-                'specialization': doctor.specialization,
-                'department_name': department.name if department else '',
-                'date': str(today),
-                'check_in_time': timezone.now().strftime('%H:%M:%S'),
-                'consultation_fee': str(doctor.consultation_fee or Decimal('500.00')),
-                'invoice_number': invoice.invoice_number if invoice else None
-            }
+            'token_receipt': settlement['receipt_payload'],
+            'receipt': settlement['receipt_payload'],
         }, status=status.HTTP_201_CREATED)
+
+
+class OPDAppointmentReceiptView(views.APIView):
+    """
+    Retrieves the complete printable/downloadable Payment & Token Receipt for an OPD Appointment.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        appointment = Appointment.objects.select_related(
+            'patient__user_profile', 'doctor__user_profile', 'department', 'branch__hospital', 'invoice'
+        ).filter(id=pk).first()
+        if not appointment:
+            return Response({'error': 'Appointment not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Patient isolation check
+        patient_caller = get_patient_profile(request.user)
+        if patient_caller and appointment.patient_id != patient_caller.id:
+            return Response({'error': 'You can only view receipts for your own appointments.'}, status=status.HTTP_403_FORBIDDEN)
+
+        invoice = appointment.invoice
+        payment = invoice.payments.select_related('received_by__user_profile', 'receipt').order_by('-payment_date').first() if invoice else None
+        receipt = getattr(payment, 'receipt', None) if payment else None
+        branch = appointment.branch or appointment.doctor.branch
+        hospital = (branch.hospital if branch and getattr(branch, 'hospital', None) else None) or Hospital.objects.first()
+        fee = invoice.total_amount if invoice else (appointment.doctor.consultation_fee or Decimal('500.00'))
+        pay_ts = payment.payment_date if payment else appointment.created_at
+        method_display = 'ONLINE' if (payment and payment.payment_method == 'ONLINE_GATEWAY') else (payment.payment_method if payment else 'CASH')
+
+        return Response({
+            'receipt_id': str(receipt.id) if receipt else None,
+            'receipt_number': receipt.receipt_number if receipt else (f"REC-{appointment.appointment_number}" if invoice else None),
+            'payment_id': str(payment.id) if payment else None,
+            'payment_number': payment.payment_number if payment else None,
+            'invoice_id': str(invoice.id) if invoice else None,
+            'invoice_number': invoice.invoice_number if invoice else None,
+            'invoice_status': invoice.status if invoice else 'PAID',
+            'appointment_id': str(appointment.id),
+            'appointment_number': appointment.appointment_number,
+            'appointment_type': appointment.appointment_type,
+            'token_number': appointment.token_number,
+            'appointment_date': str(appointment.appointment_date),
+            'time_slot': appointment.time_slot,
+            'check_in_time': (appointment.checked_in_at or appointment.created_at).strftime('%H:%M:%S'),
+            'date': str(appointment.appointment_date),
+            'payment_date': pay_ts.isoformat(),
+            'payment_date_display': pay_ts.strftime('%d %b %Y, %I:%M %p'),
+            'hospital_name': hospital.name if hospital else 'Aura Multi-Specialty Hospital',
+            'hospital_code': hospital.code if hospital else 'HOSP-HQ',
+            'hospital_address': (
+                f"{branch.address_line1}, {branch.city}, {branch.state} {branch.postal_code}".strip(', ')
+                if branch and getattr(branch, 'address_line1', '')
+                else 'Main Hospital Campus, Healthcare District'
+            ),
+            'hospital_phone': (branch.phone if branch and getattr(branch, 'phone', '') else '+91 40 2345 6789'),
+            'hospital_email': (branch.email if branch and getattr(branch, 'email', '') else 'billing@aurahospital.org'),
+            'branch_name': branch.name if branch else 'Main Branch',
+            'patient_id': str(appointment.patient.id),
+            'patient_name': appointment.patient.user_profile.full_name,
+            'patient_mrn': appointment.patient.medical_record_number,
+            'patient_phone': appointment.patient.user_profile.phone_number or '',
+            'patient_gender': appointment.patient.gender or '',
+            'patient_blood_group': appointment.patient.blood_group or '',
+            'doctor_id': str(appointment.doctor.id),
+            'doctor_name': appointment.doctor.user_profile.full_name,
+            'specialization': appointment.doctor.specialization or 'General Medicine',
+            'department_name': appointment.department.name if appointment.department else 'General OPD',
+            'consultation_fee': f"{fee:.2f}",
+            'amount_paid': f"{(invoice.paid_amount if invoice else fee):.2f}",
+            'balance_amount': f"{(invoice.balance_amount if invoice else Decimal('0.00')):.2f}",
+            'currency': 'INR',
+            'currency_symbol': '₹',
+            'formatted_amount': f"₹{fee:.2f}",
+            'payment_method': method_display,
+            'payment_status': invoice.status if invoice else 'PAID',
+            'transaction_reference': payment.transaction_reference if payment else '',
+            'processed_by_name': (
+                payment.received_by.user_profile.full_name
+                if (payment and payment.received_by and payment.received_by.user_profile)
+                else 'Reception Desk'
+            ),
+            'processed_by_employee_id': (
+                payment.received_by.employee_id if (payment and payment.received_by) else ''
+            ),
+        })
 
 
 class OPDQueueView(views.APIView):
@@ -433,9 +731,9 @@ class OPDQueueView(views.APIView):
             try:
                 target_date = datetime.strptime(query_date_str, '%Y-%m-%d').date()
             except ValueError:
-                target_date = timezone.now().date()
+                target_date = timezone.localdate()
         else:
-            target_date = timezone.now().date()
+            target_date = timezone.localdate()
 
         doctor_id = request.query_params.get('doctor_id')
         department_id = request.query_params.get('department_id')
@@ -444,7 +742,7 @@ class OPDQueueView(views.APIView):
 
         qs = Appointment.objects.select_related(
             'patient__user_profile', 'doctor__user_profile', 'department', 'branch', 'invoice'
-        ).filter(appointment_date=target_date)
+        ).prefetch_related('invoice__payments__received_by__user_profile', 'invoice__payments__receipt').filter(appointment_date=target_date)
 
         if doctor_id:
             qs = qs.filter(doctor_id=doctor_id)
@@ -468,6 +766,13 @@ class OPDQueueView(views.APIView):
             if appt.checked_in_at:
                 end_time = appt.consultation_started_at or now
                 wait_minutes = max(0, round((end_time - appt.checked_in_at).total_seconds() / 60))
+
+            latest_pay = appt.invoice.payments.first() if appt.invoice else None
+            receipt_obj = getattr(latest_pay, 'receipt', None) if latest_pay else None
+            pay_method_label = (
+                ('ONLINE' if latest_pay.payment_method == 'ONLINE_GATEWAY' else latest_pay.payment_method)
+                if latest_pay else None
+            )
 
             queue_items.append({
                 'id': str(appt.id),
@@ -494,7 +799,15 @@ class OPDQueueView(views.APIView):
                 'consultation_ended_at': appt.consultation_ended_at.isoformat() if appt.consultation_ended_at else None,
                 'wait_minutes': wait_minutes,
                 'invoice_number': appt.invoice.invoice_number if appt.invoice else None,
-                'invoice_status': appt.invoice.status if appt.invoice else None
+                'invoice_status': appt.invoice.status if appt.invoice else None,
+                'receipt_number': receipt_obj.receipt_number if receipt_obj else None,
+                'payment_method': pay_method_label,
+                'transaction_reference': latest_pay.transaction_reference if latest_pay else None,
+                'processed_by_name': (
+                    latest_pay.received_by.user_profile.full_name
+                    if (latest_pay and latest_pay.received_by and latest_pay.received_by.user_profile)
+                    else None
+                ),
             })
 
         # Sort priority: IN_CONSULTATION (0), CHECKED_IN (1), SCHEDULED (2), COMPLETED (3), CANCELLED/NO_SHOW (4)
@@ -539,7 +852,38 @@ class OPDQueueActionView(views.APIView):
             # Ensure consultation invoice is created
             get_or_create_consultation_invoice(appointment, created_by=request.user)
 
+            if appointment.doctor:
+                try:
+                    DoctorNotification.objects.create(
+                        recipient_doctor=appointment.doctor,
+                        branch=appointment.branch,
+                        notification_type=DoctorNotificationType.PATIENT_CHECKED_IN,
+                        title=f"Patient Checked In: {appointment.patient.user_profile.full_name}",
+                        message=f"{appointment.token_number or 'Token'} ({appointment.patient.user_profile.full_name}) has checked in and is waiting in the lounge.",
+                        priority='ROUTINE',
+                        patient=appointment.patient,
+                        target_url=f"/staff/doctor-workspace?tab=queue",
+                        metadata={'appointment_id': str(appointment.id), 'token_number': appointment.token_number}
+                    )
+                except Exception:
+                    pass
+
         elif action in ['START_CONSULTATION', 'CALL_NEXT']:
+            user_prof = resolve_user_profile(request)
+            role_name = getattr(user_prof.role, 'name', '') if user_prof and user_prof.role else ''
+            CLINICAL_ROLES = [
+                RoleEnum.DOCTOR,
+                RoleEnum.MEDICAL_DIRECTOR,
+                RoleEnum.DEPARTMENT_HEAD,
+                RoleEnum.SUPER_ADMIN,
+                RoleEnum.HOSPITAL_ADMIN,
+            ]
+            if role_name not in CLINICAL_ROLES:
+                return Response(
+                    {'error': 'Access Denied: Only attending doctors and clinical directors are authorized to call in patients and conduct consultations.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             if appointment.status in [AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW]:
                 return Response({'error': f'Cannot start consultation for an appointment that is {appointment.status}.'}, status=status.HTTP_400_BAD_REQUEST)
             appointment.status = AppointmentStatus.IN_CONSULTATION
@@ -661,6 +1005,21 @@ class OPDConsultationEncounterView(views.APIView):
         if not appointment:
             return Response({'error': 'Appointment not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        user_prof = resolve_user_profile(request)
+        role_name = getattr(user_prof.role, 'name', '') if user_prof and user_prof.role else ''
+        CLINICAL_ROLES = [
+            RoleEnum.DOCTOR,
+            RoleEnum.MEDICAL_DIRECTOR,
+            RoleEnum.DEPARTMENT_HEAD,
+            RoleEnum.SUPER_ADMIN,
+            RoleEnum.HOSPITAL_ADMIN,
+        ]
+        if role_name not in CLINICAL_ROLES:
+            return Response(
+                {'error': 'Access Denied: Only licensed physicians and clinical directors can finalize consultations, prescribe medications, or order laboratory/radiology tests.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         data = request.data
         doctor = appointment.doctor
         patient = appointment.patient
@@ -688,6 +1047,9 @@ class OPDConsultationEncounterView(views.APIView):
                 appointment.consultation_started_at = timezone.now() - timedelta(minutes=15)
             appointment.consultation_ended_at = timezone.now()
 
+            # Ensure consultation fee invoice is generated before adding order line items
+            consultation_inv = get_or_create_consultation_invoice(appointment, created_by=request.user)
+
             # 2. Electronic Prescription Integration
             prescription_items_data = data.get('prescriptions', [])
             presc_summary_lines = []
@@ -698,6 +1060,7 @@ class OPDConsultationEncounterView(views.APIView):
                     patient=patient,
                     doctor=doctor,
                     branch=branch,
+                    appointment=appointment,
                     diagnosis=appointment.diagnosis or 'OPD Assessment',
                     clinical_notes=appointment.treatment_plan or ''
                 )
@@ -734,63 +1097,98 @@ class OPDConsultationEncounterView(views.APIView):
                     patient=patient,
                     doctor=doctor,
                     branch=branch,
+                    appointment=appointment,
+                    encounter_type='OPD',
                     priority=data.get('lab_priority', 'ROUTINE'),
-                    clinical_notes=f"Ordered during OPD consultation: {appointment.diagnosis}"
+                    clinical_notes=f"Ordered during OPD consultation: {appointment.diagnosis}",
+                    invoice=appointment.invoice
                 )
                 for tid in lab_test_ids:
                     test = LabTestCatalogue.objects.filter(id=tid).first()
                     if test:
+                        captured_price = test.standard_rate or Decimal('250.00')
                         LabOrderItem.objects.create(
                             lab_order=lab_order,
                             test=test,
+                            captured_price=captured_price,
                             reference_range=test.reference_range
                         )
+                        if appointment.invoice:
+                            InvoiceItem.objects.create(
+                                invoice=appointment.invoice,
+                                item_type=ChargeItemType.LAB_TEST,
+                                description=f"Lab Test: {test.name} [{test.code}]",
+                                source_reference=f"LAB_ORDER:{lab_order.id}",
+                                quantity=1,
+                                unit_price=captured_price
+                            )
 
             # 4. Radiology Orders
             radiology_orders_data = data.get('radiology_orders', [])
             for rad in radiology_orders_data:
                 rad_num = f"RAD-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-                RadiologyOrder.objects.create(
+                rad_modality = rad.get('modality', ModalityEnum.X_RAY)
+                rad_rate = Decimal('1200.00')
+                if rad_modality in ['MRI']:
+                    rad_rate = Decimal('8000.00')
+                elif rad_modality in ['CT', 'CT_SCAN']:
+                    rad_rate = Decimal('4500.00')
+                elif rad_modality in ['ULTRASOUND', 'USG']:
+                    rad_rate = Decimal('1800.00')
+
+                rad_order = RadiologyOrder.objects.create(
                     order_number=rad_num,
                     patient=patient,
                     doctor=doctor,
                     branch=branch,
-                    modality=rad.get('modality', ModalityEnum.X_RAY),
+                    appointment=appointment,
+                    encounter_type='OPD',
+                    modality=rad_modality,
                     study_name=rad.get('study_name', 'Chest X-Ray PA View'),
                     clinical_indication=rad.get('clinical_indication', appointment.diagnosis),
-                    priority=rad.get('priority', 'ROUTINE')
+                    priority=rad.get('priority', 'ROUTINE'),
+                    captured_rate=rad_rate,
+                    invoice=appointment.invoice
                 )
-
-            # 5. Book Follow-up Appointment if requested
-            book_follow_up = data.get('book_follow_up', False)
-            if book_follow_up and appointment.follow_up_date:
-                fu_slot = data.get('follow_up_time_slot', '10:00 - 10:15')
-                fu_apt_num = f"APT-FU-{appointment.follow_up_date.strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-
-                # Ensure doctor doesn't have collision
-                collision = Appointment.objects.filter(
-                    doctor=doctor,
-                    appointment_date=appointment.follow_up_date,
-                    time_slot=fu_slot
-                ).exclude(status__in=[AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW]).exists()
-
-                if not collision:
-                    Appointment.objects.create(
-                        appointment_number=fu_apt_num,
-                        appointment_type=AppointmentType.SCHEDULED,
-                        booking_source='FOLLOW_UP',
-                        patient=patient,
-                        doctor=doctor,
-                        department=appointment.department,
-                        branch=branch,
-                        appointment_date=appointment.follow_up_date,
-                        time_slot=fu_slot,
-                        status=AppointmentStatus.SCHEDULED,
-                        reason_for_visit=f"Follow-up for: {appointment.diagnosis or 'Consultation'}"
+                if appointment.invoice:
+                    InvoiceItem.objects.create(
+                        invoice=appointment.invoice,
+                        item_type=ChargeItemType.RADIOLOGY,
+                        description=f"Imaging Study: {rad_order.study_name} ({rad_order.modality})",
+                        source_reference=f"RADIOLOGY:{rad_order.id}",
+                        quantity=1,
+                        unit_price=rad_rate
                     )
 
-            # 6. Ensure consultation fee invoice is generated
-            get_or_create_consultation_invoice(appointment, created_by=request.user)
+            # Recalculate invoice totals with newly ordered diagnostic investigations
+            if appointment.invoice:
+                appointment.invoice.recalculate_totals()
+
+            # 5. Inpatient Admission Recommendation Integration
+            if data.get('recommend_admission'):
+                from .models import InpatientAdmission, AdmissionStatus
+                adm_priority = data.get('admission_priority', 'ROUTINE')
+                requested_ward = data.get('requested_ward_type', 'GENERAL_WARD')
+                adm_diag = data.get('admission_diagnosis') or appointment.diagnosis or 'Inpatient Admission Recommended'
+                adm_num = f"IPD-REQ-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+
+                InpatientAdmission.objects.create(
+                    admission_number=adm_num,
+                    patient=patient,
+                    requesting_doctor=doctor,
+                    admitting_doctor=doctor,
+                    branch=branch,
+                    admission_source='OPD',
+                    priority=adm_priority,
+                    requested_ward_type=requested_ward,
+                    initial_diagnosis=adm_diag,
+                    status=AdmissionStatus.REQUESTED
+                )
+
+            # 6. Follow-up Recommendation Only
+            # Strict RBAC: Only the Receptionist role can book appointments and issue patient tokens
+            # with mandatory payment collection. Doctors record the recommended follow_up_date and
+            # follow_up_instructions on the current encounter record without auto-booking an unpaid appointment.
 
             appointment.save()
 
@@ -819,7 +1217,7 @@ class OPDReportsView(views.APIView):
         start_date_str = request.query_params.get('start_date')
         end_date_str = request.query_params.get('end_date')
 
-        today = timezone.now().date()
+        today = timezone.localdate()
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else today - timedelta(days=30)
         except ValueError:
@@ -932,4 +1330,257 @@ class OPDReportsView(views.APIView):
             },
             'doctor_reports': list(doctor_metrics.values()),
             'department_reports': list(dept_metrics.values())
+        })
+
+
+class OPDLoungeTVView(views.APIView):
+    """
+    Public & Patient-accessible Real-Time Lounge TV Queue Telemetry API.
+    Provides live waiting lounge statistics, doctor queues, serving tokens,
+    and individual patient queue status.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        today = timezone.localdate()
+        # Automatically reconcile overdue past appointments to NO_SHOW
+        try:
+            Appointment.objects.filter(
+                appointment_date__lt=today,
+                status__in=[AppointmentStatus.SCHEDULED, AppointmentStatus.CHECKED_IN]
+            ).update(status=AppointmentStatus.NO_SHOW)
+        except Exception:
+            pass
+
+        query_date_str = request.query_params.get('date')
+        if query_date_str:
+            try:
+                target_date = datetime.strptime(query_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                target_date = today
+        else:
+            target_date = today
+
+        branch_id = request.query_params.get('branch_id')
+        doctor_id = request.query_params.get('doctor_id')
+
+        # RBAC: clinicians may only view their OWN cabin queue.
+        # Only RECEPTIONIST (front-desk queue controller) may view / switch across all cabins.
+        if request.user and request.user.is_authenticated:
+            try:
+                req_profile = resolve_user_profile(request)
+                req_role = getattr(getattr(req_profile, 'role', None), 'name', '') if req_profile else ''
+                if req_role in [RoleEnum.DOCTOR, RoleEnum.DEPARTMENT_HEAD, RoleEnum.MEDICAL_DIRECTOR]:
+                    own_staff = get_staff_profile(request.user)
+                    if own_staff:
+                        doctor_id = str(own_staff.id)
+            except Exception:
+                pass
+
+        qs = Appointment.objects.select_related(
+            'patient__user_profile', 'doctor__user_profile', 'department', 'branch'
+        ).filter(appointment_date=target_date)
+
+        from apps.core.models import Branch
+        valid_branch_filter = False
+        if branch_id and branch_id != '00000000-0000-0000-0000-000000000001':
+            try:
+                if Branch.objects.filter(id=branch_id).exists():
+                    valid_branch_filter = True
+            except Exception:
+                valid_branch_filter = False
+
+        if valid_branch_filter:
+            qs = qs.filter(branch_id=branch_id)
+        if doctor_id:
+            qs = qs.filter(doctor_id=doctor_id)
+
+        active_qs = qs.exclude(status__in=[AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW])
+
+        # Get all active doctors using valid relations on UserProfile
+        # (Q and RoleEnum are imported at module level; a local import here would
+        #  shadow RoleEnum for the whole function and break the RBAC check above.)
+        doc_profiles_qs = StaffProfile.objects.select_related('user_profile', 'department', 'branch').filter(
+            Q(user_profile__role__name__in=[RoleEnum.DOCTOR, RoleEnum.MEDICAL_DIRECTOR]) |
+            Q(medical_license_number__gt='') |
+            Q(designation__icontains='Doctor') |
+            Q(designation__icontains='Surgeon') |
+            Q(designation__icontains='Physician') |
+            Q(designation__icontains='Consultant'),
+            status='ACTIVE'
+        )
+        if valid_branch_filter:
+            branch_filtered = doc_profiles_qs.filter(branch_id=branch_id)
+            if branch_filtered.exists():
+                doc_profiles_qs = branch_filtered
+        if doctor_id:
+            doc_profiles_qs = doc_profiles_qs.filter(id=doctor_id)
+
+        now = timezone.now()
+
+        all_docs = list(doc_profiles_qs)
+        cabin_map = {}
+        for idx, doc in enumerate(all_docs, start=101):
+            cabin_map[str(doc.id)] = f"OPD Cabin {idx}"
+
+        doctor_stats = {}
+        for doc in all_docs:
+            d_id = str(doc.id)
+            doctor_stats[d_id] = {
+                'doctor_id': d_id,
+                'doctor_name': doc.user_profile.full_name,
+                'specialization': doc.specialization or 'Specialist Physician',
+                'department_name': doc.department.name if doc.department else 'OPD Department',
+                'cabin_number': cabin_map.get(d_id, 'OPD Cabin 101'),
+                'total_tokens': 0,
+                'waiting_in_lounge_count': 0,
+                'currently_serving_token': None,
+                'currently_serving_patient': None,
+                'consultation_started_at': None,
+                'next_tokens': [],
+                'completed_count': 0,
+            }
+
+        queue_items = []
+        total_tokens_today = 0
+        total_waiting_in_lounge = 0
+        total_in_consultation = 0
+        total_completed = 0
+
+        # Sort: IN_CONSULTATION first, then CHECKED_IN, then SCHEDULED, then COMPLETED
+        def appt_sort_key(a):
+            rank = (
+                0 if a.status == AppointmentStatus.IN_CONSULTATION else
+                1 if a.status == AppointmentStatus.CHECKED_IN else
+                2 if a.status == AppointmentStatus.SCHEDULED else 3
+            )
+            tok_digits = re.sub(r'\D', '', str(a.token_number or ''))
+            tok_num = int(tok_digits) if tok_digits else 9999
+            return (rank, tok_num)
+
+        sorted_appts = sorted(active_qs, key=appt_sort_key)
+
+        for appt in sorted_appts:
+            doc_id = str(appt.doctor.id)
+            if doc_id not in doctor_stats:
+                cabin_num = f"OPD Cabin {101 + len(cabin_map)}"
+                cabin_map[doc_id] = cabin_num
+                doctor_stats[doc_id] = {
+                    'doctor_id': doc_id,
+                    'doctor_name': appt.doctor.user_profile.full_name,
+                    'specialization': appt.doctor.specialization or 'Specialist',
+                    'department_name': appt.department.name if appt.department else 'OPD',
+                    'cabin_number': cabin_num,
+                    'total_tokens': 0,
+                    'waiting_in_lounge_count': 0,
+                    'currently_serving_token': None,
+                    'currently_serving_patient': None,
+                    'consultation_started_at': None,
+                    'next_tokens': [],
+                    'completed_count': 0,
+                }
+
+            d_entry = doctor_stats[doc_id]
+            token_str = appt.token_number or '—'
+            if token_str != '—':
+                d_entry['total_tokens'] += 1
+                total_tokens_today += 1
+
+            fname = appt.patient.user_profile.first_name or ''
+            lname = appt.patient.user_profile.last_name or ''
+            display_name = f"{fname} {lname[:1]}." if lname else (fname or f"Token #{token_str}")
+
+            wait_mins = 0
+            if appt.checked_in_at:
+                end_t = appt.consultation_started_at or now
+                wait_mins = max(0, round((end_t - appt.checked_in_at).total_seconds() / 60))
+
+            if appt.status == AppointmentStatus.IN_CONSULTATION:
+                total_in_consultation += 1
+                if not d_entry['currently_serving_token']:
+                    d_entry['currently_serving_token'] = token_str
+                    d_entry['currently_serving_patient'] = display_name
+                    d_entry['consultation_started_at'] = appt.consultation_started_at.isoformat() if appt.consultation_started_at else None
+            elif appt.status in [AppointmentStatus.CHECKED_IN, AppointmentStatus.SCHEDULED]:
+                total_waiting_in_lounge += 1
+                d_entry['waiting_in_lounge_count'] += 1
+                if token_str != '—':
+                    d_entry['next_tokens'].append(token_str)
+            elif appt.status == AppointmentStatus.COMPLETED:
+                total_completed += 1
+                d_entry['completed_count'] += 1
+
+            queue_items.append({
+                'id': str(appt.id),
+                'appointment_number': appt.appointment_number,
+                'token_number': token_str,
+                'status': appt.status,
+                'time_slot': appt.time_slot,
+                'patient_id': str(appt.patient.id),
+                'patient_display_name': display_name,
+                'doctor_id': doc_id,
+                'doctor_name': appt.doctor.user_profile.full_name,
+                'doctor_specialization': appt.doctor.specialization or '',
+                'department_name': appt.department.name if appt.department else '',
+                'cabin_number': d_entry['cabin_number'],
+                'checked_in_at': appt.checked_in_at.isoformat() if appt.checked_in_at else None,
+                'consultation_started_at': appt.consultation_started_at.isoformat() if appt.consultation_started_at else None,
+                'wait_minutes': wait_mins,
+            })
+
+        patient_telemetry = None
+        if request.user and request.user.is_authenticated:
+            p_profile = getattr(request.user, 'patient_profile', None)
+            if not p_profile:
+                p_profile = get_patient_profile(request.user)
+            if p_profile:
+                p_appt = active_qs.filter(patient=p_profile).first()
+                if p_appt:
+                    p_doc_id = str(p_appt.doctor.id)
+                    p_tok_digits = re.sub(r'\D', '', str(p_appt.token_number or ''))
+                    p_token = int(p_tok_digits) if p_tok_digits else 0
+                    tokens_ahead = 0
+                    if p_token > 0 and p_appt.status in [AppointmentStatus.SCHEDULED, AppointmentStatus.CHECKED_IN]:
+                        for q in queue_items:
+                            if q['doctor_id'] == p_doc_id and q['status'] in [AppointmentStatus.SCHEDULED, AppointmentStatus.CHECKED_IN]:
+                                q_tok_digits = re.sub(r'\D', '', str(q.get('token_number') or ''))
+                                q_tok = int(q_tok_digits) if q_tok_digits else 9999
+                                if q_tok < p_token:
+                                    tokens_ahead += 1
+
+                    p_doc_stats = doctor_stats.get(p_doc_id, {})
+                    patient_telemetry = {
+                        'appointment_id': str(p_appt.id),
+                        'appointment_number': p_appt.appointment_number,
+                        'token_number': p_appt.token_number or '—',
+                        'status': p_appt.status,
+                        'doctor_id': p_doc_id,
+                        'doctor_name': p_appt.doctor.user_profile.full_name,
+                        'specialization': p_appt.doctor.specialization or '',
+                        'cabin_number': p_doc_stats.get('cabin_number', 'OPD Cabin 101'),
+                        'department_name': p_appt.department.name if p_appt.department else '',
+                        'tokens_ahead': tokens_ahead,
+                        'total_waiting_for_doctor': p_doc_stats.get('waiting_in_lounge_count', 0),
+                        'currently_serving_token': p_doc_stats.get('currently_serving_token'),
+                        'currently_serving_patient': p_doc_stats.get('currently_serving_patient'),
+                        'estimated_wait_minutes': max(5, tokens_ahead * 10),
+                    }
+
+        first_branch = active_qs.first().branch if active_qs.exists() else None
+        branch_name = first_branch.name if first_branch else 'AURA Central Multi-Specialty Hospital'
+
+        return Response({
+            'hospital_name': 'AURA Multi-Specialty HMS',
+            'branch_name': branch_name,
+            'date': str(target_date),
+            'current_time': now.isoformat(),
+            'summary': {
+                'total_tokens_today': total_tokens_today,
+                'total_waiting_in_lounge': total_waiting_in_lounge,
+                'total_in_consultation': total_in_consultation,
+                'total_completed': total_completed,
+            },
+            'doctors': list(doctor_stats.values()),
+            'queue': queue_items,
+            'patient_telemetry': patient_telemetry,
         })

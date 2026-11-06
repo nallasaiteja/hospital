@@ -618,6 +618,8 @@ class Prescription(BaseUUIDModel):
     diagnosis = models.TextField()
     clinical_notes = models.TextField(blank=True)
     is_dispensed = models.BooleanField(default=False)
+    is_signed = models.BooleanField(default=True)
+    signed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'hms_prescriptions'
@@ -635,7 +637,11 @@ class PrescriptionItem(BaseUUIDModel):
     duration_days = models.PositiveIntegerField(default=5)
     total_quantity = models.PositiveIntegerField(default=10)
     dispensed_quantity = models.PositiveIntegerField(default=0)
+    timing = models.CharField(max_length=50, blank=True, default='MORNING_NIGHT')
+    food_instruction = models.CharField(max_length=50, blank=True, default='AFTER_FOOD')
+    route = models.CharField(max_length=50, blank=True, default='ORAL')
     instructions = models.TextField(blank=True)
+    special_instructions = models.TextField(blank=True)
 
     class Meta:
         db_table = 'hms_prescription_items'

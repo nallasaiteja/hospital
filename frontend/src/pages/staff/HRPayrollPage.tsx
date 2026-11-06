@@ -37,7 +37,13 @@ import { parseApiError } from '../../utils/errorHandler';
 export const HRPayrollPage: React.FC = () => {
   const { currentBranch } = useBranch();
   const { role } = useAuth();
-  const canAccessPayroll = ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'HR_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT'].includes(role || '');
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
+  const canOnboardEmployee = ['SUPER_ADMIN', 'HR_MANAGER'].includes(role || '');
+  const canManageShiftsAndAttendance = ['SUPER_ADMIN', 'HR_MANAGER', 'DEPARTMENT_HEAD'].includes(role || '');
+  const canApproveLeave = ['SUPER_ADMIN', 'HR_MANAGER', 'DEPARTMENT_HEAD'].includes(role || '');
+  const canPreparePayroll = ['SUPER_ADMIN', 'HR_MANAGER', 'ACCOUNTANT'].includes(role || '');
+  const canApprovePayroll = ['SUPER_ADMIN', 'FINANCE_MANAGER'].includes(role || '');
+  const canAccessPayroll = ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'HR_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT', 'AUDITOR'].includes(role || '');
 
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'EMPLOYEES' | 'ATTENDANCE' | 'ROSTERS' | 'LEAVES' | 'PAYROLL'>('DASHBOARD');
   
@@ -369,25 +375,31 @@ export const HRPayrollPage: React.FC = () => {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => handleQuickClock('CLOCK_IN')}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <Clock className="w-4 h-4" /> Quick Clock-In
-          </button>
-          <button
-            onClick={() => setIsLeaveModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition-colors border border-slate-700"
-          >
-            <Calendar className="w-4 h-4" /> Apply Leave
-          </button>
-          <button
-            onClick={() => setIsOnboardModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition-colors border border-slate-700"
-          >
-            <Plus className="w-4 h-4" /> Onboard Employee
-          </button>
-          {canAccessPayroll && (
+          {!isReadOnlyRole && (
+            <>
+              <button
+                onClick={() => handleQuickClock('CLOCK_IN')}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <Clock className="w-4 h-4" /> Quick Clock-In
+              </button>
+              <button
+                onClick={() => setIsLeaveModalOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition-colors border border-slate-700"
+              >
+                <Calendar className="w-4 h-4" /> Apply Leave
+              </button>
+            </>
+          )}
+          {canOnboardEmployee && (
+            <button
+              onClick={() => setIsOnboardModalOpen(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition-colors border border-slate-700"
+            >
+              <Plus className="w-4 h-4" /> Onboard Employee
+            </button>
+          )}
+          {canPreparePayroll && (
             <button
               onClick={() => setIsPayrollModalOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
@@ -594,22 +606,26 @@ export const HRPayrollPage: React.FC = () => {
                       <Badge variant={att.status === 'PRESENT' ? 'success' : 'warning'}>{att.status}</Badge>
                     </td>
                     <td className="p-3 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedAttendance(att);
-                          setCorrectionForm({
-                            correction_reason: '',
-                            clock_in: att.clock_in || '09:00:00',
-                            clock_out: att.clock_out || '18:00:00',
-                            status: att.status || 'PRESENT',
-                            total_hours: att.total_hours_worked || '9.00'
-                          });
-                          setIsCorrectionModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors"
-                      >
-                        Correct
-                      </button>
+                      {canManageShiftsAndAttendance ? (
+                        <button
+                          onClick={() => {
+                            setSelectedAttendance(att);
+                            setCorrectionForm({
+                              correction_reason: '',
+                              clock_in: att.clock_in || '09:00:00',
+                              clock_out: att.clock_out || '18:00:00',
+                              status: att.status || 'PRESENT',
+                              total_hours: att.total_hours_worked || '9.00'
+                            });
+                            setIsCorrectionModalOpen(true);
+                          }}
+                          className="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors"
+                        >
+                          Correct
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-500 font-mono">Read-Only</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -654,23 +670,25 @@ export const HRPayrollPage: React.FC = () => {
                   </h2>
                   <p className="text-xs text-slate-400 mt-0.5">Live database roster schedules across hospital staff</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAssignShiftForm({
-                      staff: staffMembers[0]?.id || '',
-                      shift: shifts.find((s: any) => s.shift_code === 'GS')?.id || shifts[0]?.id || '',
-                      roster_date: new Date().toISOString().split('T')[0],
-                      status: 'CONFIRMED',
-                      notes: 'Assigned General Day Shift schedule',
-                    });
-                    setIsAssignShiftModalOpen(true);
-                  }}
-                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Assign Shift</span>
-                </button>
+                {canManageShiftsAndAttendance && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAssignShiftForm({
+                        staff: staffMembers[0]?.id || '',
+                        shift: shifts.find((s: any) => s.shift_code === 'GS')?.id || shifts[0]?.id || '',
+                        roster_date: new Date().toISOString().split('T')[0],
+                        status: 'CONFIRMED',
+                        notes: 'Assigned General Day Shift schedule',
+                      });
+                      setIsAssignShiftModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Assign Shift</span>
+                  </button>
+                )}
               </div>
               <div className="space-y-2.5 max-h-[30rem] overflow-y-auto pr-1 custom-scrollbar">
                 {rosters.length === 0 ? (
@@ -771,7 +789,7 @@ export const HRPayrollPage: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="p-3 text-right space-x-2">
-                      {l.status === 'PENDING' && (
+                      {l.status === 'PENDING' && canApproveLeave ? (
                         <>
                           <button
                             onClick={() => handleLeaveDecision(l.id, 'approve')}
@@ -786,7 +804,9 @@ export const HRPayrollPage: React.FC = () => {
                             Reject
                           </button>
                         </>
-                      )}
+                      ) : l.status === 'PENDING' ? (
+                        <span className="text-xs text-slate-500 font-mono">HR / Dept Head Only</span>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -829,7 +849,7 @@ export const HRPayrollPage: React.FC = () => {
                         </Badge>
                       </td>
                       <td className="p-3 text-right space-x-2">
-                        {p.status === 'DRAFT' && (
+                        {p.status === 'DRAFT' && canPreparePayroll && (
                           <button
                             onClick={() => handleSubmitForApproval(p.id)}
                             className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded"
@@ -837,7 +857,7 @@ export const HRPayrollPage: React.FC = () => {
                             Submit Approval
                           </button>
                         )}
-                        {p.status === 'PENDING_APPROVAL' && (
+                        {p.status === 'PENDING_APPROVAL' && canApprovePayroll && (
                           <button
                             onClick={() => handleApprovePayroll(p.id)}
                             className="px-2 py-1 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded font-medium"
@@ -845,7 +865,7 @@ export const HRPayrollPage: React.FC = () => {
                             Executive Approve
                           </button>
                         )}
-                        {p.status === 'APPROVED' && (
+                        {p.status === 'APPROVED' && (canApprovePayroll || role === 'ACCOUNTANT') && (
                           <button
                             onClick={() => handlePostGL(p.id)}
                             className="px-2 py-1 text-xs bg-purple-600 hover:bg-purple-500 text-white rounded font-medium"
@@ -853,7 +873,7 @@ export const HRPayrollPage: React.FC = () => {
                             Post to GL
                           </button>
                         )}
-                        {p.status === 'POSTED_GL' && (
+                        {p.status === 'POSTED_GL' && canApprovePayroll && (
                           <button
                             onClick={() => handleDisbursePayroll(p.id)}
                             className="px-2 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium"

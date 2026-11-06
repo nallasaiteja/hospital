@@ -225,9 +225,16 @@ class PatientManagementView(APIView):
     @transaction.atomic
     def post(self, request):
         user_prof = get_current_user_profile(request)
-        # Only staff or admins can register walk-in patients
+        # Only authorized registration/clinical staff can register walk-in patients
         if user_prof and user_prof.role.name == RoleEnum.PATIENT:
             return Response({'detail': 'Patients cannot register other patients.'}, status=status.HTTP_403_FORBIDDEN)
+        if not request.user.is_superuser and user_prof and user_prof.role.name in [
+            RoleEnum.BRANCH_MANAGER, RoleEnum.HOSPITAL_ADMIN, RoleEnum.AUDITOR
+        ]:
+            return Response(
+                {'detail': f"Role '{user_prof.role.display_name}' has read-only monitoring access and cannot register patients."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         serializer = PatientRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -360,6 +367,13 @@ class PatientDetailView(APIView):
     @transaction.atomic
     def patch(self, request, pk):
         user_prof = get_current_user_profile(request)
+        if not request.user.is_superuser and user_prof and user_prof.role.name in [
+            RoleEnum.BRANCH_MANAGER, RoleEnum.HOSPITAL_ADMIN, RoleEnum.AUDITOR
+        ]:
+            return Response(
+                {'detail': f"Role '{user_prof.role.display_name}' has read-only monitoring access and cannot modify patient records."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         patient = self.get_patient(pk, user_prof)
         if patient == 'FORBIDDEN':
             return Response({'detail': 'Unauthorized.'}, status=status.HTTP_403_FORBIDDEN)
@@ -446,6 +460,32 @@ class PatientFullEMRView(APIView):
         if user_prof and user_prof.role.name == RoleEnum.PATIENT:
             if patient.user_profile_id != user_prof.id:
                 return Response({'detail': 'Access denied: Patient cannot access another record.'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Enforce Receptionist / Billing / Non-clinical restriction on full clinical EMR
+        if not request.user.is_superuser and user_prof and user_prof.role:
+            restricted_emr_roles = [
+                RoleEnum.RECEPTIONIST, RoleEnum.PHARMACIST, RoleEnum.LAB_TECHNICIAN,
+                RoleEnum.RADIOLOGY_TECHNICIAN, RoleEnum.BILLING_EXECUTIVE, RoleEnum.CASHIER,
+                RoleEnum.INSURANCE_COORDINATOR, RoleEnum.ACCOUNTANT, RoleEnum.FINANCE_MANAGER,
+                RoleEnum.HR_MANAGER, RoleEnum.INVENTORY_MANAGER, RoleEnum.PROCUREMENT_OFFICER,
+            ]
+            if user_prof.role.name in restricted_emr_roles:
+                from apps.core.activity_log_service import ActivityLogService
+                ActivityLogService.record(
+                    action='CLINICAL_EMR_ACCESS_DENIED',
+                    entity_type='PatientProfile',
+                    entity_id=str(patient.id),
+                    module='PATIENTS',
+                    request=request,
+                    user_profile=user_prof,
+                    branch=patient.primary_branch,
+                    status='DENIED',
+                    description=f"Role '{user_prof.role.display_name}' attempted to access restricted clinical EMR notes/diagnoses.",
+                )
+                return Response(
+                    {'detail': f"Access Denied: Role '{user_prof.role.display_name}' is restricted to demographic and registration records and cannot access confidential clinical EMR notes, diagnoses, or prescriptions."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         # 1. Appointments & Consultations
         appointments = Appointment.objects.filter(patient=patient).select_related(
@@ -765,8 +805,10 @@ class PatientMedicalHistoryView(APIView):
     @transaction.atomic
     def post(self, request, pk):
         user_prof = get_current_user_profile(request)
-        if user_prof and user_prof.role.name not in [RoleEnum.SUPER_ADMIN, RoleEnum.BRANCH_MANAGER, RoleEnum.DOCTOR, RoleEnum.NURSE]:
-            return Response({'detail': 'Only clinical staff can update medical history and allergies.'}, status=status.HTTP_403_FORBIDDEN)
+        if not request.user.is_superuser and user_prof and user_prof.role.name not in [
+            RoleEnum.SUPER_ADMIN, RoleEnum.MEDICAL_DIRECTOR, RoleEnum.DEPARTMENT_HEAD, RoleEnum.DOCTOR, RoleEnum.NURSE
+        ]:
+            return Response({'detail': 'Only clinical staff can update medical history and allergies. Branch Managers have read-only monitoring access.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             patient = PatientProfile.objects.get(id=pk)

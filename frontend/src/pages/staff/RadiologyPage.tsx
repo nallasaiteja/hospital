@@ -24,6 +24,7 @@ import { Select } from '../../components/common/Select';
 import { Input } from '../../components/common/Input';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface RadiologyRecord {
   id: string;
@@ -54,6 +55,8 @@ interface RadiologyRecord {
 
 export const RadiologyPage: React.FC = () => {
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [orders, setOrders] = useState<RadiologyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [bannerAlert, setBannerAlert] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
@@ -274,48 +277,52 @@ export const RadiologyPage: React.FC = () => {
       align: 'right',
       render: (r) => (
         <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-          {r.status === 'REQUESTED' && (
-            <button
-              onClick={() => {
-                setSelectedOrder(r);
-                setScheduledDate(new Date().toISOString().split('T')[0]);
-                setShowScheduleModal(true);
-              }}
-              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-800 hover:bg-cyan-900 transition flex items-center gap-1"
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              Schedule
-            </button>
-          )}
+          {!isReadOnlyRole && (
+            <>
+              {r.status === 'REQUESTED' && (
+                <button
+                  onClick={() => {
+                    setSelectedOrder(r);
+                    setScheduledDate(new Date().toISOString().split('T')[0]);
+                    setShowScheduleModal(true);
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-800 hover:bg-cyan-900 transition flex items-center gap-1"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  Schedule
+                </button>
+              )}
 
-          {r.status === 'SCHEDULED' && (
-            <button
-              onClick={() => {
-                setSelectedOrder(r);
-                setPacsUid(`1.2.840.10008.5.1.4.1.1.${Date.now()}`);
-                setShowCompleteModal(true);
-              }}
-              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-950 text-indigo-300 border border-indigo-800 hover:bg-indigo-900 transition flex items-center gap-1"
-            >
-              <Activity className="w-3.5 h-3.5" />
-              Complete Scan
-            </button>
-          )}
+              {r.status === 'SCHEDULED' && (
+                <button
+                  onClick={() => {
+                    setSelectedOrder(r);
+                    setPacsUid(`1.2.840.10008.5.1.4.1.1.${Date.now()}`);
+                    setShowCompleteModal(true);
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-950 text-indigo-300 border border-indigo-800 hover:bg-indigo-900 transition flex items-center gap-1"
+                >
+                  <Activity className="w-3.5 h-3.5" />
+                  Complete Scan
+                </button>
+              )}
 
-          {(r.status === 'COMPLETED' || r.status === 'IN_PROGRESS') && (
-            <button
-              onClick={() => {
-                setSelectedOrder(r);
-                setFindings(r.findings || '');
-                setImpression(r.impression || '');
-                setRecommendations(r.key_recommendations || '');
-                setShowReportModal(true);
-              }}
-              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white transition flex items-center gap-1"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              Report Study
-            </button>
+              {(r.status === 'COMPLETED' || r.status === 'IN_PROGRESS') && (
+                <button
+                  onClick={() => {
+                    setSelectedOrder(r);
+                    setFindings(r.findings || '');
+                    setImpression(r.impression || '');
+                    setRecommendations(r.key_recommendations || '');
+                    setShowReportModal(true);
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white transition flex items-center gap-1"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Report Study
+                </button>
+              )}
+            </>
           )}
 
           {(r.status === 'RELEASED' || r.status === 'REPORTED') && (
@@ -349,13 +356,15 @@ export const RadiologyPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowOrderModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-semibold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition self-start md:self-auto"
-          >
-            <Plus className="w-4 h-4" />
-            Request Imaging Study
-          </button>
+          {!isReadOnlyRole && (
+            <button
+              onClick={() => setShowOrderModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-semibold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition self-start md:self-auto"
+            >
+              <Plus className="w-4 h-4" />
+              Request Imaging Study
+            </button>
+          )}
           <button
             onClick={fetchOrders}
             className="p-2 border border-slate-700 hover:bg-slate-800 rounded-lg text-slate-300 transition"
@@ -438,10 +447,15 @@ export const RadiologyPage: React.FC = () => {
               label="Referring Physician"
               value={selectedDoctorId}
               onChange={(e) => setSelectedDoctorId(e.target.value)}
-              options={doctors.map((d) => ({
-                value: d.id,
-                label: `Dr. ${d.user_profile?.first_name || ''} ${d.user_profile?.last_name || 'Staff'} (${d.specialization || d.designation || 'Consultant'})`,
-              }))}
+              options={doctors.map((d) => {
+                const rawName = d?.user_profile?.full_name || `${d?.user_profile?.first_name || ''} ${d?.user_profile?.last_name || ''}`.trim() || 'Physician';
+                const cleanName = rawName.replace(/^Dr\.?\s*/i, '');
+                const specialty = d?.specialization || d?.designation || d?.department_name || 'Consultant';
+                return {
+                  value: d.id,
+                  label: `Dr. ${cleanName} (${specialty})`,
+                };
+              })}
               required
             />
 

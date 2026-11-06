@@ -27,6 +27,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { billingFinanceService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../../components/common/Badge';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
@@ -112,6 +113,8 @@ interface DashboardStats {
 }
 
 export const FinancialAccountsPage: React.FC = () => {
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<'ACCOUNTS' | 'TRANSACTIONS' | 'IMPORT' | 'RECONCILIATION' | 'DOCUMENTS'>('ACCOUNTS');
   const [accounts, setAccounts] = useState<FinancialAccount[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -610,20 +613,24 @@ export const FinancialAccountsPage: React.FC = () => {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <button
-            onClick={() => setActiveTab('IMPORT')}
-            className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-medium text-slate-200 transition-colors"
-          >
-            <UploadCloud className="w-4 h-4 text-sky-400" />
-            Import Statement
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 rounded-lg text-sm font-semibold text-slate-950 transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            New Account
-          </button>
+          {!isReadOnlyRole && (
+            <>
+              <button
+                onClick={() => setActiveTab('IMPORT')}
+                className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-medium text-slate-200 transition-colors"
+              >
+                <UploadCloud className="w-4 h-4 text-sky-400" />
+                Import Statement
+              </button>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 rounded-lg text-sm font-semibold text-slate-950 transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                New Account
+              </button>
+            </>
+          )}
         </div>
       </div>
 

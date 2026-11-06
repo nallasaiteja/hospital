@@ -38,11 +38,14 @@ import { Select } from '../../components/common/Select';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../context/AuthContext';
 
 export const PatientDetailPage: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
 
   const [emr, setEmr] = useState<PatientEMRData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -513,12 +516,14 @@ export const PatientDetailPage: React.FC = () => {
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <Heart className="w-5 h-5 text-rose-400" /> Past Clinical History
             </h3>
-            <button
-              onClick={() => setShowHistoryModal(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700 transition"
-            >
-              Edit History
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowHistoryModal(true)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700 transition"
+              >
+                Edit History
+              </button>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
@@ -564,12 +569,14 @@ export const PatientDetailPage: React.FC = () => {
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-rose-400" /> Documented Drug & Environmental Allergies
             </h3>
-            <button
-              onClick={() => setShowHistoryModal(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-rose-400 hover:bg-slate-700 transition"
-            >
-              Update Allergies
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowHistoryModal(true)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-rose-400 hover:bg-slate-700 transition"
+              >
+                Update Allergies
+              </button>
+            )}
           </div>
           {emr.allergies && emr.allergies.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -598,12 +605,14 @@ export const PatientDetailPage: React.FC = () => {
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <FileCheck className="w-5 h-5 text-emerald-400" /> Informed Consents & Authorizations
             </h3>
-            <button
-              onClick={() => setShowConsentModal(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" /> Add Consent Form
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowConsentModal(true)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> Add Consent Form
+              </button>
+            )}
           </div>
           {emr.consents && emr.consents.length > 0 ? (
             <div className="space-y-3">
@@ -627,7 +636,7 @@ export const PatientDetailPage: React.FC = () => {
                       <p className="text-xs text-rose-400 font-medium">Revocation Reason: {consent.revocation_reason}</p>
                     )}
                   </div>
-                  {consent.status === 'GRANTED' && (
+                  {consent.status === 'GRANTED' && !isReadOnlyRole && (
                     <button
                       onClick={() => setShowRevokeModal(consent.id)}
                       className="px-2.5 py-1 text-xs rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition"
@@ -653,12 +662,14 @@ export const PatientDetailPage: React.FC = () => {
             <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <Upload className="w-5 h-5 text-violet-400" /> Supporting Clinical Documents & Identification
             </h3>
-            <button
-              onClick={() => setShowDocModal(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/30 hover:bg-violet-500/20 transition flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" /> Upload Document
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowDocModal(true)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/30 hover:bg-violet-500/20 transition flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> Upload Document
+              </button>
+            )}
           </div>
           {emr.documents && emr.documents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -720,7 +731,7 @@ export const PatientDetailPage: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-slate-200 font-medium">{appt.date} • {appt.time_slot}</p>
-                    {appt.token_number && <p className="text-slate-400 font-mono text-[11px]">Token: #{appt.token_number}</p>}
+                    {appt.token_number && <p className="text-slate-400 font-mono text-[11px]">Token: #{String(appt.token_number).replace(/^(token\s*#*|#)+/i, '').trim()}</p>}
                   </div>
                 </div>
               ))}

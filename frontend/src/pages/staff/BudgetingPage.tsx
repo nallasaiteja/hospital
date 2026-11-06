@@ -941,7 +941,7 @@ export const BudgetingPage: React.FC = () => {
                 <div>
                   <span className="text-slate-500 block">Minimum Liquidity Line:</span>
                   <span className="text-sm font-bold text-amber-400 font-mono">
-                    {fmt(forecastData?.minimum_safety_threshold || 1000000)}
+                    {fmt(forecastData?.minimum_safety_threshold ?? 0)}
                   </span>
                 </div>
               </div>

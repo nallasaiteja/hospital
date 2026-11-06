@@ -21,7 +21,8 @@ from .models import (
     ModalityEnum, RadiologyOrder, RadiologyStatus,
     DiagnosticReport, DiagnosticReportStatus, CriticalAlertNotification,
     DiagnosticEquipment, EquipmentTransmissionLog, HL7TransmissionLog,
-    Appointment, InpatientAdmission, EmergencyEncounter
+    Appointment, InpatientAdmission, EmergencyEncounter,
+    DoctorNotification, DoctorNotificationType
 )
 from .serializers import (
     LabTestCatalogueSerializer, LabOrderSerializer, LabOrderItemSerializer,
@@ -112,7 +113,7 @@ class LaboratoryDashboardStatsView(views.APIView):
             diff = (s.updated_at - s.collected_at).total_seconds() / 3600.0
             total_tat_hours += max(0.5, diff)
             tat_count += 1
-        avg_tat_hours = round(total_tat_hours / tat_count, 1) if tat_count > 0 else 3.5
+        avg_tat_hours = round(total_tat_hours / tat_count, 1) if tat_count > 0 else 0.0
 
         # Recent Critical Alerts
         active_critical_alerts = CriticalAlertNotificationSerializer(
@@ -729,8 +730,8 @@ class LabReportApprovalView(views.APIView):
 
         staff = get_staff_profile(request.user)
 
-        # Permission check: Approver must be Doctor, Medical Director, or Admin
-        allowed_roles = [RoleEnum.DOCTOR, RoleEnum.MEDICAL_DIRECTOR, RoleEnum.HOSPITAL_ADMIN, RoleEnum.SUPER_ADMIN]
+        # Permission check: Approver must be Doctor, Pathologist/Lab Technician, Medical Director, or Admin
+        allowed_roles = [RoleEnum.DOCTOR, RoleEnum.MEDICAL_DIRECTOR, RoleEnum.HOSPITAL_ADMIN, RoleEnum.SUPER_ADMIN, RoleEnum.LAB_TECHNICIAN, 'PATHOLOGIST']
         user_prof = get_user_profile(request.user)
         user_role = user_prof.role.name if (user_prof and user_prof.role) else (staff.user_profile.role.name if (staff and staff.user_profile and staff.user_profile.role) else '')
         if user_role not in allowed_roles:
@@ -768,6 +769,23 @@ class LabReportApprovalView(views.APIView):
                 'clinical_comments': request.data.get('clinical_comments', '')
             }
         )
+
+        # Optional immediate publishing if explicitly requested
+        publish_immediately = bool(request.data.get('publish_immediately', False))
+        if publish_immediately:
+            payload_str = f"{order.order_number}:{report.report_number}:{order.patient.medical_record_number}:{timezone.now().isoformat()}"
+            digital_signature = hashlib.sha256(payload_str.encode('utf-8')).hexdigest()
+
+            report.status = DiagnosticReportStatus.RELEASED
+            report.is_released = True
+            report.released_at = timezone.now()
+            report.digital_signature_hash = digital_signature
+            report.save()
+
+            order.status = LabOrderStatus.RELEASED
+            order.save(update_fields=['status'])
+            order.items.update(status=LabItemStatus.RELEASED)
+            order.samples.update(status=SampleStatus.COMPLETED)
 
         log_lab_audit(
             request.user,
@@ -834,6 +852,24 @@ class LabReportReleaseView(views.APIView):
 
         # Mark samples completed
         order.samples.update(status=SampleStatus.COMPLETED)
+
+        # Dispatch real-time notification to the ordering doctor
+        if order.doctor:
+            has_abnormal = order.items.filter(is_abnormal=True).exists()
+            try:
+                DoctorNotification.objects.create(
+                    recipient_doctor=order.doctor,
+                    branch=order.branch,
+                    notification_type=DoctorNotificationType.CRITICAL_ALERT if has_abnormal else DoctorNotificationType.LAB_REPORT_AVAILABLE,
+                    title=f"{'CRITICAL ALERT: ' if has_abnormal else 'Lab Report Released: '}{report.report_number}",
+                    message=f"Diagnostic laboratory report for {order.patient.user_profile.full_name} is released and available in EMR.",
+                    priority='CRITICAL' if has_abnormal else 'ROUTINE',
+                    patient=order.patient,
+                    target_url=f"/staff/doctor-workspace?tab=emr&patient={order.patient.id}",
+                    metadata={'lab_order_id': str(order.id), 'report_id': str(report.id), 'report_number': report.report_number}
+                )
+            except Exception:
+                pass
 
         log_lab_audit(
             request.user,
@@ -1057,8 +1093,11 @@ class RadiologyWorkflowViewSet(viewsets.ModelViewSet):
         )
 
         # Patient portal isolation
-        if hasattr(user, 'profile') and hasattr(user.profile, 'patient_profile'):
-            return qs.filter(patient=user.profile.patient_profile, is_released=True)
+        pat_profile = getattr(user, 'profile', None) and getattr(user.profile, 'patient_profile', None)
+        if not pat_profile:
+            pat_profile = get_patient_profile(user)
+        if pat_profile:
+            return qs.filter(patient=pat_profile, is_released=True)
 
         branch_id = self.request.query_params.get('branch_id')
         modality = self.request.query_params.get('modality')
@@ -1266,6 +1305,23 @@ class RadiologyReportActionView(views.APIView):
                     delivery_status='DELIVERED_IN_APP'
                 )
 
+            # Dispatch real-time notification to the ordering doctor
+            if order.doctor:
+                try:
+                    DoctorNotification.objects.create(
+                        recipient_doctor=order.doctor,
+                        branch=order.branch,
+                        notification_type=DoctorNotificationType.CRITICAL_ALERT if order.is_critical else DoctorNotificationType.LAB_REPORT_AVAILABLE,
+                        title=f"{'CRITICAL ALERT: ' if order.is_critical else 'Radiology Study Released: '}{order.study_name} ({order.modality})",
+                        message=f"Imaging interpretation for {order.patient.user_profile.full_name} is finalized and available in EMR.",
+                        priority='CRITICAL' if order.is_critical else 'ROUTINE',
+                        patient=order.patient,
+                        target_url=f"/staff/doctor-workspace?tab=emr&patient={order.patient.id}",
+                        metadata={'radiology_order_id': str(order.id), 'study_name': order.study_name, 'modality': order.modality}
+                    )
+                except Exception:
+                    pass
+
         log_lab_audit(request.user, f"RADIOLOGY_{action}", 'RadiologyOrder', order.id, branch=order.branch)
         return Response({'success': True, 'message': msg, 'order': RadiologyOrderSerializer(order).data})
 
@@ -1281,7 +1337,7 @@ class DiagnosticReportDetailView(views.APIView):
         report = DiagnosticReport.objects.select_related(
             'patient__user_profile', 'branch', 'prepared_by__user_profile', 'approved_by__user_profile',
             'lab_order', 'radiology_order'
-        ).filter(id=pk).first()
+        ).filter(Q(id=pk) | Q(lab_order_id=pk) | Q(radiology_order_id=pk)).first()
 
         if not report:
             return Response({'error': 'Diagnostic report not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -1332,7 +1388,7 @@ class DiagnosticReportDownloadView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        report = DiagnosticReport.objects.filter(id=pk).first()
+        report = DiagnosticReport.objects.filter(Q(id=pk) | Q(lab_order_id=pk) | Q(radiology_order_id=pk)).first()
         if not report:
             return Response({'error': 'Report not found.'}, status=status.HTTP_404_NOT_FOUND)
 

@@ -875,3 +875,286 @@ class HospitalSetting(BaseUUIDModel):
 
     def __str__(self):
         return f"{self.setting_key}: {self.setting_value}"
+
+
+# =============================================================================
+# 12. RECRUITMENT, WORKFORCE REQUESTS, GRIEVANCES & APPRAISALS (PHASE 2-6)
+# =============================================================================
+
+class StaffRequirementRequest(BaseUUIDModel):
+    """
+    Department Head staffing shortage request to HR Management.
+    Workflow: Department Head submits -> HR reviews -> Management approves -> Recruitment initiates.
+    """
+    URGENCY_LEVELS = [
+        ('NORMAL', 'Normal Routine Need'),
+        ('HIGH', 'High - Impacting Workload'),
+        ('CRITICAL', 'Critical - Patient Care at Risk'),
+    ]
+    STATUS_CHOICES = [
+        ('SUBMITTED', 'Submitted to HR'),
+        ('HR_REVIEW', 'Under HR Review'),
+        ('APPROVED', 'Approved for Hiring'),
+        ('RECRUITING', 'Recruitment in Progress'),
+        ('FULFILLED', 'Position Fulfilled'),
+        ('REJECTED', 'Rejected / Deferred'),
+    ]
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='staff_requirement_requests')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='staff_requirement_requests')
+    requested_by = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, related_name='submitted_staff_requirements')
+    designation = models.CharField(max_length=100)
+    count = models.PositiveIntegerField(default=1)
+    urgency = models.CharField(max_length=20, choices=URGENCY_LEVELS, default='NORMAL')
+    reason = models.TextField()
+    qualifications_needed = models.TextField(blank=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='SUBMITTED')
+    hr_reviewer = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_staff_requirements')
+    hr_notes = models.TextField(blank=True)
+    rejection_reason = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'hms_staff_requirement_requests'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.department.code}: {self.count}x {self.designation} [{self.status}]"
+
+
+class JobVacancy(BaseUUIDModel):
+    """
+    Hospital Open Job Vacancies managed by HR.
+    """
+    VACANCY_STATUS = [
+        ('OPEN', 'Open / Active'),
+        ('ON_HOLD', 'On Hold'),
+        ('FILLED', 'Filled / Closed'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+    title = models.CharField(max_length=150)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='job_vacancies')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='job_vacancies')
+    designation = models.CharField(max_length=100)
+    vacancies_count = models.PositiveIntegerField(default=1)
+    employment_type = models.CharField(max_length=30, choices=EmploymentType.choices, default=EmploymentType.FULL_TIME)
+    experience_years_min = models.PositiveIntegerField(default=1)
+    description = models.TextField()
+    requirements = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=VACANCY_STATUS, default='OPEN')
+    posted_by = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='posted_vacancies')
+    deadline_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'hms_job_vacancies'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.department.name}) [{self.status}]"
+
+
+class JobApplication(BaseUUIDModel):
+    """
+    Candidate Applications for Job Vacancies.
+    """
+    APPLICATION_STATUS = [
+        ('APPLIED', 'Application Received'),
+        ('SHORTLISTED', 'Shortlisted'),
+        ('INTERVIEW_SCHEDULED', 'Interview Scheduled'),
+        ('INTERVIEW_COMPLETED', 'Interview Completed'),
+        ('OFFERED', 'Offer Letter Sent'),
+        ('HIRED', 'Hired & Onboarding'),
+        ('REJECTED', 'Not Selected'),
+    ]
+    vacancy = models.ForeignKey(JobVacancy, on_delete=models.CASCADE, related_name='applications')
+    candidate_name = models.CharField(max_length=150)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30)
+    qualification = models.CharField(max_length=150, blank=True)
+    experience_years = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('0.0'))
+    resume_url = models.URLField(max_length=500, blank=True)
+    status = models.CharField(max_length=30, choices=APPLICATION_STATUS, default='APPLIED')
+    interview_date = models.DateTimeField(null=True, blank=True)
+    interviewer = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='interviewed_applications')
+    interview_feedback = models.TextField(blank=True)
+    rating = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'hms_job_applications'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.candidate_name} -> {self.vacancy.title} [{self.status}]"
+
+
+class PerformanceAppraisal(BaseUUIDModel):
+    """
+    Formal Hospital Performance Evaluation Cycle.
+    Department Heads provide clinical/operational feedback; HR administers process.
+    """
+    APPRAISAL_STATUS = [
+        ('INITIATED', 'Initiated by HR'),
+        ('HOD_REVIEW', 'Awaiting HOD Feedback'),
+        ('HOD_SUBMITTED', 'HOD Feedback Submitted'),
+        ('HR_PROCESSED', 'HR Finalized'),
+        ('COMPLETED', 'Completed'),
+    ]
+    staff = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, related_name='appraisals')
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='appraisals')
+    cycle_name = models.CharField(max_length=100)
+    status = models.CharField(max_length=30, choices=APPRAISAL_STATUS, default='INITIATED')
+    hod_reviewer = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_hod_appraisals')
+    clinical_competence_rating = models.PositiveSmallIntegerField(default=4)
+    teamwork_rating = models.PositiveSmallIntegerField(default=4)
+    punctuality_rating = models.PositiveSmallIntegerField(default=4)
+    overall_rating = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('4.0'))
+    hod_feedback = models.TextField(blank=True)
+    training_recommendation = models.TextField(blank=True)
+    promotion_recommendation = models.CharField(max_length=100, blank=True)
+    hr_reviewer = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_hr_appraisals')
+    hr_notes = models.TextField(blank=True)
+    increment_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
+
+    class Meta:
+        db_table = 'hms_performance_appraisals'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.staff.user_profile.full_name} ({self.cycle_name}) [{self.status}]"
+
+
+class TrainingProgram(BaseUUIDModel):
+    """
+    Hospital Training, Continuing Medical Education (CME), and Compliance Modules.
+    """
+    CATEGORIES = [
+        ('CLINICAL_SAFETY', 'Clinical Protocols & Patient Safety'),
+        ('BLS_ACLS', 'BLS / ACLS Resuscitation Certification'),
+        ('INFECTION_CONTROL', 'Hospital Infection Prevention & Control'),
+        ('NABH_COMPLIANCE', 'NABH Quality & Statutory Standards'),
+        ('SOFTWARE_TRAINING', 'AURA HMS & Clinical EHR Training'),
+        ('PATIENT_CARE', 'Patient Communication & Compassionate Care'),
+    ]
+    STATUS_CHOICES = [
+        ('UPCOMING', 'Upcoming'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('COMPLETED', 'Completed'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+    title = models.CharField(max_length=200)
+    category = models.CharField(max_length=50, choices=CATEGORIES)
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='training_programs')
+    trainer_name = models.CharField(max_length=150)
+    scheduled_date = models.DateField()
+    duration_hours = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('2.0'))
+    is_mandatory = models.BooleanField(default=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='UPCOMING')
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'hms_training_programs'
+        ordering = ['-scheduled_date']
+
+    def __str__(self):
+        return f"{self.title} ({self.scheduled_date}) [{self.status}]"
+
+
+class EmployeeTrainingEnrollment(BaseUUIDModel):
+    """
+    Employee Enrollment, Attendance, and Certification for Training Programs.
+    """
+    program = models.ForeignKey(TrainingProgram, on_delete=models.CASCADE, related_name='enrollments')
+    staff = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, related_name='training_enrollments')
+    attendance_status = models.CharField(
+        max_length=20,
+        choices=[('ENROLLED', 'Enrolled'), ('ATTENDED', 'Attended & Completed'), ('ABSENT', 'Absent / Missed')],
+        default='ENROLLED'
+    )
+    certification_issued = models.BooleanField(default=False)
+    certificate_expiry_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'hms_training_enrollments'
+        unique_together = ('program', 'staff')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.staff.employee_id} -> {self.program.title} ({self.attendance_status})"
+
+
+class EmployeeGrievance(BaseUUIDModel):
+    """
+    Confidential Employee Grievance & Harassment Redressal Mechanism.
+    """
+    GRIEVANCE_CATEGORIES = [
+        ('WORKPLACE_ENVIRONMENT', 'Workplace Environment & Ergonomics'),
+        ('COMPENSATION', 'Salary, Allowances & Benefits'),
+        ('INTERPERSONAL', 'Interpersonal Conflict / Team Relations'),
+        ('HARASSMENT', 'Harassment / Discrimination'),
+        ('SHIFT_DUTY', 'Duty Allocation & Working Hours'),
+        ('ETHICAL', 'Clinical Ethics / Integrity Issue'),
+    ]
+    STATUS_CHOICES = [
+        ('OPEN', 'Submitted / Open'),
+        ('UNDER_INVESTIGATION', 'Under Investigation'),
+        ('ESCALATED', 'Escalated to Leadership'),
+        ('RESOLVED', 'Resolved with Action Plan'),
+        ('CLOSED', 'Closed'),
+    ]
+    grievance_code = models.CharField(max_length=50, unique=True, db_index=True)
+    staff = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, related_name='filed_grievances')
+    category = models.CharField(max_length=40, choices=GRIEVANCE_CATEGORIES)
+    subject = models.CharField(max_length=200)
+    description = models.TextField()
+    is_confidential = models.BooleanField(default=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='OPEN')
+    assigned_hr = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='handled_grievances')
+    investigation_notes = models.TextField(blank=True)
+    resolution_notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'hms_employee_grievances'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.grievance_code}] {self.subject} ({self.status})"
+
+
+class DepartmentOperationalIssue(BaseUUIDModel):
+    """
+    Department Head Operational Issues, Equipment Breakdowns, and Shortages.
+    """
+    ISSUE_TYPES = [
+        ('STAFFING_SHORTAGE', 'Critical Staffing Shortage'),
+        ('EQUIPMENT_FAILURE', 'Medical Device / Analyzer Breakdown'),
+        ('CONSUMABLE_OUT_OF_STOCK', 'Surgical / Pharmacy Consumable Depleted'),
+        ('PATIENT_OVERFLOW', 'Emergency / OPD Patient Surge'),
+        ('FACILITY_ISSUE', 'HVAC / Power / Infrastructure Fault'),
+    ]
+    SEVERITY_LEVELS = [
+        ('LOW', 'Low - Advisory'),
+        ('MEDIUM', 'Medium - Impairing Flow'),
+        ('HIGH', 'High - Urgent Intervention'),
+        ('CRITICAL', 'Critical - Life/Safety Threat'),
+    ]
+    STATUS_CHOICES = [
+        ('OPEN', 'Reported / Open'),
+        ('IN_PROGRESS', 'Assigned / Under Resolution'),
+        ('RESOLVED', 'Resolved'),
+        ('ESCALATED', 'Escalated to Hospital Admin / Branch Manager'),
+    ]
+    issue_code = models.CharField(max_length=50, unique=True, db_index=True)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='operational_issues')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='department_operational_issues')
+    reported_by = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, related_name='reported_operational_issues')
+    issue_type = models.CharField(max_length=40, choices=ISSUE_TYPES)
+    severity = models.CharField(max_length=20, choices=SEVERITY_LEVELS, default='MEDIUM')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='OPEN')
+    resolution_notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'hms_department_operational_issues'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.issue_code}] {self.department.code}: {self.title} [{self.severity}]"

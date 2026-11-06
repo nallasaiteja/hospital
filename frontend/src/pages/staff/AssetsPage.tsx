@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { operationsHrService } from '../../services/api';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
@@ -29,6 +30,8 @@ import { parseApiError } from '../../utils/errorHandler';
 
 export const AssetsPage: React.FC = () => {
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<'REGISTER' | 'DEPRECIATION' | 'MAINTENANCE' | 'SCHEDULES'>('REGISTER');
   
   // Data States
@@ -181,12 +184,14 @@ export const AssetsPage: React.FC = () => {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setIsAddAssetModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" /> Register New Asset
-          </button>
+          {!isReadOnlyRole && (
+            <button
+              onClick={() => setIsAddAssetModalOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Register New Asset
+            </button>
+          )}
         </div>
       </div>
 
@@ -324,15 +329,17 @@ export const AssetsPage: React.FC = () => {
                       <Badge variant={asset.status === 'OPERATIONAL' ? 'success' : 'warning'}>{asset.status}</Badge>
                     </td>
                     <td className="p-3 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedAsset(asset);
-                          setIsDepreciateModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-600/40 rounded transition-colors"
-                      >
-                        <TrendingDown className="w-3.5 h-3.5" /> Depreciate
-                      </button>
+                      {!isReadOnlyRole && (
+                        <button
+                          onClick={() => {
+                            setSelectedAsset(asset);
+                            setIsDepreciateModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-600/40 rounded transition-colors"
+                        >
+                          <TrendingDown className="w-3.5 h-3.5" /> Depreciate
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -384,15 +391,17 @@ export const AssetsPage: React.FC = () => {
                         <td className="p-3">{asset.useful_life_years} years</td>
                         <td className="p-3 font-mono font-bold text-amber-400">₹{parseFloat(annual).toLocaleString()} / yr</td>
                         <td className="p-3 text-right">
-                          <button
-                            onClick={() => {
-                              setSelectedAsset(asset);
-                              setIsDepreciateModalOpen(true);
-                            }}
-                            className="px-3 py-1 text-xs bg-amber-600 hover:bg-amber-500 text-white rounded font-medium shadow-sm transition-colors"
-                          >
-                            Post to GL
-                          </button>
+                          {!isReadOnlyRole && (
+                            <button
+                              onClick={() => {
+                                setSelectedAsset(asset);
+                                setIsDepreciateModalOpen(true);
+                              }}
+                              className="px-3 py-1 text-xs bg-amber-600 hover:bg-amber-500 text-white rounded font-medium shadow-sm transition-colors"
+                            >
+                              Post to GL
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -445,15 +454,17 @@ export const AssetsPage: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="p-3 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedTask(t);
-                          setIsCertifyModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded transition-colors"
-                      >
-                        Certify & Complete
-                      </button>
+                      {!isReadOnlyRole && (
+                        <button
+                          onClick={() => {
+                            setSelectedTask(t);
+                            setIsCertifyModalOpen(true);
+                          }}
+                          className="px-2.5 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded transition-colors"
+                        >
+                          Certify & Complete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

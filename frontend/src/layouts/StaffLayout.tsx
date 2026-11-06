@@ -35,12 +35,23 @@ import {
   Flame,
   Radio,
   Languages,
+  Calendar,
+  Award,
+  GraduationCap,
+  UserMinus,
+  AlertOctagon,
+  CheckSquare,
+  FileCheck,
+  Briefcase,
+  Tag,
+  Wallet,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useBranch } from '../context/BranchContext';
 import { Badge } from '../components/common/Badge';
 import { LanguageSelector } from '../components/common/LanguageSelector';
+import { canAccessRoute, ROLE_DATA_SCOPES, STRICT_READ_ONLY_ROLES } from '../config/rbacMatrix';
 import clsx from 'clsx';
 
 interface NavGroup {
@@ -91,6 +102,32 @@ export const StaffLayout: React.FC = () => {
     };
   }, [isMobileDrawerOpen]);
 
+  // Role-based automatic route protection
+  useEffect(() => {
+    if (!role) return;
+    if (role === 'DOCTOR') {
+      if (!location.pathname.startsWith('/staff/doctor-workspace') && !location.pathname.startsWith('/staff/voice-translation') && !location.pathname.startsWith('/staff/lounge-tv')) {
+        navigate('/staff/doctor-workspace', { replace: true });
+      }
+    } else if (role === 'SUPER_ADMIN') {
+      if (location.pathname === '/staff/dashboard' || location.pathname === '/staff') {
+        navigate('/staff/branch-manager', { replace: true });
+      }
+    } else if (role === 'HOSPITAL_ADMIN') {
+      if (location.pathname === '/staff/dashboard' || location.pathname === '/staff') {
+        navigate('/staff/reports?tab=FINANCE', { replace: true });
+      }
+    } else if (role === 'INVENTORY_MANAGER' || role === 'PROCUREMENT_OFFICER') {
+      if (location.pathname === '/staff/dashboard' || location.pathname === '/staff' || location.pathname === '/staff/') {
+        navigate('/staff/inventory', { replace: true });
+      }
+    } else if (role === 'INSURANCE_COORDINATOR') {
+      if (location.pathname.startsWith('/staff/patients') || location.pathname === '/staff/dashboard' || location.pathname === '/staff' || location.pathname === '/staff/') {
+        navigate('/staff/insurance', { replace: true });
+      }
+    }
+  }, [role, location.pathname, navigate]);
+
   // All 27 Hospital Management Modules organized into 4 logical groups with strict RBAC scoping
   const navGroups: NavGroup[] = [
     {
@@ -98,10 +135,11 @@ export const StaffLayout: React.FC = () => {
       translationKey: 'navigation.coreOperations',
       items: [
         { label: '1. Dashboard', translationKey: 'navigation.dashboard', path: '/staff/dashboard', icon: Activity },
-        { label: '2. Patient Management', translationKey: 'navigation.patients', path: '/staff/patients', icon: Users, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
-        { label: '3. OPD & Appointments', translationKey: 'navigation.appointments', path: '/staff/appointments', icon: Stethoscope, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
-        { label: '4. Emergency & Casualty', translationKey: 'navigation.emergency', path: '/staff/emergency', icon: Flame, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE'] },
-        { label: '5. IPD & Admissions', translationKey: 'navigation.admissions', path: '/staff/admissions', icon: Bed, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
+        { label: 'Branch Manager', translationKey: 'navigation.branchManager', path: '/staff/branch-manager', icon: Building2, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN'] },
+        { label: '2. Patient Management', translationKey: 'navigation.patients', path: '/staff/patients', icon: Users, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'RECEPTIONIST'] },
+        { label: '3. OPD & Appointments', translationKey: 'navigation.appointments', path: '/staff/appointments', icon: Stethoscope, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'RECEPTIONIST'] },
+        { label: '4. Emergency & Casualty', translationKey: 'navigation.emergency', path: '/staff/emergency', icon: Flame, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE'] },
+        { label: '5. IPD & Admissions', translationKey: 'navigation.admissions', path: '/staff/admissions', icon: Bed, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'RECEPTIONIST'] },
         { label: 'Voice Translation', translationKey: 'navigation.voiceTranslation', path: '/staff/voice-translation', icon: Languages },
       ],
     },
@@ -109,53 +147,317 @@ export const StaffLayout: React.FC = () => {
       title: 'Clinical & Diagnostics',
       translationKey: 'navigation.clinicalDiagnostics',
       items: [
-        { label: '6. Doctors & Nursing', translationKey: 'navigation.doctorsNursing', path: '/staff/doctors-nursing', icon: UserCheck, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE', 'MEDICAL_DIRECTOR'] },
-        { label: '7. Laboratory & Diagnostics', translationKey: 'navigation.laboratory', path: '/staff/laboratory', icon: Layers, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'LAB_TECHNICIAN', 'PATHOLOGIST'] },
-        { label: '8. Radiology & Imaging', translationKey: 'navigation.radiology', path: '/staff/radiology', icon: Radio, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'RADIOLOGY_TECHNICIAN', 'RADIOLOGIST'] },
-        { label: '9. Pharmacy Formulary', translationKey: 'navigation.pharmacy', path: '/staff/pharmacy', icon: Pill, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'PHARMACIST'] },
-        { label: '10. Inventory & Procurement', translationKey: 'navigation.inventory', path: '/staff/inventory', icon: ShoppingBag, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'PHARMACIST', 'INVENTORY_MANAGER', 'PROCUREMENT_OFFICER'] },
-        { label: '11. OT & ICU Surgical Suite', translationKey: 'navigation.surgeryIcu', path: '/staff/surgery-icu', icon: Scissors, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE'] },
+        { label: 'Doctor Clinical Workspace', translationKey: 'navigation.doctorWorkspace', path: '/staff/doctor-workspace', icon: Stethoscope, roles: ['SUPER_ADMIN', 'DOCTOR', 'MEDICAL_DIRECTOR', 'DEPARTMENT_HEAD'] },
+        { label: '6. Doctors & Nursing', translationKey: 'navigation.doctorsNursing', path: '/staff/doctors-nursing', icon: UserCheck, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'MEDICAL_DIRECTOR'] },
+        { label: '7. Laboratory & Diagnostics', translationKey: 'navigation.laboratory', path: '/staff/laboratory', icon: Layers, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'LAB_TECHNICIAN', 'PATHOLOGIST'] },
+        { label: '8. Radiology & Imaging', translationKey: 'navigation.radiology', path: '/staff/radiology', icon: Radio, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'RADIOLOGY_TECHNICIAN', 'RADIOLOGIST'] },
+        { label: '9. Pharmacy Formulary', translationKey: 'navigation.pharmacy', path: '/staff/pharmacy', icon: Pill, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'PHARMACIST'] },
+        { label: '10. Inventory & Procurement', translationKey: 'navigation.inventory', path: '/staff/inventory', icon: ShoppingBag, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'INVENTORY_MANAGER', 'PROCUREMENT_OFFICER'] },
+        { label: '11. OT & ICU Surgical Suite', translationKey: 'navigation.surgeryIcu', path: '/staff/surgery-icu', icon: Scissors, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE'] },
       ],
     },
     {
       title: 'Financial Management',
       translationKey: 'navigation.financialManagement',
       items: [
-        { label: '12. Billing & Cashier', translationKey: 'navigation.billing', path: '/staff/billing', icon: DollarSign, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT', 'CASHIER', 'BILLING_EXECUTIVE'] },
+        { label: '12. Billing & Cashier', translationKey: 'navigation.billing', path: '/staff/billing', icon: DollarSign, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'BILLING_EXECUTIVE'] },
         { label: '13. Insurance & TPA Claims', translationKey: 'navigation.insurance', path: '/staff/insurance', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'INSURANCE_COORDINATOR', 'BILLING_EXECUTIVE'] },
-        { label: '14. Financial Accounts', translationKey: 'navigation.financialAccounts', path: '/staff/financial-accounts', icon: Landmark, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT'] },
-        { label: '15. Financial Transactions', translationKey: 'navigation.transactions', path: '/staff/transactions', icon: Receipt, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT'] },
-        { label: '16. Investment Registers', translationKey: 'navigation.investments', path: '/staff/investments', icon: TrendingUp, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'INVESTMENT_MANAGER'] },
-        { label: '17. Banking & Reconciliation', translationKey: 'navigation.banking', path: '/staff/banking', icon: Building2, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT'] },
-        { label: '18. Loans & Liabilities', translationKey: 'navigation.loans', path: '/staff/loans', icon: Landmark, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT'] },
-        { label: '19. Accounting & General Ledger', translationKey: 'navigation.generalLedger', path: '/staff/general-ledger', icon: Scale, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT'] },
-        { label: '20. Budgeting & Cash Flow', translationKey: 'navigation.budgeting', path: '/staff/budgeting', icon: Target, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT'] },
-        { label: '21. Profit & Loss Statement', translationKey: 'navigation.profitLoss', path: '/staff/profit-loss', icon: FileText, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT', 'AUDITOR'] },
+        { label: '14. Financial Accounts', translationKey: 'navigation.financialAccounts', path: '/staff/financial-accounts', icon: Landmark, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER'] },
+        { label: '15. Financial Transactions', translationKey: 'navigation.transactions', path: '/staff/transactions', icon: Receipt, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER'] },
+        { label: '16. Investment Registers', translationKey: 'navigation.investments', path: '/staff/investments', icon: TrendingUp, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'INVESTMENT_MANAGER'] },
+        { label: '17. Banking & Reconciliation', translationKey: 'navigation.banking', path: '/staff/banking', icon: Building2, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER'] },
+        { label: '18. Loans & Liabilities', translationKey: 'navigation.loans', path: '/staff/loans', icon: Landmark, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER'] },
+        { label: '19. Accounting & General Ledger', translationKey: 'navigation.generalLedger', path: '/staff/general-ledger', icon: Scale, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER'] },
+        { label: '20. Budgeting & Cash Flow', translationKey: 'navigation.budgeting', path: '/staff/budgeting', icon: Target, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER'] },
+        { label: '21. Profit & Loss Statement', translationKey: 'navigation.profitLoss', path: '/staff/profit-loss', icon: FileText, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER'] },
       ],
     },
     {
       title: 'Governance & Administration',
       translationKey: 'navigation.governanceAdmin',
       items: [
-        { label: '22. HR & Staff Payroll', translationKey: 'navigation.hrPayroll', path: '/staff/hr-payroll', icon: Clock, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'HR_MANAGER', 'FINANCE_MANAGER', 'ACCOUNTANT'] },
-        { label: '23. Equipment & Assets', translationKey: 'navigation.assets', path: '/staff/assets', icon: Wrench, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE'] },
-        { label: '24. Patient Portal Gateway', translationKey: 'navigation.patientPortal', path: '/staff/patient-portal', icon: ExternalLink, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
-        { label: '25. Reports & Analytics', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'MEDICAL_DIRECTOR', 'FINANCE_MANAGER', 'DOCTOR', 'NURSE', 'PHARMACIST', 'LAB_TECHNICIAN', 'ACCOUNTANT'] },
-        { label: '26. Users, Roles & RBAC', translationKey: 'navigation.usersRoles', path: '/staff/users-roles', icon: ShieldAlert, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER'] },
-        { label: '27. Settings & Audit Trail', translationKey: 'navigation.settingsAudit', path: '/staff/settings-audit', icon: Settings, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'AUDITOR'] },
+        { label: '22. HR & Staff Payroll', translationKey: 'navigation.hrPayroll', path: '/staff/hr-payroll', icon: Clock, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'HR_MANAGER', 'FINANCE_MANAGER'] },
+        { label: '23. Equipment & Assets', translationKey: 'navigation.assets', path: '/staff/assets', icon: Wrench, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE'] },
+        { label: '24. Patient Portal Gateway', translationKey: 'navigation.patientPortal', path: '/staff/patient-portal', icon: ExternalLink, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'RECEPTIONIST'] },
+        { label: '25. Reports & Analytics', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'MEDICAL_DIRECTOR', 'FINANCE_MANAGER', 'NURSE', 'PHARMACIST', 'LAB_TECHNICIAN'] },
+        { label: '26. Users, Roles & RBAC', translationKey: 'navigation.usersRoles', path: '/staff/users-roles', icon: ShieldAlert, roles: ['SUPER_ADMIN'] },
+        { label: '27. Settings & Audit Trail', translationKey: 'navigation.settingsAudit', path: '/staff/settings-audit', icon: Settings, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER'] },
       ],
     },
   ];
 
-  // Filter navigation items by role
-  const visibleNavGroups = navGroups.map(group => ({
-    ...group,
-    items: group.items.filter(item => {
-      if (!item.roles || item.roles.length === 0) return true;
-      if (!role || role === 'SUPER_ADMIN' || role === 'HOSPITAL_ADMIN') return true;
-      return item.roles.includes(role);
-    })
-  })).filter(group => group.items.length > 0);
+  // Dedicated 14-Section Navigation Group strictly for Branch Manager role
+  const branchManagerNavGroup: NavGroup = {
+    title: 'Branch Operations',
+    translationKey: 'navigation.branchManager',
+    items: [
+      { label: '1. Dashboard Overview', translationKey: 'navigation.dashboardOverview', path: '/staff/branch-manager?tab=overview', icon: Activity },
+      { label: '2. Patient Management', translationKey: 'navigation.patientManagement', path: '/staff/branch-manager?tab=patients', icon: Users },
+      { label: '3. Department Management', translationKey: 'navigation.departmentManagement', path: '/staff/branch-manager?tab=departments', icon: Building2 },
+      { label: '4. Staff Management', translationKey: 'navigation.staffManagement', path: '/staff/branch-manager?tab=staff', icon: UserCheck },
+      { label: '5. Bed Management', translationKey: 'navigation.bedManagement', path: '/staff/branch-manager?tab=beds', icon: Bed },
+      { label: '6. Financial Management', translationKey: 'navigation.financialManagement', path: '/staff/branch-manager?tab=finances', icon: DollarSign },
+      { label: '7. Pharmacy and Inventory', translationKey: 'navigation.pharmacyInventory', path: '/staff/branch-manager?tab=pharmacy_inventory', icon: Pill },
+      { label: '8. Laboratory and Diagnostics', translationKey: 'navigation.laboratoryDiagnostics', path: '/staff/branch-manager?tab=diagnostics', icon: Layers },
+      { label: '9. Complaints Management', translationKey: 'navigation.complaintsManagement', path: '/staff/branch-manager?tab=complaints', icon: ShieldAlert },
+      { label: '10. Maintenance Management', translationKey: 'navigation.maintenanceManagement', path: '/staff/branch-manager?tab=maintenance', icon: Wrench },
+      { label: '11. Insurance and Corporate Billing', translationKey: 'navigation.insuranceBilling', path: '/staff/branch-manager?tab=insurance', icon: ShieldCheck },
+      { label: '12. Reports and Analytics', translationKey: 'navigation.reportsAnalytics', path: '/staff/branch-manager?tab=reports', icon: BarChart3 },
+      { label: '13. Audit and Compliance', translationKey: 'navigation.auditCompliance', path: '/staff/branch-manager?tab=audit_compliance', icon: Scale },
+      { label: '14. Notifications', translationKey: 'navigation.notifications', path: '/staff/branch-manager?tab=notifications', icon: Bell },
+    ],
+  };
+
+  // Dedicated Navigation Group strictly for Department Head role with clean, professional names
+  const departmentHeadNavGroup: NavGroup = {
+    title: 'Department Operations',
+    translationKey: 'navigation.departmentHeadOperations',
+    items: [
+      { label: 'Overview', translationKey: 'navigation.dashboardOverview', path: '/staff/department-head?tab=overview', icon: Activity },
+      { label: 'Department Profile', translationKey: 'navigation.deptProfile', path: '/staff/department-head?tab=dept_overview', icon: Building2 },
+      { label: 'Staff Directory', translationKey: 'navigation.deptStaff', path: '/staff/department-head?tab=staff', icon: Users },
+      { label: 'Shift & Duty Rosters', translationKey: 'navigation.shiftRoster', path: '/staff/department-head?tab=roster', icon: Clock },
+      { label: 'Attendance Monitoring', translationKey: 'navigation.attendanceMonitoring', path: '/staff/department-head?tab=attendance', icon: UserCheck },
+      { label: 'Leave Coverage', translationKey: 'navigation.leaveRecommendations', path: '/staff/department-head?tab=leaves', icon: Calendar },
+      { label: 'Staffing Requisitions', translationKey: 'navigation.staffRequirements', path: '/staff/department-head?tab=staff_requests', icon: Briefcase },
+      { label: 'Workload Telemetry', translationKey: 'navigation.workloadManagement', path: '/staff/department-head?tab=workload', icon: Layers },
+      { label: 'Biomedical Equipment', translationKey: 'navigation.resourceMonitoring', path: '/staff/department-head?tab=resources', icon: Wrench },
+      { label: 'Department Performance', translationKey: 'navigation.departmentPerformance', path: '/staff/department-head?tab=performance', icon: TrendingUp },
+      { label: 'Operational Issues', translationKey: 'navigation.operationalIssues', path: '/staff/department-head?tab=issues', icon: AlertOctagon },
+      { label: 'Reports & Analytics', translationKey: 'navigation.departmentReports', path: '/staff/department-head?tab=reports', icon: FileText },
+      { label: 'Alerts & Notices', translationKey: 'navigation.deptAlerts', path: '/staff/department-head?tab=notifications', icon: Bell },
+    ],
+  };
+
+  // Dedicated Doctor Navigation Group: Doctor Clinical Workspace and Voice Translation ONLY
+  const doctorNavGroup: NavGroup = {
+    title: 'Clinical Practice',
+    translationKey: 'navigation.doctorClinicalSuite',
+    items: [
+      {
+        label: 'Doctor Clinical Workspace',
+        translationKey: 'navigation.doctorWorkspace',
+        path: '/staff/doctor-workspace',
+        icon: Stethoscope,
+      },
+      {
+        label: 'Voice Translation',
+        translationKey: 'navigation.voiceTranslation',
+        path: '/staff/voice-translation',
+        icon: Languages,
+      },
+    ],
+  };
+
+  // Single Doctor Workspace navigation item if Department Head is also a Doctor
+  const doctorWorkspaceNavGroup: NavGroup = {
+    title: 'Clinical Practice',
+    translationKey: 'navigation.clinicalPractice',
+    items: [
+      { label: 'Doctor Clinical Workspace', translationKey: 'navigation.doctorWorkspace', path: '/staff/doctor-workspace', icon: Stethoscope },
+    ],
+  };
+
+  // Dedicated Navigation Group strictly for HR Manager role with clean, professional names
+  const hrManagerNavGroup: NavGroup = {
+    title: 'Human Resources',
+    translationKey: 'navigation.hrManagement',
+    items: [
+      { label: 'Overview', translationKey: 'navigation.hrOverview', path: '/staff/hr-management?tab=overview', icon: Activity },
+      { label: 'Employee Directory', translationKey: 'navigation.employeeDirectory', path: '/staff/hr-management?tab=employees', icon: Users },
+      { label: 'Recruitment & Hiring', translationKey: 'navigation.recruitmentHiring', path: '/staff/hr-management?tab=recruitment', icon: Briefcase },
+      { label: 'Onboarding', translationKey: 'navigation.onboarding', path: '/staff/hr-management?tab=onboarding', icon: CheckSquare },
+      { label: 'Attendance', translationKey: 'navigation.attendance', path: '/staff/hr-management?tab=attendance', icon: Clock },
+      { label: 'Leave Management', translationKey: 'navigation.leaveManagement', path: '/staff/hr-management?tab=leaves', icon: Calendar },
+      { label: 'Payroll & Salary', translationKey: 'navigation.payrollSalary', path: '/staff/hr-management?tab=payroll', icon: DollarSign },
+      { label: 'Performance Appraisals', translationKey: 'navigation.performanceAppraisals', path: '/staff/hr-management?tab=appraisals', icon: Award },
+      { label: 'Training & Development', translationKey: 'navigation.trainingDevelopment', path: '/staff/hr-management?tab=training', icon: GraduationCap },
+      { label: 'Grievance Redressal', translationKey: 'navigation.grievanceRedressal', path: '/staff/hr-management?tab=grievances', icon: AlertOctagon },
+      { label: 'Credentials & Compliance', translationKey: 'navigation.credentialsCompliance', path: '/staff/hr-management?tab=documents', icon: FileCheck },
+      { label: 'Exit & Offboarding', translationKey: 'navigation.exitOffboarding', path: '/staff/hr-management?tab=exits', icon: UserMinus },
+      { label: 'Reports & Analytics', translationKey: 'navigation.reportsAnalytics', path: '/staff/hr-management?tab=reports', icon: FileText },
+      { label: 'Notifications', translationKey: 'navigation.notifications', path: '/staff/hr-management?tab=notifications', icon: Bell },
+    ],
+  };
+
+  // Unified Financial Leadership & Operational Accounting Navigation for Finance Manager (Consolidated Role)
+  const financeManagerNavGroups: NavGroup[] = [
+    {
+      title: 'Financial Health & General Ledger',
+      translationKey: 'navigation.financialHealthGeneralLedger',
+      items: [
+        { label: 'Executive Financial Summary (P&L)', translationKey: 'navigation.profitLoss', path: '/staff/profit-loss', icon: FileText },
+        { label: 'General Ledger & Journal Entries', translationKey: 'navigation.generalLedger', path: '/staff/general-ledger', icon: Scale },
+        { label: 'Chart of Accounts Register', translationKey: 'navigation.financialAccounts', path: '/staff/financial-accounts', icon: Layers },
+        { label: 'Budgets & Cash Flow Planning', translationKey: 'navigation.budgeting', path: '/staff/budgeting', icon: Target },
+        { label: 'MCA Audit & Statutory Reports', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3 },
+      ],
+    },
+    {
+      title: 'Treasury & Liabilities',
+      translationKey: 'navigation.treasuryLiabilities',
+      items: [
+        { label: 'Bank Accounts & Reconciliation', translationKey: 'navigation.banking', path: '/staff/banking', icon: Building2 },
+        { label: 'Debt & Term Liabilities', translationKey: 'navigation.loans', path: '/staff/loans', icon: Landmark },
+      ],
+    },
+    {
+      title: 'Payroll Controls',
+      translationKey: 'navigation.payrollControls',
+      items: [
+        { label: 'Monthly Payroll Disbursement', translationKey: 'navigation.hrPayroll', path: '/staff/hr-payroll', icon: Clock },
+      ],
+    },
+  ];
+
+  // Dedicated Navigation for Insurance / Cashless Desk
+  const insuranceCoordinatorNavGroup: NavGroup = {
+    title: 'Cashless & TPA Claims Desk',
+    translationKey: 'navigation.cashlessTpaDesk',
+    items: [
+      { label: 'Cashless & TPA Claims Desk', translationKey: 'navigation.insurance', path: '/staff/insurance', icon: ShieldCheck },
+      { label: 'TPA Claims & Settlement Reports', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3 },
+    ],
+  };
+
+  // Dedicated Navigation for Inventory Manager
+  const inventoryManagerNavGroup: NavGroup = {
+    title: 'Materials & Inventory Operations',
+    translationKey: 'navigation.inventoryOperations',
+    items: [
+      { label: 'Inventory & Stock Control', translationKey: 'navigation.inventory', path: '/staff/inventory', icon: ShoppingBag },
+      { label: 'Hospital Assets & Equipment', translationKey: 'navigation.assets', path: '/staff/assets', icon: Wrench },
+      { label: 'Stock & Materials Reports', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3 },
+    ],
+  };
+
+  // Dedicated Navigation for Procurement & Vendor Operations
+  const procurementOfficerNavGroup: NavGroup = {
+    title: 'Procurement & Vendor Operations',
+    translationKey: 'navigation.procurementOperations',
+    items: [
+      { label: 'Purchase Orders & Vendor Sourcing', translationKey: 'navigation.inventory', path: '/staff/inventory', icon: ShoppingBag },
+      { label: 'Asset Procurement & Capital Goods', translationKey: 'navigation.assets', path: '/staff/assets', icon: Wrench },
+      { label: 'Procurement & PO Reports', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3 },
+    ],
+  };
+
+  // Unified Navigation for Billing & Cashier Executive (Single Consolidated Account)
+  const billingCashierNavGroup: NavGroup = {
+    title: 'Billing & Cash Desk Operations',
+    translationKey: 'navigation.billingCashierDesk',
+    items: [
+      { label: 'Patient Invoicing & Discharge Billing', translationKey: 'navigation.billingInvoices', path: '/staff/billing?tab=invoices', icon: FileText },
+      { label: 'Payment Collection & Receipts', translationKey: 'navigation.cashierReceipts', path: '/staff/billing?tab=receipts', icon: Receipt },
+      { label: 'Advance Deposits & Refunds', translationKey: 'navigation.cashierDeposits', path: '/staff/billing?tab=deposits', icon: Wallet },
+      { label: 'Daily Cash Drawer & Shifts', translationKey: 'navigation.cashierShifts', path: '/staff/billing?tab=cashier_shifts', icon: Clock },
+      { label: 'Tariff Plans & Service Catalogue', translationKey: 'navigation.billingTariffs', path: '/staff/billing?tab=tariffs', icon: Tag },
+      { label: 'Patient Directory Lookup', translationKey: 'navigation.patients', path: '/staff/patients', icon: Users },
+      { label: 'Daily Collection & Billing Reports', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3 },
+    ],
+  };
+
+  // Dedicated Ultra-Clean 2-Section Navigation strictly for Super Admin (Admin of all hospital branches)
+  const superAdminNavGroup: NavGroup = {
+    title: 'Enterprise Administration',
+    translationKey: 'navigation.enterpriseAdmin',
+    items: [
+      {
+        label: 'Hospital Branches & Operations',
+        translationKey: 'navigation.branchManager',
+        path: '/staff/branch-manager',
+        icon: Building2,
+      },
+      {
+        label: 'System Access & Security Governance',
+        translationKey: 'navigation.usersRoles',
+        path: '/staff/users-roles',
+        icon: ShieldAlert,
+      },
+    ],
+  };
+
+  // Dedicated Multi-Branch Navigation strictly for Hospital Administrator (Finances & Staff Details in detail)
+  const hospitalAdminNavGroup: NavGroup = {
+    title: 'Hospital Administration',
+    translationKey: 'navigation.hospitalAdminNetwork',
+    items: [
+      {
+        label: 'Financial Reports & Analytics',
+        translationKey: 'navigation.reportsFinance',
+        path: '/staff/reports?tab=FINANCE',
+        icon: DollarSign,
+      },
+      {
+        label: 'Staff Details & Directory',
+        translationKey: 'navigation.staffManagement',
+        path: '/staff/branch-manager?tab=staff',
+        icon: Users,
+      },
+    ],
+  };
+
+  // Strict role-specific navigation isolation
+  let visibleNavGroups: NavGroup[] = [];
+
+  if (role === 'SUPER_ADMIN') {
+    visibleNavGroups = [superAdminNavGroup];
+  } else if (role === 'HOSPITAL_ADMIN') {
+    visibleNavGroups = [hospitalAdminNavGroup];
+  } else if (role === 'BRANCH_MANAGER') {
+    visibleNavGroups = [branchManagerNavGroup];
+  } else if (role === 'DOCTOR') {
+    visibleNavGroups = [doctorNavGroup];
+  } else if (role === 'DEPARTMENT_HEAD') {
+    const isDoctorHead = Boolean(
+      staffProfile?.medical_license_number ||
+      staffProfile?.specialization ||
+      staffProfile?.designation?.toLowerCase().includes('doctor') ||
+      staffProfile?.designation?.toLowerCase().includes('physician') ||
+      staffProfile?.designation?.toLowerCase().includes('surgeon') ||
+      staffProfile?.designation?.toLowerCase().includes('consultant')
+    );
+    visibleNavGroups = isDoctorHead
+      ? [departmentHeadNavGroup, doctorWorkspaceNavGroup]
+      : [departmentHeadNavGroup];
+  } else if (role === 'HR_MANAGER') {
+    visibleNavGroups = [hrManagerNavGroup];
+  } else if (role === 'FINANCE_MANAGER' || role === 'ACCOUNTANT') {
+    visibleNavGroups = financeManagerNavGroups;
+  } else if (role === 'INVENTORY_MANAGER') {
+    visibleNavGroups = [inventoryManagerNavGroup];
+  } else if (role === 'PROCUREMENT_OFFICER') {
+    visibleNavGroups = [procurementOfficerNavGroup];
+  } else if (role === 'INSURANCE_COORDINATOR') {
+    visibleNavGroups = [insuranceCoordinatorNavGroup];
+  } else if (role === 'BILLING_EXECUTIVE' || role === 'CASHIER') {
+    visibleNavGroups = [billingCashierNavGroup];
+  } else if (role === 'AUDITOR') {
+    visibleNavGroups = [
+      {
+        title: 'Statutory Audit & Compliance',
+        translationKey: 'navigation.statutoryAudit',
+        items: [
+          { label: 'MCA Audit Trail & Compliance Logs', translationKey: 'navigation.settingsAudit', path: '/staff/settings-audit', icon: Settings },
+          { label: 'Statutory Audit Reports', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3 },
+        ],
+      }
+    ];
+  } else {
+    visibleNavGroups = navGroups.map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        if (!role) return false;
+        if (item.roles && !item.roles.includes(role)) return false;
+        return canAccessRoute(role, item.path);
+      })
+    })).filter(group => group.items.length > 0);
+  }
+
+  const totalAuthorizedSections = visibleNavGroups.reduce((sum, g) => sum + g.items.length, 0);
+  const isMultiBranchRole = role ? ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'INVESTMENT_MANAGER'].includes(role) : false;
+  const isReadOnlySupervisory = role ? STRICT_READ_ONLY_ROLES.includes(role) : false;
+  const dataScope = role ? ROLE_DATA_SCOPES[role] || 'OWN' : 'OWN';
 
   const handleSignOut = async () => {
     await logout();
@@ -186,7 +488,33 @@ export const StaffLayout: React.FC = () => {
         {/* Brand Header */}
         <div className="h-16 border-b border-slate-800 flex items-center justify-between px-4 shrink-0">
           <Link
-            to="/staff/dashboard"
+            to={
+              role === 'SUPER_ADMIN' || role === 'BRANCH_MANAGER'
+                ? '/staff/branch-manager'
+                : role === 'HOSPITAL_ADMIN'
+                ? '/staff/reports?tab=FINANCE'
+                : role === 'DOCTOR'
+                ? '/staff/doctor-workspace'
+                : role === 'DEPARTMENT_HEAD'
+                ? '/staff/department-head'
+                : role === 'HR_MANAGER'
+                ? '/staff/hr-management'
+                : role === 'FINANCE_MANAGER' || role === 'ACCOUNTANT'
+                ? '/staff/profit-loss'
+                : role === 'INSURANCE_COORDINATOR'
+                ? '/staff/insurance'
+                : role === 'BILLING_EXECUTIVE' || role === 'CASHIER'
+                ? '/staff/billing?tab=invoices'
+                : role === 'AUDITOR'
+                ? '/staff/settings-audit'
+                : role === 'LAB_TECHNICIAN'
+                ? '/staff/laboratory'
+                : role === 'PHARMACIST'
+                ? '/staff/pharmacy'
+                : role === 'INVENTORY_MANAGER' || role === 'PROCUREMENT_OFFICER'
+                ? '/staff/inventory'
+                : '/staff/dashboard'
+            }
             onClick={() => setIsMobileDrawerOpen(false)}
             className="flex items-center gap-3 overflow-hidden"
           >
@@ -223,6 +551,30 @@ export const StaffLayout: React.FC = () => {
           </button>
         </div>
 
+        {/* Role & Section Assignment Badge */}
+        {(isSidebarOpen || isMobileDrawerOpen) && role && (
+          <div className="mx-3 mt-3 p-2.5 rounded-xl bg-slate-950/80 border border-cyan-500/25 shrink-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 truncate">
+                {role === 'BILLING_EXECUTIVE' || role === 'CASHIER'
+                  ? 'Billing & Cashier Executive'
+                  : role === 'ACCOUNTANT'
+                  ? 'Finance Manager'
+                  : role.replace(/_/g, ' ')}
+              </span>
+              <span className="px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 text-[9px] font-mono font-bold shrink-0">
+                {dataScope} SCOPE
+              </span>
+            </div>
+            <div className="flex items-center justify-between mt-1.5 text-[10px] text-slate-400">
+              <span>Assigned Sections: <strong className="text-white">{totalAuthorizedSections}</strong></span>
+              <span className={isReadOnlySupervisory ? 'text-amber-400 font-semibold' : 'text-emerald-400 font-semibold'}>
+                {isReadOnlySupervisory ? 'Read-Only' : 'Authorized'}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Navigation Groups */}
         <div className="flex-1 py-3 px-3 overflow-y-auto space-y-5 custom-scrollbar">
           {visibleNavGroups.map((group, gIdx) => (
@@ -234,7 +586,10 @@ export const StaffLayout: React.FC = () => {
               )}
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path || (item.path !== '/staff/dashboard' && location.pathname.startsWith(item.path + '/'));
+                const currentFull = location.pathname + location.search;
+                const isActive = item.path.includes('?')
+                  ? (currentFull === item.path || (location.pathname === '/staff/branch-manager' && item.path.endsWith('?tab=overview') && !location.search))
+                  : (location.pathname === item.path || (item.path !== '/staff/dashboard' && location.pathname.startsWith(item.path + '/')));
                 const displayLabel = item.translationKey ? t(item.translationKey) : item.label;
 
                 return (
@@ -317,20 +672,30 @@ export const StaffLayout: React.FC = () => {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Branch Switcher Dropdown */}
+            {/* Branch Switcher / Locked Branch Badge */}
             <div className="relative">
               <button
-                onClick={() => setShowBranchMenu(!showBranchMenu)}
-                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 hover:border-cyan-500/40 transition max-w-[170px] sm:max-w-xs"
+                onClick={() => isMultiBranchRole && setShowBranchMenu(!showBranchMenu)}
+                className={clsx(
+                  'flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 transition max-w-[190px] sm:max-w-xs',
+                  isMultiBranchRole ? 'hover:border-cyan-500/40 cursor-pointer' : 'cursor-default opacity-90'
+                )}
+                title={isMultiBranchRole ? 'Switch Hospital Branch' : `Assigned Branch (${dataScope} Scope)`}
               >
                 <Building2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                 <span className="font-semibold text-white truncate text-xs">
-                  {currentBranch?.name || 'AURA Central Multi-Specialty'}
+                  {currentBranch?.name || staffProfile?.branch_name || 'AURA Central Multi-Specialty'}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                {isMultiBranchRole ? (
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                ) : (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 font-mono shrink-0">
+                    {dataScope}
+                  </span>
+                )}
               </button>
 
-              {showBranchMenu && (
+              {isMultiBranchRole && showBranchMenu && (
                 <div className="absolute top-full left-0 mt-2 w-72 max-w-[90vw] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                   <div className="px-3 py-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                     {t('common.switchBranch')}
@@ -473,19 +838,67 @@ export const StaffLayout: React.FC = () => {
 
         {/* Dynamic Breadcrumbs */}
         <div className="px-3 sm:px-6 pt-3 flex items-center gap-2 text-xs text-slate-500 shrink-0 overflow-x-auto whitespace-nowrap custom-scrollbar">
-          <Link to="/staff/dashboard" className="hover:text-slate-300 transition shrink-0">
+          <Link
+            to={
+              role === 'SUPER_ADMIN' || role === 'BRANCH_MANAGER'
+                ? '/staff/branch-manager'
+                : role === 'HOSPITAL_ADMIN'
+                ? '/staff/reports?tab=FINANCE'
+                : role === 'DOCTOR'
+                ? '/staff/doctor-workspace'
+                : role === 'DEPARTMENT_HEAD'
+                ? '/staff/department-head'
+                : role === 'HR_MANAGER'
+                ? '/staff/hr-management'
+                : role === 'FINANCE_MANAGER' || role === 'ACCOUNTANT'
+                ? '/staff/profit-loss'
+                : role === 'INSURANCE_COORDINATOR'
+                ? '/staff/insurance'
+                : role === 'BILLING_EXECUTIVE' || role === 'CASHIER'
+                ? '/staff/billing?tab=invoices'
+                : role === 'AUDITOR'
+                ? '/staff/settings-audit'
+                : role === 'LAB_TECHNICIAN'
+                ? '/staff/laboratory'
+                : role === 'PHARMACIST'
+                ? '/staff/pharmacy'
+                : role === 'INVENTORY_MANAGER' || role === 'PROCUREMENT_OFFICER'
+                ? '/staff/inventory'
+                : '/staff/dashboard'
+            }
+            className="hover:text-slate-300 transition shrink-0"
+          >
             {t('brand.name', 'AURA Multi-Specialty HMS')}
           </Link>
           <span>/</span>
           <span className="text-slate-300 font-medium capitalize truncate">
             {(() => {
-              const currentNav = navGroups.flatMap((g) => g.items).find((i) => i.path === location.pathname);
+              const allItems = [...visibleNavGroups.flatMap((g) => g.items), ...navGroups.flatMap((g) => g.items)];
+              const currentNav = allItems.find((i) => i.path === location.pathname);
               return currentNav?.translationKey
                 ? t(currentNav.translationKey)
                 : location.pathname.split('/').pop()?.replace('-', ' ') || t('navigation.dashboard', 'Dashboard');
             })()}
           </span>
         </div>
+
+        {/* Read-Only Supervisory / Audit Mode Banner */}
+        {isReadOnlySupervisory && role !== 'HOSPITAL_ADMIN' && role !== 'SUPER_ADMIN' && (
+          <div className="mx-3 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-amber-300 font-medium">
+              <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                <strong>{role === 'AUDITOR' ? 'Compliance Audit Mode (Read-Only):' : 'Branch Supervisory Monitoring Mode (Read-Only):'}</strong>{' '}
+                {role === 'AUDITOR'
+                  ? 'You have cross-departmental read-only inspection access and can record official audit findings in Settings & Audit Trail.'
+                  : 'You have full operational visibility across your assigned branch. Creating, editing, deleting, or approving departmental records is restricted to authorized operational owners.'}
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider shrink-0">
+              Scope: {dataScope} • Read-Only
+            </span>
+          </div>
+        )}
 
         {/* Page Canvas */}
         <main className="flex-1 p-3 sm:p-5 lg:p-6 pb-12 overflow-x-hidden w-full max-w-full">

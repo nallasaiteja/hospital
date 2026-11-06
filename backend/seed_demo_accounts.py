@@ -71,12 +71,15 @@ accounts = [
     },
     {
         'email': 'medical.director@aurahospital.com',
-        'first_name': 'Dr. Bhaskar',
+        'first_name': 'Bhaskar',
         'last_name': 'Chatterjee',
         'role_enum': RoleEnum.MEDICAL_DIRECTOR,
         'department': dept_med,
         'emp_id': 'EMP-MDR-001',
         'designation': 'Chief Medical Director',
+        'specialization': 'General & Laparoscopic Surgery',
+        'license': 'MCI-2002-18340',
+        'fee': 1500.00,
         'is_staff': True,
     },
     {
@@ -87,6 +90,35 @@ accounts = [
         'department': dept_med,
         'emp_id': 'EMP-DOC-001',
         'designation': 'Senior Consultant - Internal Medicine',
+        'specialization': 'Internal Medicine & Diabetology',
+        'license': 'MCI-2015-84920',
+        'fee': 800.00,
+        'is_staff': True,
+    },
+    {
+        'email': 'surgeon.drsharma@hospital.com',
+        'first_name': 'Alok',
+        'last_name': 'Sharma',
+        'role_enum': RoleEnum.DOCTOR,
+        'department': dept_med,
+        'emp_id': 'EMP-DOC-002',
+        'designation': 'Chief Cardio Surgeon',
+        'specialization': 'Cardiothoracic & Vascular Surgery',
+        'license': 'MCI-2010-47291',
+        'fee': 1200.00,
+        'is_staff': True,
+    },
+    {
+        'email': 'anesthesia.drpriya@hospital.com',
+        'first_name': 'Priya',
+        'last_name': 'Varma',
+        'role_enum': RoleEnum.DOCTOR,
+        'department': dept_med,
+        'emp_id': 'EMP-DOC-003',
+        'designation': 'Senior Anesthesiologist',
+        'specialization': 'Anesthesiology & Critical Care',
+        'license': 'MCI-2017-63914',
+        'fee': 900.00,
         'is_staff': True,
     },
     {
@@ -116,7 +148,7 @@ accounts = [
         'role_enum': RoleEnum.BILLING_EXECUTIVE,
         'department': dept_fin,
         'emp_id': 'EMP-BIL-001',
-        'designation': 'Senior Billing Executive',
+        'designation': 'Senior Billing & Cashier Executive',
         'is_staff': True,
     },
     {
@@ -170,16 +202,6 @@ accounts = [
         'is_staff': True,
     },
     {
-        'email': 'accountant.demo@aurahospital.com',
-        'first_name': 'Arun',
-        'last_name': 'Nambiar',
-        'role_enum': RoleEnum.ACCOUNTANT,
-        'department': dept_fin,
-        'emp_id': 'EMP-ACC-001',
-        'designation': 'Senior Hospital Accountant',
-        'is_staff': True,
-    },
-    {
         'email': 'finance.manager@aurahospital.com',
         'first_name': 'Meenakshi',
         'last_name': 'Sundaram',
@@ -197,16 +219,6 @@ accounts = [
         'department': dept_fin,
         'emp_id': 'EMP-INV-002',
         'designation': 'Chief Investment & Treasury Officer',
-        'is_staff': True,
-    },
-    {
-        'email': 'cashier.demo@aurahospital.com',
-        'first_name': 'Ganesh',
-        'last_name': 'Iyer',
-        'role_enum': RoleEnum.CASHIER,
-        'department': dept_fin,
-        'emp_id': 'EMP-CSH-001',
-        'designation': 'Lead Cash Counter Executive',
         'is_staff': True,
     },
     {
@@ -231,22 +243,15 @@ accounts = [
     },
     {
         'email': 'dept.head@aurahospital.com',
-        'first_name': 'Dr. Sanjay',
+        'first_name': 'Sanjay',
         'last_name': 'Gupta',
         'role_enum': RoleEnum.DEPARTMENT_HEAD,
         'department': dept_med,
         'emp_id': 'EMP-DHD-001',
         'designation': 'Clinical Department Head (HOD)',
-        'is_staff': True,
-    },
-    {
-        'email': 'auditor.demo@aurahospital.com',
-        'first_name': 'Ramesh',
-        'last_name': 'Kothari',
-        'role_enum': RoleEnum.AUDITOR,
-        'department': dept_fin,
-        'emp_id': 'EMP-AUD-001',
-        'designation': 'Chief Compliance & Internal Auditor',
+        'specialization': 'Interventional Cardiology',
+        'license': 'MCI-2008-31955',
+        'fee': 1000.00,
         'is_staff': True,
     },
     {
@@ -317,16 +322,24 @@ for acc in accounts:
     if acc['is_staff']:
         emp_id = acc['emp_id']
         designation = acc['designation']
+        staff_defaults = {
+            'hospital': main_branch.hospital,
+            'branch': main_branch,
+            'department': acc['department'],
+            'employee_id': emp_id,
+            'designation': designation,
+            'status': StaffStatus.ACTIVE
+        }
+        if 'specialization' in acc:
+            staff_defaults['specialization'] = acc['specialization']
+        if 'license' in acc:
+            staff_defaults['medical_license_number'] = acc['license']
+        if 'fee' in acc:
+            staff_defaults['consultation_fee'] = acc['fee']
+
         StaffProfile.objects.update_or_create(
             user_profile=profile,
-            defaults={
-                'hospital': main_branch.hospital,
-                'branch': main_branch,
-                'department': acc['department'],
-                'employee_id': emp_id,
-                'designation': designation,
-                'status': StaffStatus.ACTIVE
-            }
+            defaults=staff_defaults
         )
         print(f'   Linked Staff Profile: {emp_id} ({designation})')
     else:

@@ -41,6 +41,10 @@ class TestClinicalOperations(TestCase):
             name=RoleEnum.DOCTOR,
             defaults={'display_name': 'Doctor'}
         )
+        self.receptionist_role, _ = Role.objects.get_or_create(
+            name=RoleEnum.RECEPTIONIST,
+            defaults={'display_name': 'Receptionist'}
+        )
         self.patient_role, _ = Role.objects.get_or_create(
             name=RoleEnum.PATIENT,
             defaults={'display_name': 'Patient'}
@@ -67,6 +71,29 @@ class TestClinicalOperations(TestCase):
             employee_id=f"EMP-{uuid.uuid4().hex[:6].upper()}",
             designation='Consultant Cardiologist',
             consultation_fee=Decimal('800.00'),
+            status='ACTIVE'
+        )
+
+        # Receptionist profile & Django auth user
+        self.rec_supabase_id = uuid.uuid4()
+        self.rec_django_user = User.objects.create_user(
+            username=str(self.rec_supabase_id),
+            email='receptionist@hospital.local'
+        )
+        self.rec_user = UserProfile.objects.create(
+            supabase_user_id=self.rec_supabase_id,
+            email='receptionist@hospital.local',
+            first_name='Meera',
+            last_name='Kulkarni',
+            role=self.receptionist_role
+        )
+        self.receptionist = StaffProfile.objects.create(
+            user_profile=self.rec_user,
+            hospital=self.hospital,
+            branch=self.branch,
+            department=self.dept,
+            employee_id=f"EMP-{uuid.uuid4().hex[:6].upper()}",
+            designation='Front Desk Receptionist',
             status='ACTIVE'
         )
 
@@ -106,9 +133,7 @@ class TestClinicalOperations(TestCase):
         )
 
     def test_appointment_booking_and_slot_collision_prevention(self):
-        """Verify appointment booking and conflict prevention on duplicate doctor time slot."""
-        self.client.force_authenticate(user=self.doc_django_user)
-
+        """Verify appointment booking (strictly Receptionist + mandatory payment) and conflict prevention on duplicate doctor time slot."""
         payload = {
             'patient_id': str(self.patient.id),
             'doctor_id': str(self.doctor.id),
@@ -116,14 +141,23 @@ class TestClinicalOperations(TestCase):
             'department_id': str(self.dept.id),
             'appointment_date': '2026-11-15',
             'time_slot': '10:00 AM',
-            'reason_for_visit': 'Routine hypertension follow-up'
+            'reason_for_visit': 'Routine hypertension follow-up',
+            'payment_method': 'CASH',
+            'cash_received_confirmed': True,
         }
 
-        # First booking succeeds
+        # Doctor attempting to book must be REJECTED (403 Forbidden)
+        self.client.force_authenticate(user=self.doc_django_user)
+        res_doc = self.client.post('/api/v1/clinical/appointments/', payload, format='json')
+        self.assertEqual(res_doc.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Receptionist booking with confirmed Cash payment succeeds
+        self.client.force_authenticate(user=self.rec_django_user)
         res1 = self.client.post('/api/v1/clinical/appointments/', payload, format='json')
         self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
         self.assertIn('APT-', res1.data['appointment_number'])
         self.assertEqual(res1.data['token_number'], 'Token #1')
+        self.assertEqual(res1.data['invoice_status'], 'PAID')
 
         # Second booking with identical doctor, date, and slot must be REJECTED (409 Conflict)
         res2 = self.client.post('/api/v1/clinical/appointments/', payload, format='json')
@@ -202,30 +236,40 @@ class TestClinicalOperations(TestCase):
         self.assertIn('Cardiology Summit', res_leave.data['leave_reason'])
 
     def test_opd_walk_in_registration_and_token_generation(self):
-        """Verify walk-in patient registration generates atomic token and consultation invoice."""
-        self.client.force_authenticate(user=self.doc_django_user)
-
+        """Verify walk-in patient registration (strictly Receptionist + mandatory payment) generates atomic token and PAID consultation invoice."""
         payload = {
             'patient_id': str(self.patient.id),
             'doctor_id': str(self.doctor.id),
             'department_id': str(self.dept.id),
             'branch_id': str(self.branch.id),
             'chief_complaint': 'Acute chest tightness and dizziness',
-            'vitals': {'bp': '138/88', 'pulse': 82, 'spo2': 98}
+            'vitals': {'bp': '138/88', 'pulse': 82, 'spo2': 98},
+            'payment_method': 'CASH',
+            'cash_received_confirmed': True,
         }
 
+        # Doctor attempting to issue walk-in token must be REJECTED (403 Forbidden)
+        self.client.force_authenticate(user=self.doc_django_user)
+        res_doc = self.client.post('/api/v1/clinical/opd/walk-in/', payload, format='json')
+        self.assertEqual(res_doc.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Receptionist issuing walk-in token with confirmed Cash payment succeeds
+        self.client.force_authenticate(user=self.rec_django_user)
         res = self.client.post('/api/v1/clinical/opd/walk-in/', payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertIn('Token #', res.data['token_receipt']['token_number'])
         self.assertEqual(res.data['appointment']['status'], 'CHECKED_IN')
         self.assertEqual(res.data['appointment']['appointment_type'], 'WALK_IN')
         self.assertIsNotNone(res.data['token_receipt']['invoice_number'])
+        self.assertIsNotNone(res.data['token_receipt']['receipt_number'])
+        self.assertEqual(res.data['token_receipt']['payment_status'], 'PAID')
 
         # Verify in database
         appt = Appointment.objects.get(id=res.data['appointment']['id'])
         self.assertIsNotNone(appt.checked_in_at)
         self.assertIsNotNone(appt.invoice)
         self.assertEqual(appt.invoice.total_amount, self.doctor.consultation_fee)
+        self.assertEqual(appt.invoice.status, 'PAID')
 
     def test_opd_queue_and_status_transitions(self):
         """Verify patient queue view, wait time calculation, and status progression."""
@@ -239,7 +283,7 @@ class TestClinicalOperations(TestCase):
             doctor=self.doctor,
             department=self.dept,
             branch=self.branch,
-            appointment_date=timezone.now().date(),
+            appointment_date=timezone.localdate(),
             time_slot='11:00 AM',
             token_number='Token #99',
             status=AppointmentStatus.CHECKED_IN,
@@ -247,7 +291,7 @@ class TestClinicalOperations(TestCase):
         )
 
         # Fetch queue
-        res_q = self.client.get(f'/api/v1/clinical/opd/queue/?date={timezone.now().date()}&doctor_id={self.doctor.id}')
+        res_q = self.client.get(f'/api/v1/clinical/opd/queue/?date={timezone.localdate()}&doctor_id={self.doctor.id}')
         self.assertEqual(res_q.status_code, status.HTTP_200_OK)
         self.assertTrue(any(item['id'] == str(appt.id) for item in res_q.data))
 
@@ -291,7 +335,7 @@ class TestClinicalOperations(TestCase):
             doctor=self.doctor,
             department=self.dept,
             branch=self.branch,
-            appointment_date=timezone.now().date(),
+            appointment_date=timezone.localdate(),
             time_slot='02:00 PM',
             token_number='Token #101',
             status=AppointmentStatus.IN_CONSULTATION
@@ -328,13 +372,9 @@ class TestClinicalOperations(TestCase):
         self.assertTrue(Prescription.objects.filter(patient=self.patient, doctor=self.doctor).exists())
         self.assertTrue(LabOrder.objects.filter(patient=self.patient, doctor=self.doctor).exists())
 
-        # Verify Follow-up Appointment created
-        follow_up_appt = Appointment.objects.filter(
-            patient=self.patient,
-            booking_source='FOLLOW_UP'
-        ).first()
-        self.assertIsNotNone(follow_up_appt)
-        self.assertEqual(follow_up_appt.status, AppointmentStatus.SCHEDULED)
+        # Verify recommended follow_up_date is saved on the consultation record (while Receptionist handles paid booking)
+        appt.refresh_from_db()
+        self.assertIsNotNone(appt.follow_up_date)
 
     def test_opd_reports_aggregation(self):
         """Verify doctor-wise and department-wise reporting returns real calculated totals."""
@@ -613,5 +653,70 @@ class TestClinicalOperations(TestCase):
         self.assertEqual(res_rep.status_code, status.HTTP_200_OK)
         self.assertIn('ward_occupancy', res_rep.data)
         self.assertIn('readmissions', res_rep.data)
+
+    def test_lounge_tv_telemetry_and_doctor_queues(self):
+        """Verify Lounge TV API returns active doctors, consultation cabins, and live queue without 500 error."""
+        from django.utils import timezone
+
+        # Create checked-in appointment for today
+        appt = Appointment.objects.create(
+            appointment_number=f"APT-LTV-{uuid.uuid4().hex[:6].upper()}",
+            patient=self.patient,
+            doctor=self.doctor,
+            department=self.dept,
+            branch=self.branch,
+            appointment_date=timezone.localdate(),
+            time_slot='10:30 AM',
+            token_number='42',
+            status=AppointmentStatus.CHECKED_IN,
+            checked_in_at=timezone.now()
+        )
+
+        res = self.client.get(f'/api/v1/clinical/opd/lounge-tv/?branch_id={self.branch.id}')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertIn('doctors', data)
+        self.assertIn('queue', data)
+        self.assertIn('summary', data)
+        self.assertGreaterEqual(len(data['doctors']), 1)
+        self.assertEqual(data['summary']['total_waiting_in_lounge'], 1)
+
+        doc_entry = next((d for d in data['doctors'] if d['doctor_id'] == str(self.doctor.id)), None)
+        self.assertIsNotNone(doc_entry)
+        self.assertEqual(doc_entry['waiting_in_lounge_count'], 1)
+        self.assertTrue(doc_entry['cabin_number'].startswith('OPD Cabin'))
+
+    def test_overdue_appointments_auto_reconciliation_and_lounge_isolation(self):
+        """Verify past appointments with SCHEDULED status auto-transition to NO_SHOW and have 0 lounge count."""
+        from datetime import timedelta
+        from django.utils import timezone
+
+        past_date = timezone.now().date() - timedelta(days=14)
+        past_appt = Appointment.objects.create(
+            appointment_number=f"APT-PAST-{uuid.uuid4().hex[:6].upper()}",
+            patient=self.patient,
+            doctor=self.doctor,
+            department=self.dept,
+            branch=self.branch,
+            appointment_date=past_date,
+            time_slot='10:00 AM',
+            token_number='2',
+            status=AppointmentStatus.SCHEDULED,
+        )
+
+        # 1. Query appointments endpoint - should auto-reconcile past appointment
+        self.client.force_authenticate(user=self.pat_django_user)
+        res = self.client.get('/api/v1/clinical/appointments/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        past_appt.refresh_from_db()
+        self.assertEqual(past_appt.status, AppointmentStatus.NO_SHOW)
+
+        # 2. Verify serializer gives 0 lounge waiting count for past date
+        from apps.clinical.serializers import AppointmentSerializer
+        ser_data = AppointmentSerializer(past_appt).data
+        self.assertEqual(ser_data['lounge_waiting_count'], 0)
+        self.assertEqual(ser_data['tokens_ahead'], 0)
+
 
 

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from .models import (
     DoctorSchedule, DoctorLeave, Appointment, EmergencyEncounter,
@@ -6,7 +7,8 @@ from .models import (
     LabOrder, LabOrderItem, RadiologyOrder, DutyRoster,
     ExternalDiagnosticProvider, LabSample, DiagnosticReport,
     CriticalAlertNotification, DiagnosticEquipment,
-    EquipmentTransmissionLog, HL7TransmissionLog
+    EquipmentTransmissionLog, HL7TransmissionLog,
+    ConsultationAddendum, ClinicalReferral, MedicalDocument, DoctorNotification
 )
 from apps.authentication.models import PatientProfile, StaffProfile
 from apps.core.models import Branch, Department
@@ -42,10 +44,114 @@ class AppointmentSerializer(serializers.ModelSerializer):
     branch_name = serializers.CharField(source='branch.name', read_only=True)
     invoice_number = serializers.CharField(source='invoice.invoice_number', read_only=True)
     invoice_status = serializers.CharField(source='invoice.status', read_only=True)
+    paid_amount = serializers.DecimalField(source='invoice.paid_amount', max_digits=12, decimal_places=2, read_only=True)
+    receipt_number = serializers.SerializerMethodField()
+    payment_method = serializers.SerializerMethodField()
+    transaction_reference = serializers.SerializerMethodField()
+    processed_by_name = serializers.SerializerMethodField()
+    lounge_waiting_count = serializers.SerializerMethodField()
+    serving_token = serializers.SerializerMethodField()
+    tokens_ahead = serializers.SerializerMethodField()
 
     class Meta:
         model = Appointment
         fields = '__all__'
+
+    def _get_latest_payment(self, obj):
+        inv = getattr(obj, 'invoice', None)
+        if not inv:
+            return None
+        return inv.payments.select_related('received_by__user_profile', 'receipt').order_by('-payment_date').first()
+
+    def get_receipt_number(self, obj):
+        pay = self._get_latest_payment(obj)
+        if pay and hasattr(pay, 'receipt') and pay.receipt:
+            return pay.receipt.receipt_number
+        return None
+
+    def get_payment_method(self, obj):
+        pay = self._get_latest_payment(obj)
+        if not pay:
+            return None
+        return 'ONLINE' if pay.payment_method == 'ONLINE_GATEWAY' else pay.payment_method
+
+    def get_transaction_reference(self, obj):
+        pay = self._get_latest_payment(obj)
+        return pay.transaction_reference if pay else None
+
+    def get_processed_by_name(self, obj):
+        pay = self._get_latest_payment(obj)
+        if pay and pay.received_by and pay.received_by.user_profile:
+            return pay.received_by.user_profile.full_name
+        return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        today = timezone.localdate()
+        # Strictly ensure any appointment whose date has crossed is never represented as active SCHEDULED or CHECKED_IN
+        appt_date = instance.appointment_date
+        if isinstance(appt_date, str):
+            try:
+                from datetime import datetime
+                appt_date = datetime.strptime(appt_date[:10], '%Y-%m-%d').date()
+            except Exception:
+                appt_date = None
+
+        if appt_date and appt_date < today and data.get('status') in ['SCHEDULED', 'CHECKED_IN']:
+            data['status'] = 'NO_SHOW'
+        return data
+
+    def get_lounge_waiting_count(self, obj):
+        try:
+            today = timezone.localdate()
+            # Waiting lounge queue is strictly for TODAY
+            if str(obj.appointment_date)[:10] != str(today) or obj.status not in ['SCHEDULED', 'CHECKED_IN', 'IN_CONSULTATION']:
+                return 0
+            return Appointment.objects.filter(
+                doctor=obj.doctor,
+                appointment_date=today,
+                status__in=['SCHEDULED', 'CHECKED_IN']
+            ).count()
+        except Exception:
+            return 0
+
+    def get_serving_token(self, obj):
+        try:
+            today = timezone.localdate()
+            if str(obj.appointment_date)[:10] != str(today):
+                return None
+            serving = Appointment.objects.filter(
+                doctor=obj.doctor,
+                appointment_date=today,
+                status='IN_CONSULTATION'
+            ).first()
+            return serving.token_number if serving else None
+        except Exception:
+            return None
+
+    def get_tokens_ahead(self, obj):
+        import re
+        today = timezone.localdate()
+        if str(obj.appointment_date)[:10] != str(today) or obj.status not in ['SCHEDULED', 'CHECKED_IN']:
+            return 0
+        try:
+            tok_digits = re.sub(r'\D', '', str(obj.token_number or ''))
+            if not tok_digits:
+                return 0
+            my_tok = int(tok_digits)
+            tokens = Appointment.objects.filter(
+                doctor=obj.doctor,
+                appointment_date=today,
+                status__in=['SCHEDULED', 'CHECKED_IN']
+            ).exclude(id=obj.id).values_list('token_number', flat=True)
+            ahead = 0
+            for t in tokens:
+                other_digits = re.sub(r'\D', '', str(t or ''))
+                if other_digits and int(other_digits) < my_tok:
+                    ahead += 1
+            return ahead
+        except Exception:
+            return 0
 
 
 class EmergencyEncounterSerializer(serializers.ModelSerializer):
@@ -330,3 +436,49 @@ class DutyRosterSerializer(serializers.ModelSerializer):
     class Meta:
         model = DutyRoster
         fields = '__all__'
+
+
+class ConsultationAddendumSerializer(serializers.ModelSerializer):
+    doctor_name = serializers.CharField(source='doctor.user_profile.full_name', read_only=True)
+
+    class Meta:
+        model = ConsultationAddendum
+        fields = '__all__'
+
+
+class ClinicalReferralSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.user_profile.full_name', read_only=True)
+    patient_mrn = serializers.CharField(source='patient.medical_record_number', read_only=True)
+    referring_doctor_name = serializers.CharField(source='referring_doctor.user_profile.full_name', read_only=True)
+    receiving_doctor_name = serializers.CharField(source='receiving_doctor.user_profile.full_name', read_only=True)
+    receiving_department_name = serializers.CharField(source='receiving_department.name', read_only=True)
+    branch_name = serializers.CharField(source='branch.name', read_only=True)
+
+    class Meta:
+        model = ClinicalReferral
+        fields = '__all__'
+
+
+class MedicalDocumentSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.user_profile.full_name', read_only=True)
+    patient_mrn = serializers.CharField(source='patient.medical_record_number', read_only=True)
+    patient_age = serializers.IntegerField(source='patient.age', read_only=True)
+    patient_gender = serializers.CharField(source='patient.gender', read_only=True)
+    doctor_name = serializers.CharField(source='doctor.user_profile.full_name', read_only=True)
+    doctor_qualification = serializers.CharField(source='doctor.qualification', read_only=True)
+    doctor_registration_number = serializers.CharField(source='doctor.medical_license_number', read_only=True)
+    doctor_specialization = serializers.CharField(source='doctor.specialization', read_only=True)
+    branch_name = serializers.CharField(source='branch.name', read_only=True)
+
+    class Meta:
+        model = MedicalDocument
+        fields = '__all__'
+
+
+class DoctorNotificationSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.user_profile.full_name', read_only=True)
+
+    class Meta:
+        model = DoctorNotification
+        fields = '__all__'
+

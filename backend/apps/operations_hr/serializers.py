@@ -8,7 +8,9 @@ from .models import (
     LeaveBalance, HospitalHoliday, FixedAsset, AssetDepreciationSchedule,
     EquipmentMaintenanceTask, OperatingTheatreSuite, OperationTheatreBooking,
     ICUObservationRecord, Ambulance, AmbulanceDispatch, BloodBankStock,
-    HousekeepingTask, BiomedicalWasteRecord
+    HousekeepingTask, BiomedicalWasteRecord,
+    StaffRequirementRequest, JobVacancy, JobApplication, PerformanceAppraisal,
+    TrainingProgram, EmployeeTrainingEnrollment, EmployeeGrievance, DepartmentOperationalIssue
 )
 
 
@@ -305,8 +307,175 @@ class HospitalSettingSerializer(serializers.ModelSerializer):
 
 class AuditLogSerializer(serializers.ModelSerializer):
     actor_email = serializers.CharField(read_only=True)
-    branch_name = serializers.CharField(source='branch.name', read_only=True)
+    branch_name = serializers.SerializerMethodField()
+    actor_name = serializers.SerializerMethodField()
+    actor_role = serializers.SerializerMethodField()
+    employee_id = serializers.SerializerMethodField()
+    department_name = serializers.SerializerMethodField()
+    module = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    approval_status = serializers.SerializerMethodField()
+    approver_info = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
 
     class Meta:
         model = AuditLog
+        fields = [
+            'id', 'actor_user_id', 'actor_email', 'actor_name', 'actor_role',
+            'employee_id', 'department_name', 'branch', 'branch_name',
+            'action', 'module', 'entity_type', 'entity_id',
+            'ip_address', 'user_agent', 'old_values', 'new_values',
+            'status', 'approval_status', 'approver_info', 'description',
+            'created_at',
+        ]
+
+    def _get_meta(self, obj):
+        if isinstance(obj.new_values, dict) and '_meta' in obj.new_values and isinstance(obj.new_values['_meta'], dict):
+            return obj.new_values['_meta']
+        return {}
+
+    def get_branch_name(self, obj):
+        if obj.branch:
+            return obj.branch.name
+        return self._get_meta(obj).get('branch_name') or 'Main Branch'
+
+    def get_actor_name(self, obj):
+        meta_name = self._get_meta(obj).get('actor_name')
+        if meta_name:
+            return meta_name
+        if obj.actor_email:
+            return obj.actor_email.split('@')[0].replace('.', ' ').title()
+        return 'System'
+
+    def get_actor_role(self, obj):
+        return self._get_meta(obj).get('actor_role') or 'STAFF'
+
+    def get_employee_id(self, obj):
+        return self._get_meta(obj).get('employee_id') or ''
+
+    def get_department_name(self, obj):
+        return self._get_meta(obj).get('department_name') or 'General Operations'
+
+    def get_module(self, obj):
+        meta_mod = self._get_meta(obj).get('module')
+        if meta_mod:
+            return meta_mod
+        et = (obj.entity_type or '').upper()
+        if any(k in et for k in ['STAFF', 'LEAVE', 'PAYROLL', 'SHIFT', 'ATTENDANCE']):
+            return 'HR_PAYROLL'
+        if any(k in et for k in ['PATIENT', 'APPOINTMENT', 'ADMISSION', 'CONSULT']):
+            return 'CLINICAL'
+        if any(k in et for k in ['INVOICE', 'PAYMENT', 'JOURNAL', 'CLAIM']):
+            return 'FINANCE'
+        return obj.entity_type or 'SYSTEM'
+
+    def get_status(self, obj):
+        meta_status = self._get_meta(obj).get('status')
+        if meta_status:
+            return meta_status
+        if 'DENIED' in (obj.action or '') or 'FAILED' in (obj.action or ''):
+            return 'DENIED'
+        return 'SUCCESS'
+
+    def get_approval_status(self, obj):
+        return self._get_meta(obj).get('approval_status') or ('APPROVED' if 'APPROV' in (obj.action or '') else 'N/A')
+
+    def get_approver_info(self, obj):
+        return self._get_meta(obj).get('approver_info') or ''
+
+    def get_description(self, obj):
+        meta_desc = self._get_meta(obj).get('description')
+        if meta_desc:
+            return meta_desc
+        return f"{self.get_actor_name(obj)} performed {obj.action} on {obj.entity_type} {obj.entity_id}".strip()
+
+
+# =============================================================================
+# 12. NEW SERIALIZERS: RECRUITMENT, WORKFORCE, GRIEVANCES & APPRAISALS
+# =============================================================================
+
+class StaffRequirementRequestSerializer(serializers.ModelSerializer):
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    department_code = serializers.CharField(source='department.code', read_only=True)
+    requested_by_name = serializers.CharField(source='requested_by.user_profile.full_name', read_only=True)
+    hr_reviewer_name = serializers.CharField(source='hr_reviewer.user_profile.full_name', read_only=True)
+
+    class Meta:
+        model = StaffRequirementRequest
+        fields = '__all__'
+        read_only_fields = ['requested_by']
+
+
+class JobVacancySerializer(serializers.ModelSerializer):
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    applications_count = serializers.IntegerField(source='applications.count', read_only=True)
+    posted_by_name = serializers.CharField(source='posted_by.user_profile.full_name', read_only=True)
+
+    class Meta:
+        model = JobVacancy
+        fields = '__all__'
+        read_only_fields = ['posted_by']
+
+
+class JobApplicationSerializer(serializers.ModelSerializer):
+    vacancy_title = serializers.CharField(source='vacancy.title', read_only=True)
+    interviewer_name = serializers.CharField(source='interviewer.user_profile.full_name', read_only=True)
+
+    class Meta:
+        model = JobApplication
+        fields = '__all__'
+        read_only_fields = ['interviewer']
+
+
+class PerformanceAppraisalSerializer(serializers.ModelSerializer):
+    staff_name = serializers.CharField(source='staff.user_profile.full_name', read_only=True)
+    staff_employee_id = serializers.CharField(source='staff.employee_id', read_only=True)
+    staff_designation = serializers.CharField(source='staff.designation', read_only=True)
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    hod_reviewer_name = serializers.CharField(source='hod_reviewer.user_profile.full_name', read_only=True)
+    hr_reviewer_name = serializers.CharField(source='hr_reviewer.user_profile.full_name', read_only=True)
+
+    class Meta:
+        model = PerformanceAppraisal
+        fields = '__all__'
+
+
+class TrainingProgramSerializer(serializers.ModelSerializer):
+    enrollments_count = serializers.IntegerField(source='enrollments.count', read_only=True)
+
+    class Meta:
+        model = TrainingProgram
+        fields = '__all__'
+
+
+class EmployeeTrainingEnrollmentSerializer(serializers.ModelSerializer):
+    program_title = serializers.CharField(source='program.title', read_only=True)
+    program_category = serializers.CharField(source='program.category', read_only=True)
+    program_scheduled_date = serializers.DateField(source='program.scheduled_date', read_only=True)
+    staff_name = serializers.CharField(source='staff.user_profile.full_name', read_only=True)
+    staff_employee_id = serializers.CharField(source='staff.employee_id', read_only=True)
+
+    class Meta:
+        model = EmployeeTrainingEnrollment
+        fields = '__all__'
+
+
+class EmployeeGrievanceSerializer(serializers.ModelSerializer):
+    staff_name = serializers.CharField(source='staff.user_profile.full_name', read_only=True)
+    staff_employee_id = serializers.CharField(source='staff.employee_id', read_only=True)
+    staff_department = serializers.CharField(source='staff.department.name', read_only=True)
+    assigned_hr_name = serializers.CharField(source='assigned_hr.user_profile.full_name', read_only=True)
+
+    class Meta:
+        model = EmployeeGrievance
+        fields = '__all__'
+
+
+class DepartmentOperationalIssueSerializer(serializers.ModelSerializer):
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    department_code = serializers.CharField(source='department.code', read_only=True)
+    reported_by_name = serializers.CharField(source='reported_by.user_profile.full_name', read_only=True)
+
+    class Meta:
+        model = DepartmentOperationalIssue
         fields = '__all__'

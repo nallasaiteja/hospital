@@ -24,6 +24,8 @@ from apps.authentication.models import (
     SecurityEventType,
 )
 from apps.authentication.permissions import IsStaffMember, IsSuperAdmin, HasRole
+from apps.authentication.rbac_matrix import HR_ASSIGNABLE_ROLES
+from apps.core.activity_log_service import ActivityLogService
 from apps.authentication.throttling import AuthRateThrottle
 from apps.authentication.serializers import (
     RoleSerializer,
@@ -60,10 +62,29 @@ class UserManagementListView(views.APIView):
     def get(self, request):
         requester = get_requester_profile(request)
         if not request.user.is_superuser:
-            if not requester or requester.role.name not in [RoleEnum.SUPER_ADMIN, RoleEnum.HOSPITAL_ADMIN, RoleEnum.BRANCH_MANAGER, RoleEnum.HR_MANAGER, RoleEnum.AUDITOR]:
-                return Response({'error': 'Unauthorized to view user administration.'}, status=status.HTTP_403_FORBIDDEN)
+            if not requester or requester.role.name not in [RoleEnum.SUPER_ADMIN, RoleEnum.HR_MANAGER, RoleEnum.AUDITOR]:
+                ActivityLogService.record(
+                    action='USER_ADMIN_VIEW_DENIED',
+                    entity_type='UserProfile',
+                    module='USERS_ROLES',
+                    request=request,
+                    user_profile=requester,
+                    status='DENIED',
+                    description='Unauthorized attempt to access User & Role Administration.',
+                )
+                return Response(
+                    {'error': 'Unauthorized to view user administration. Only Super Admin, HR Manager, and Auditor have access.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         qs = UserProfile.objects.select_related('role', 'staff_profile__branch', 'staff_profile__department', 'patient_profile__primary_branch').all()
+
+        # Scope HR Manager to their assigned branch
+        if not request.user.is_superuser and requester and requester.role.name == RoleEnum.HR_MANAGER:
+            hr_staff = getattr(requester, 'staff_profile', None)
+            if hr_staff and hr_staff.branch_id:
+                from django.db.models import Q
+                qs = qs.filter(Q(staff_profile__branch_id=hr_staff.branch_id) | Q(patient_profile__primary_branch_id=hr_staff.branch_id))
 
         role = request.query_params.get('role')
         if role and role != 'ALL':
@@ -151,8 +172,21 @@ class UserManagementDetailView(views.APIView):
     def patch(self, request, pk):
         requester = get_requester_profile(request)
         if not request.user.is_superuser:
-            if not requester or requester.role.name not in [RoleEnum.SUPER_ADMIN, RoleEnum.HOSPITAL_ADMIN, RoleEnum.BRANCH_MANAGER, RoleEnum.HR_MANAGER]:
-                return Response({'error': 'Unauthorized to modify user accounts.'}, status=status.HTTP_403_FORBIDDEN)
+            if not requester or requester.role.name not in [RoleEnum.SUPER_ADMIN, RoleEnum.HR_MANAGER]:
+                ActivityLogService.record(
+                    action='USER_ACCOUNT_MODIFICATION_DENIED',
+                    entity_type='UserProfile',
+                    entity_id=str(pk),
+                    module='USERS_ROLES',
+                    request=request,
+                    user_profile=requester,
+                    status='DENIED',
+                    description='Unauthorized attempt to modify user account or role. Branch Managers and Auditors cannot modify user accounts.',
+                )
+                return Response(
+                    {'error': 'Unauthorized to modify user accounts. Only Super Admin and HR Manager can modify staff roles and status.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         target_user = UserProfile.objects.select_related('role', 'staff_profile').filter(id=pk).first()
         if not target_user:
@@ -163,6 +197,33 @@ class UserManagementDetailView(views.APIView):
         data = serializer.validated_data
 
         actor_email = requester.email if requester else 'admin@system.local'
+
+        # HR Manager scope & role restrictions
+        if not request.user.is_superuser and requester and requester.role.name == RoleEnum.HR_MANAGER:
+            if target_user.role.name in [RoleEnum.SUPER_ADMIN, RoleEnum.HOSPITAL_ADMIN, RoleEnum.BRANCH_MANAGER]:
+                return Response(
+                    {'error': f"HR Managers cannot modify executive or administrative account '{target_user.role.display_name}'."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            if 'role_name' in data and data['role_name'] not in HR_ASSIGNABLE_ROLES:
+                SecurityAuditEvent.objects.create(
+                    event_type=SecurityEventType.UNAUTHORIZED_ACCESS_ATTEMPT,
+                    actor_email=actor_email,
+                    target_user_id=target_user.supabase_user_id,
+                    target_user_email=target_user.email,
+                    details={'attempt': f"HR Manager attempted to assign restricted role {data['role_name']}"}
+                )
+                return Response(
+                    {'error': f"HR Managers can only assign approved operational roles and cannot grant '{data['role_name']}'."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            hr_staff = getattr(requester, 'staff_profile', None)
+            target_staff = getattr(target_user, 'staff_profile', None)
+            if hr_staff and hr_staff.branch_id and target_staff and target_staff.branch_id and str(hr_staff.branch_id) != str(target_staff.branch_id):
+                return Response(
+                    {'error': 'HR Managers can only modify staff accounts within their assigned branch.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         # Rule 1: Prevent deactivating the last Super Admin
         if data.get('is_active') is False and target_user.role.name == RoleEnum.SUPER_ADMIN:
@@ -233,6 +294,22 @@ class UserManagementDetailView(views.APIView):
             if updated_sp_fields:
                 sp.save(update_fields=updated_sp_fields)
 
+        ActivityLogService.record(
+            action='USER_ACCOUNT_UPDATED',
+            entity_type='UserProfile',
+            entity_id=str(target_user.id),
+            module='USERS_ROLES',
+            request=request,
+            user_profile=requester,
+            new_values={
+                'target_email': target_user.email,
+                'role': target_user.role.name,
+                'is_active': target_user.is_active,
+                'updated_fields': list(data.keys()),
+            },
+            description=f"Updated user account {target_user.email} (Role: {target_user.role.display_name}).",
+        )
+
         return Response({'message': f'User {target_user.email} updated successfully.'}, status=status.HTTP_200_OK)
 
 
@@ -291,8 +368,18 @@ class RolePermissionsDetailView(views.APIView):
     def _save_permissions(self, request, pk):
         requester = get_requester_profile(request)
         if not request.user.is_superuser:
-            if not requester or requester.role.name not in [RoleEnum.SUPER_ADMIN, RoleEnum.HOSPITAL_ADMIN]:
-                return Response({'error': 'Unauthorized to modify role permissions.'}, status=status.HTTP_403_FORBIDDEN)
+            if not requester or requester.role.name != RoleEnum.SUPER_ADMIN:
+                ActivityLogService.record(
+                    action='ROLE_PERMISSION_UPDATE_DENIED',
+                    entity_type='Role',
+                    entity_id=str(pk),
+                    module='USERS_ROLES',
+                    request=request,
+                    user_profile=requester,
+                    status='DENIED',
+                    description='Unauthorized attempt to modify system role permissions. Only Super Admin is authorized.',
+                )
+                return Response({'error': 'Unauthorized to modify role permissions. Super Administrator privileges required.'}, status=status.HTTP_403_FORBIDDEN)
 
         role = self._get_role(pk)
         if not role:
@@ -333,8 +420,8 @@ class FinancialApprovalPolicyView(views.APIView):
     def post(self, request):
         requester = get_requester_profile(request)
         if not request.user.is_superuser:
-            if not requester or requester.role.name not in [RoleEnum.SUPER_ADMIN, RoleEnum.HOSPITAL_ADMIN, RoleEnum.FINANCE_MANAGER]:
-                return Response({'error': 'Unauthorized to configure financial approval policies.'}, status=status.HTTP_403_FORBIDDEN)
+            if not requester or requester.role.name not in [RoleEnum.SUPER_ADMIN, RoleEnum.FINANCE_MANAGER]:
+                return Response({'error': 'Unauthorized to configure financial approval policies. Super Admin or Finance Manager required.'}, status=status.HTTP_403_FORBIDDEN)
 
         data = request.data
         approver_role = Role.objects.filter(id=data.get('approver_role')).first() or Role.objects.filter(name=data.get('approver_role_name')).first()
@@ -442,9 +529,19 @@ class FinancialApprovalActionView(views.APIView):
                     'error': 'Separation of duties violation: Transaction creators are strictly prohibited from approving their own financial requests.'
                 }, status=status.HTTP_403_FORBIDDEN)
 
-        # ROLE PERMISSION CHECK
-        allowed_roles = [RoleEnum.SUPER_ADMIN, RoleEnum.HOSPITAL_ADMIN, RoleEnum.FINANCE_MANAGER, RoleEnum.ACCOUNTANT, RoleEnum.INVESTMENT_MANAGER, RoleEnum.PROCUREMENT_OFFICER]
+        # ROLE PERMISSION CHECK: Branch Manager and Hospital Admin have read-only monitoring access
+        allowed_roles = [RoleEnum.SUPER_ADMIN, RoleEnum.FINANCE_MANAGER, RoleEnum.ACCOUNTANT, RoleEnum.INVESTMENT_MANAGER, RoleEnum.PROCUREMENT_OFFICER]
         if not request.user.is_superuser and (not requester or requester.role.name not in allowed_roles):
+            ActivityLogService.record(
+                action='FINANCIAL_APPROVAL_DENIED',
+                entity_type='FinancialApprovalRequest',
+                entity_id=str(approval_req.id),
+                module='TRANSACTIONS',
+                request=request,
+                user_profile=requester,
+                status='DENIED',
+                description=f"Unauthorized attempt to approve/reject financial request {approval_req.request_number}.",
+            )
             return Response({'error': 'You do not possess the financial approval authority for this transaction.'}, status=status.HTTP_403_FORBIDDEN)
 
         actor_email = requester.email if requester else 'admin@system.local'

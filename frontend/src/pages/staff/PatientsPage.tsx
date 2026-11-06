@@ -32,12 +32,28 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 
 export const PatientsPage: React.FC = () => {
   const { t } = useTranslation();
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
   const navigate = useNavigate();
+
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
+  const canEditDemographics = ['SUPER_ADMIN', 'RECEPTIONIST', 'DOCTOR', 'NURSE', 'DEPARTMENT_HEAD'].includes(role || '');
+  const canViewClinicalEmr = [
+    'SUPER_ADMIN',
+    'MEDICAL_DIRECTOR',
+    'DEPARTMENT_HEAD',
+    'DOCTOR',
+    'NURSE',
+    'PHARMACIST',
+    'LAB_TECHNICIAN',
+    'RADIOLOGY_TECHNICIAN',
+    'AUDITOR',
+  ].includes(role || '');
 
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -390,35 +406,43 @@ export const PatientsPage: React.FC = () => {
         align: 'right',
         render: (p: PatientProfile) => (
           <div className="flex items-center justify-end gap-1.5">
-            <button
-              onClick={() => {
-                setEditingPatient(p);
-                setEditFirstName(p.user_profile?.first_name || '');
-                setEditLastName(p.user_profile?.last_name || '');
-                setEditPhone(p.user_profile?.phone_number || '');
-                setEditAddress(p.address || '');
-                setEditCity(p.city || '');
-                setEditState(p.state || '');
-                setEditPostal(p.postal_code || '');
-                setEditEmergencyName(p.emergency_contact_name || '');
-                setEditEmergencyPhone(p.emergency_contact_phone || '');
-              }}
-              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
-            >
-              {t('common.edit', 'Edit')}
-            </button>
-            <button
-              onClick={() => navigate(`/staff/patients/${p.id}`)}
-              className="px-3 py-1 text-xs font-semibold rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition flex items-center gap-1"
-            >
-              <span>{t('patients.medicalHistory', 'EMR Chart')}</span>
-              <ExternalLink className="w-3 h-3" />
-            </button>
+            {canEditDemographics && (
+              <button
+                onClick={() => {
+                  setEditingPatient(p);
+                  setEditFirstName(p.user_profile?.first_name || '');
+                  setEditLastName(p.user_profile?.last_name || '');
+                  setEditPhone(p.user_profile?.phone_number || '');
+                  setEditAddress(p.address || '');
+                  setEditCity(p.city || '');
+                  setEditState(p.state || '');
+                  setEditPostal(p.postal_code || '');
+                  setEditEmergencyName(p.emergency_contact_name || '');
+                  setEditEmergencyPhone(p.emergency_contact_phone || '');
+                }}
+                className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+              >
+                {t('common.edit', 'Edit')}
+              </button>
+            )}
+            {canViewClinicalEmr ? (
+              <button
+                onClick={() => navigate(`/staff/patients/${p.id}`)}
+                className="px-3 py-1 text-xs font-semibold rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition flex items-center gap-1"
+              >
+                <span>{t('patients.medicalHistory', 'EMR Chart')}</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
+            ) : (
+              <span className="px-2 py-1 text-[10px] font-mono text-slate-500 border border-slate-800 rounded">
+                Demographics Only
+              </span>
+            )}
           </div>
         ),
       },
     ],
-    [t, patients]
+    [t, patients, canEditDemographics, canViewClinicalEmr]
   );
 
   return (
@@ -442,28 +466,30 @@ export const PatientsPage: React.FC = () => {
             Enterprise Master Patient Index (EMPI), Longitudinal Clinical Records, Duplicate Matching & Merging.
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={handleOpenDuplicates}
-            className="px-3 py-2 rounded-xl text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition flex items-center gap-1.5"
-          >
-            <GitMerge className="w-4 h-4" /> {t('common.filter', 'Duplicate Review')}
-            {stats && stats.potential_duplicates_count > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px]">
-                {stats.potential_duplicates_count}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => {
-              setRegStep('IDENTITY');
-              setShowRegisterModal(true);
-            }}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20"
-          >
-            <Plus className="w-4 h-4" /> {t('patients.registerNew', 'Register New Patient')}
-          </button>
-        </div>
+        {!isReadOnlyRole && canEditDemographics && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleOpenDuplicates}
+              className="px-3 py-2 rounded-xl text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition flex items-center gap-1.5"
+            >
+              <GitMerge className="w-4 h-4" /> {t('common.filter', 'Duplicate Review')}
+              {stats && stats.potential_duplicates_count > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px]">
+                  {stats.potential_duplicates_count}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setRegStep('IDENTITY');
+                setShowRegisterModal(true);
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20"
+            >
+              <Plus className="w-4 h-4" /> {t('patients.registerNew', 'Register New Patient')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* KPI Stats Calculated from Persistent Database Records */}

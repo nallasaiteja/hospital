@@ -109,6 +109,12 @@ export const LandingPage: React.FC = () => {
             <LanguageSelector variant="compact" />
 
             <Link
+              to="/careers"
+              className="px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white transition"
+            >
+              Careers
+            </Link>
+            <Link
               to="/patient/login"
               className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-semibold text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-750 border border-slate-700 transition"
             >
@@ -541,6 +547,10 @@ export const LandingPage: React.FC = () => {
             <p className="mt-1">&copy; {new Date().getFullYear()} {t('landing.footerCopyright', 'AURA Healthcare Systems. Built with precision for NABH clinical compliance.')}</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] sm:text-xs">
+            <Link to="/careers" className="text-cyan-400 hover:text-cyan-300 font-semibold transition">
+              Careers & Job Openings
+            </Link>
+            <span>&bull;</span>
             <span className="text-teal-400 font-medium">{t('landing.footerApiStatus', 'Backend API')}: {apiStatus}</span>
             <span>&bull;</span>
             <span className="text-slate-400">{t('landing.footerTimezone', 'Timezone: Asia/Kolkata')}</span>

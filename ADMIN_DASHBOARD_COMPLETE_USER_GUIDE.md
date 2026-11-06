@@ -719,9 +719,9 @@ Nurse Sunita logs into the system. She can view vital signs, record nursing roun
 - `PHARMACIST`: Pharmacy staff dispensing prescriptions and managing drug stocks.
 - `LAB_TECHNICIAN` / `PATHOLOGIST`: Laboratory personnel processing samples and signing reports.
 - `RADIOLOGIST`: Imaging specialists reading scans and writing impressions.
-- `ACCOUNTANT` / `CASHIER`: Billing executives collecting payments and managing cash registers.
+- `BILLING_EXECUTIVE`: Billing & cash desk executives managing patient invoices, advance deposits, and receipts.
+- `FINANCE_MANAGER`: Finance & accounting controller managing General Ledger, journals, budgets, P&L, and financial reconciliations.
 - `HR_MANAGER`: Personnel managers handling payroll, shifts, and leaves.
-- `AUDITOR`: Independent inspectors reviewing financial and compliance records.
 - `PATIENT`: Verified patients viewing only their own personal records.
 
 ### 5. Buttons and Controls:

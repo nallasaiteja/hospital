@@ -9,10 +9,20 @@ from .views import (
 from .opd_views import (
     OPDDashboardStatsView, DoctorAvailableSlotsView,
     DoctorScheduleViewSet, DoctorLeaveViewSet,
+    OPDConsultationFeePreviewView, OPDPaymentOrderCreateView,
+    OPDPaymentOrderAuthorizeSandboxView, OPDAppointmentReceiptView,
     OPDWalkInRegistrationView, OPDQueueView, OPDQueueActionView,
-    OPDConsultationEncounterView, OPDReportsView
+    OPDConsultationEncounterView, OPDReportsView, OPDLoungeTVView
 )
 from .voice_views import VoicePrescriptionExtractView
+from .doctor_workspace_views import (
+    DoctorDashboardOverviewView, DoctorAppointmentsView, DoctorPatientsView,
+    DoctorPatientEMRView, DoctorConsultationDetailView, DoctorConsultationAddendumView,
+    DoctorPrescriptionsView, DoctorInvestigationRequestsView, DoctorInvestigationReportsView,
+    DoctorInpatientsView, DoctorReferralsView, DoctorReferralActionView,
+    DoctorMedicalDocumentsView, DoctorLeaveManagementView, DoctorLeaveCoordinationApprovalView,
+    DoctorNotificationsView, DoctorProfileView
+)
 from .ipd_views import (
     EmergencyIPDDashboardStatsView, EmergencyEncounterViewSet,
     EmergencyActionView, InpatientAdmissionViewSet, BedViewSet,
@@ -57,10 +67,15 @@ urlpatterns = [
     # OPD and Queue Management
     path('opd/dashboard-stats/', OPDDashboardStatsView.as_view(), name='opd-dashboard-stats'),
     path('doctors/<uuid:doctor_id>/available-slots/', DoctorAvailableSlotsView.as_view(), name='doctor-available-slots'),
+    path('opd/consultation-fee/', OPDConsultationFeePreviewView.as_view(), name='opd-consultation-fee'),
+    path('opd/payment-order/', OPDPaymentOrderCreateView.as_view(), name='opd-payment-order'),
+    path('opd/payment-order/authorize-sandbox/', OPDPaymentOrderAuthorizeSandboxView.as_view(), name='opd-payment-order-authorize-sandbox'),
     path('opd/walk-in/', OPDWalkInRegistrationView.as_view(), name='opd-walk-in'),
     path('opd/queue/', OPDQueueView.as_view(), name='opd-queue'),
     path('opd/queue/<uuid:pk>/action/', OPDQueueActionView.as_view(), name='opd-queue-action'),
+    path('opd/lounge-tv/', OPDLoungeTVView.as_view(), name='opd-lounge-tv'),
     path('opd/reports/', OPDReportsView.as_view(), name='opd-reports'),
+    path('appointments/<uuid:pk>/receipt/', OPDAppointmentReceiptView.as_view(), name='appointment-receipt'),
 
     # Encounter & Consultation Workspace
     path('appointments/<uuid:pk>/encounter/', OPDConsultationEncounterView.as_view(), name='appointment-encounter'),
@@ -103,6 +118,26 @@ urlpatterns = [
     path('radiology/orders/<uuid:pk>/schedule/', RadiologyScheduleActionView.as_view(), name='radiology-schedule'),
     path('radiology/orders/<uuid:pk>/complete/', RadiologyCompleteActionView.as_view(), name='radiology-complete'),
     path('radiology/orders/<uuid:pk>/report/', RadiologyReportActionView.as_view(), name='radiology-report'),
+
+    # Doctor Clinical Workspace Endpoints
+    path('doctor-workspace/dashboard/', DoctorDashboardOverviewView.as_view(), name='doctor-dashboard'),
+    path('doctor-workspace/appointments/', DoctorAppointmentsView.as_view(), name='doctor-appointments'),
+    path('doctor-workspace/patients/', DoctorPatientsView.as_view(), name='doctor-patients'),
+    path('doctor-workspace/patients/<uuid:patient_id>/emr/', DoctorPatientEMRView.as_view(), name='doctor-patient-emr'),
+    path('doctor-workspace/consultations/<uuid:appointment_id>/', DoctorConsultationDetailView.as_view(), name='doctor-consultation-detail'),
+    path('doctor-workspace/consultations/<uuid:appointment_id>/addendum/', DoctorConsultationAddendumView.as_view(), name='doctor-consultation-addendum'),
+    path('doctor-workspace/prescriptions/', DoctorPrescriptionsView.as_view(), name='doctor-prescriptions'),
+    path('doctor-workspace/investigations/', DoctorInvestigationRequestsView.as_view(), name='doctor-investigations'),
+    path('doctor-workspace/reports/', DoctorInvestigationReportsView.as_view(), name='doctor-reports'),
+    path('doctor-workspace/inpatients/', DoctorInpatientsView.as_view(), name='doctor-inpatients'),
+    path('doctor-workspace/inpatients/<uuid:admission_id>/notes/', DoctorInpatientsView.as_view(), name='doctor-inpatient-notes'),
+    path('doctor-workspace/referrals/', DoctorReferralsView.as_view(), name='doctor-referrals'),
+    path('doctor-workspace/referrals/<uuid:referral_id>/action/', DoctorReferralActionView.as_view(), name='doctor-referral-action'),
+    path('doctor-workspace/documents/', DoctorMedicalDocumentsView.as_view(), name='doctor-documents'),
+    path('doctor-workspace/leaves/', DoctorLeaveManagementView.as_view(), name='doctor-leaves'),
+    path('doctor-workspace/leaves/<uuid:leave_id>/coordinate-approval/', DoctorLeaveCoordinationApprovalView.as_view(), name='doctor-leave-coordinate-approval'),
+    path('doctor-workspace/notifications/', DoctorNotificationsView.as_view(), name='doctor-notifications'),
+    path('doctor-workspace/profile/', DoctorProfileView.as_view(), name='doctor-profile'),
 
     # General Clinical Endpoints
     path('', include(router.urls)),

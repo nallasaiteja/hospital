@@ -26,6 +26,7 @@ import {
   PatientTransferRecord,
   EmergencyIPDDashboardStats,
   InpatientRunningBill,
+  LoungeTVData,
 } from '../types';
 
 const api = axios.create({
@@ -85,6 +86,9 @@ export interface CurrentUserResponse {
   user?: UserProfile;
   role?: string;
   permissions?: string[];
+  module_permissions?: Record<string, string[]>;
+  data_scope?: string;
+  is_read_only?: boolean;
   staff_profile?: StaffProfile;
   patient_profile?: PatientProfile;
   message?: string;
@@ -439,6 +443,7 @@ export const patientService = {
 export const clinicalService = {
   getAppointments: async (params?: any) => (await api.get('/clinical/appointments/', { params })).data,
   bookAppointment: async (payload: any) => (await api.post('/clinical/appointments/', payload)).data,
+  cancelAppointment: async (id: string, reason?: string) => (await api.post(`/clinical/appointments/${id}/cancel/`, { reason })).data,
   updateAppointmentStatus: async (id: string, status: string) => (await api.patch(`/clinical/appointments/${id}/status/`, { status })).data,
   recordConsultation: async (id: string, payload: any) => (await api.post(`/clinical/appointments/${id}/consultation/`, payload)).data,
   getEmergencyCases: async (params?: any) => (await api.get('/clinical/emergency/', { params })).data,
@@ -494,8 +499,63 @@ export const opdService = {
     chief_complaint?: string;
     reason_for_visit?: string;
     vitals?: Record<string, any>;
-  }): Promise<{ message: string; appointment: Appointment; token_receipt: any }> => {
+    payment_method: 'CASH' | 'ONLINE';
+    cash_received_confirmed?: boolean;
+    razorpay_order_id?: string;
+    razorpay_payment_id?: string;
+    razorpay_signature?: string;
+    transaction_reference?: string;
+    idempotency_key?: string;
+  }): Promise<{ message: string; appointment: Appointment; token_receipt: any; receipt?: any }> => {
     const res = await api.post('/clinical/opd/walk-in/', payload);
+    return res.data;
+  },
+  getConsultationFee: async (params: {
+    doctor_id: string;
+    patient_id?: string;
+    department_id?: string;
+  }): Promise<{
+    doctor_id: string;
+    doctor_name: string;
+    specialization: string;
+    department_name: string;
+    consultation_fee: string;
+    formatted_amount: string;
+    currency: string;
+    currency_symbol: string;
+    fee_source: string;
+    allowed_payment_methods: string[];
+  }> => {
+    const res = await api.get('/clinical/opd/consultation-fee/', { params });
+    return res.data;
+  },
+  createPaymentOrder: async (payload: {
+    patient_id: string;
+    doctor_id: string;
+    department_id?: string;
+    booking_type?: 'APPOINTMENT' | 'WALK_IN';
+    idempotency_key?: string;
+  }): Promise<any> => {
+    const res = await api.post('/clinical/opd/payment-order/', payload);
+    return res.data;
+  },
+  authorizeSandboxPaymentOrder: async (payload: {
+    razorpay_order_id: string;
+    simulate_failure?: boolean;
+  }): Promise<{
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    amount: string;
+    formatted_amount: string;
+    currency: string;
+    status: string;
+  }> => {
+    const res = await api.post('/clinical/opd/payment-order/authorize-sandbox/', payload);
+    return res.data;
+  },
+  getAppointmentReceipt: async (appointmentId: string): Promise<any> => {
+    const res = await api.get(`/clinical/appointments/${appointmentId}/receipt/`);
     return res.data;
   },
   getQueue: async (params?: {
@@ -506,6 +566,10 @@ export const opdService = {
     search?: string;
   }): Promise<QueueItem[]> => {
     const res = await api.get<QueueItem[]>('/clinical/opd/queue/', { params });
+    return res.data;
+  },
+  getLoungeTV: async (params?: { branch_id?: string; doctor_id?: string; date?: string }): Promise<LoungeTVData> => {
+    const res = await api.get<LoungeTVData>('/clinical/opd/lounge-tv/', { params });
     return res.data;
   },
   executeQueueAction: async (appointmentId: string, action: string, payload?: any): Promise<Appointment> => {
@@ -1149,8 +1213,44 @@ export const procurementService = pharmacyService;
 export const operationsHrService = {
   // Dashboards
   getHRDashboard: (params?: any) => api.get('/operations-hr/dashboards/hr/', { params }).then(r => r.data),
+  getComprehensiveHRDashboard: (params?: any) => api.get('/operations-hr/dashboards/comprehensive-hr/', { params }).then(r => r.data),
+  getDepartmentHeadDashboard: (params?: any) => api.get('/operations-hr/dashboards/department-head/', { params }).then(r => r.data),
+  broadcastDepartmentNotice: (payload: { title: string; message: string; severity?: string; department_id?: string; branch_id?: string }) =>
+    api.post('/operations-hr/dashboards/department-head/', payload).then(r => r.data),
   getAssetDashboard: (params?: any) => api.get('/operations-hr/dashboards/assets/', { params }).then(r => r.data),
   getOperationsDashboard: (params?: any) => api.get('/operations-hr/dashboards/operations/', { params }).then(r => r.data),
+  getBranchOperationsDashboard: (params?: any) => api.get('/operations-hr/dashboards/branch-operations/', { params }).then(r => r.data),
+
+  // Recruitment & Vacancies (Phase 3 Module 2)
+  getVacancies: (params?: any) => api.get('/operations-hr/vacancies/', { params }).then(r => r.data),
+  createVacancy: (payload: any) => api.post('/operations-hr/vacancies/', payload).then(r => r.data),
+  getApplications: (params?: any) => api.get('/operations-hr/applications/', { params }).then(r => r.data),
+  createApplication: (payload: any) => api.post('/operations-hr/applications/', payload).then(r => r.data),
+  updateApplication: (id: string, payload: any) => api.patch(`/operations-hr/applications/${id}/`, payload).then(r => r.data),
+
+  // Staff Requirements Workflow (Phase 4 Module 6 & Phase 6 Workflow 1)
+  getStaffRequirements: (params?: any) => api.get('/operations-hr/staff-requirements/', { params }).then(r => r.data),
+  createStaffRequirement: (payload: any) => api.post('/operations-hr/staff-requirements/', payload).then(r => r.data),
+  updateStaffRequirement: (id: string, payload: any) => api.patch(`/operations-hr/staff-requirements/${id}/`, payload).then(r => r.data),
+
+  // Performance Appraisal (Phase 3 Module 7 & Phase 4)
+  getAppraisals: (params?: any) => api.get('/operations-hr/appraisals/', { params }).then(r => r.data),
+  createAppraisal: (payload: any) => api.post('/operations-hr/appraisals/', payload).then(r => r.data),
+  updateAppraisal: (id: string, payload: any) => api.patch(`/operations-hr/appraisals/${id}/`, payload).then(r => r.data),
+
+  // Training & Development (Phase 3 Module 8)
+  getTrainingPrograms: (params?: any) => api.get('/operations-hr/training-programs/', { params }).then(r => r.data),
+  createTrainingProgram: (payload: any) => api.post('/operations-hr/training-programs/', payload).then(r => r.data),
+
+  // Employee Grievances (Phase 3 Module 9)
+  getGrievances: (params?: any) => api.get('/operations-hr/grievances/', { params }).then(r => r.data),
+  createGrievance: (payload: any) => api.post('/operations-hr/grievances/', payload).then(r => r.data),
+  updateGrievance: (id: string, payload: any) => api.patch(`/operations-hr/grievances/${id}/`, payload).then(r => r.data),
+
+  // Department Operational Issues (Phase 4 Module 10)
+  getOperationalIssues: (params?: any) => api.get('/operations-hr/operational-issues/', { params }).then(r => r.data),
+  createOperationalIssue: (payload: any) => api.post('/operations-hr/operational-issues/', payload).then(r => r.data),
+  updateOperationalIssue: (id: string, payload: any) => api.patch(`/operations-hr/operational-issues/${id}/`, payload).then(r => r.data),
 
   // Employees & HR
   getStaffMembers: (params?: any) => api.get('/operations-hr/staff-members/', { params }).then(r => r.data),
@@ -1165,6 +1265,8 @@ export const operationsHrService = {
   createShift: (payload: any) => api.post('/operations-hr/shifts/', payload).then(r => r.data),
   getRosters: (params?: any) => api.get('/operations-hr/rosters/', { params }).then(r => r.data),
   assignRoster: (payload: any) => api.post('/operations-hr/rosters/', payload).then(r => r.data),
+  updateRoster: (id: string, payload: any) => api.patch(`/operations-hr/rosters/${id}/`, payload).then(r => r.data),
+  deleteRoster: (id: string) => api.delete(`/operations-hr/rosters/${id}/`).then(r => r.data),
   requestShiftSwap: (id: string, payload: any) => api.post(`/operations-hr/rosters/${id}/swap-request/`, payload).then(r => r.data),
   approveShiftSwap: (id: string) => api.post(`/operations-hr/rosters/${id}/approve-swap/`).then(r => r.data),
 
@@ -1176,6 +1278,7 @@ export const operationsHrService = {
   // Leaves & Holidays
   getLeaveRequests: (params?: any) => api.get('/operations-hr/leaves/', { params }).then(r => r.data),
   applyLeave: (payload: any) => api.post('/operations-hr/leaves/', payload).then(r => r.data),
+  recommendLeave: (id: string, payload: any) => api.post(`/operations-hr/leaves/${id}/recommend/`, payload).then(r => r.data),
   approveLeave: (id: string, payload?: any) => api.post(`/operations-hr/leaves/${id}/approve/`, payload || {}).then(r => r.data),
   rejectLeave: (id: string, payload?: any) => api.post(`/operations-hr/leaves/${id}/reject/`, payload || {}).then(r => r.data),
   getLeaveBalances: (params?: any) => api.get('/operations-hr/leave-balances/', { params }).then(r => r.data),
@@ -1241,7 +1344,9 @@ export const operationsHrService = {
   getPayroll: (params?: any) => api.get('/operations-hr/payroll/', { params }).then(r => r.data),
   processPayroll: (payload: any) => api.post('/operations-hr/payroll/', payload).then(r => r.data),
   getAnalyticsOverview: (branch_id?: string) => api.get('/operations-hr/dashboards/hr/', { params: { branch_id } }).then(r => r.data),
-  getAuditLogs: () => api.get('/operations-hr/audit-logs/').then(r => r.data),
+  getAuditLogs: (params?: any) => api.get('/operations-hr/audit-logs/', { params }).then(r => r.data),
+  createAuditFinding: (payload: Record<string, any>) =>
+    api.post('/operations-hr/audit-logs/', payload).then(r => r.data),
   getSettings: () => api.get('/operations-hr/settings/').then(r => r.data),
 };
 
@@ -1307,14 +1412,105 @@ export const reportsDashboardService = {
       params,
       responseType: 'blob',
     });
-    const blob = new Blob([res.data], { type: 'text/csv' });
+    const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
+    a.style.display = 'none';
     a.href = url;
     a.download = `${params.metric.toLowerCase()}_report.csv`;
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 150);
   },
+};
+
+export const doctorWorkspaceService = {
+  getDashboard: (params?: { doctor_id?: string }) =>
+    api.get('/clinical/doctor-workspace/dashboard/', { params }).then((r) => r.data),
+
+  getAppointments: (params?: { scope?: string; status?: string; date?: string; search?: string; doctor_id?: string }) =>
+    api.get('/clinical/doctor-workspace/appointments/', { params }).then((r) => r.data),
+
+  getPatients: (params?: { search?: string; gender?: string; doctor_id?: string }) =>
+    api.get('/clinical/doctor-workspace/patients/', { params }).then((r) => r.data),
+
+  getPatientEMR: (patientId: string) =>
+    api.get(`/clinical/doctor-workspace/patients/${patientId}/emr/`).then((r) => r.data),
+
+  getConsultationDetail: (appointmentId: string) =>
+    api.get(`/clinical/doctor-workspace/consultations/${appointmentId}/`).then((r) => r.data),
+
+  saveConsultation: (appointmentId: string, payload: any) =>
+    api.post(`/clinical/doctor-workspace/consultations/${appointmentId}/`, payload).then((r) => r.data),
+
+  addConsultationAddendum: (appointmentId: string, payload: { reason_for_amendment: string; addendum_notes: string }) =>
+    api.post(`/clinical/doctor-workspace/consultations/${appointmentId}/addendum/`, payload).then((r) => r.data),
+
+  getPrescriptions: (params?: { patient_id?: string; appointment_id?: string }) =>
+    api.get('/clinical/doctor-workspace/prescriptions/', { params }).then((r) => r.data),
+
+  createPrescription: (payload: any) =>
+    api.post('/clinical/doctor-workspace/prescriptions/', payload).then((r) => r.data),
+
+  getInvestigationCatalogue: () =>
+    api.get('/clinical/doctor-workspace/investigations/').then((r) => r.data),
+
+  orderInvestigation: (payload: any) =>
+    api.post('/clinical/doctor-workspace/investigations/', payload).then((r) => r.data),
+
+  getReports: (params?: { patient_id?: string; status?: string; abnormal_only?: boolean }) =>
+    api.get('/clinical/doctor-workspace/reports/', { params }).then((r) => r.data),
+
+  acknowledgeCriticalAlert: (alertId: string) =>
+    api.post('/clinical/doctor-workspace/reports/', { alert_id: alertId }).then((r) => r.data),
+
+  getInpatients: () =>
+    api.get('/clinical/doctor-workspace/inpatients/').then((r) => r.data),
+
+  logInpatientNote: (admissionId: string, payload: any) =>
+    api.post(`/clinical/doctor-workspace/inpatients/${admissionId}/notes/`, payload).then((r) => r.data),
+
+  getReferrals: () =>
+    api.get('/clinical/doctor-workspace/referrals/').then((r) => r.data),
+
+  createReferral: (payload: any) =>
+    api.post('/clinical/doctor-workspace/referrals/', payload).then((r) => r.data),
+
+  respondReferral: (referralId: string, payload: { action: string; receiving_doctor_notes?: string }) =>
+    api.post(`/clinical/doctor-workspace/referrals/${referralId}/action/`, payload).then((r) => r.data),
+
+  getDocuments: (params?: { patient_id?: string }) =>
+    api.get('/clinical/doctor-workspace/documents/', { params }).then((r) => r.data),
+
+  createDocument: (payload: any) =>
+    api.post('/clinical/doctor-workspace/documents/', payload).then((r) => r.data),
+
+  getLeaves: () =>
+    api.get('/clinical/doctor-workspace/leaves/').then((r) => r.data),
+
+  applyLeave: (payload: any) =>
+    api.post('/clinical/doctor-workspace/leaves/', payload).then((r) => r.data),
+
+  coordinateLeaveApproval: (leaveId: string, payload: { decision: string; comments?: string }) =>
+    api.post(`/clinical/doctor-workspace/leaves/${leaveId}/coordinate-approval/`, payload).then((r) => r.data),
+
+  getNotifications: (params?: { unread?: boolean }) =>
+    api.get('/clinical/doctor-workspace/notifications/', { params }).then((r) => r.data),
+
+  markNotificationRead: (payload: { notification_id?: string; mark_all_read?: boolean }) =>
+    api.post('/clinical/doctor-workspace/notifications/', payload).then((r) => r.data),
+
+  getProfile: () =>
+    api.get('/clinical/doctor-workspace/profile/').then((r) => r.data),
+
+  updateProfile: (payload: any) =>
+    api.patch('/clinical/doctor-workspace/profile/', payload).then((r) => r.data),
+
+  extractVoicePrescription: (payload: { audio_transcript?: string; transcript?: string; raw_text?: string }) =>
+    api.post('/clinical/voice-prescription/extract/', payload).then((r) => r.data),
 };
 
 export default api;

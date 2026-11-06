@@ -11,6 +11,7 @@ import { Select } from '../../components/common/Select';
 import { DateField } from '../../components/common/DateField';
 import { Input } from '../../components/common/Input';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface StaffMember {
   id: string;
@@ -18,8 +19,13 @@ interface StaffMember {
   user_profile: {
     first_name: string;
     last_name: string;
+    full_name?: string;
     email: string;
     phone_number: string;
+    role?: {
+      name: string;
+      display_name?: string;
+    };
   };
   designation: string;
   specialization: string;
@@ -42,6 +48,8 @@ interface RosterEntry {
 
 export const DoctorsNursingPage: React.FC = () => {
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<'roster' | 'directory'>('directory');
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [rosterList, setRosterList] = useState<RosterEntry[]>([]);
@@ -62,9 +70,14 @@ export const DoctorsNursingPage: React.FC = () => {
         authService.getStaffDirectory({ branch_id: currentBranch?.id }),
         clinicalService.getDutyRoster({ branch_id: currentBranch?.id }),
       ]);
-      setStaffList(staffData as unknown as StaffMember[]);
+      // Filter exclusively to clinical medical doctors, department heads, and nursing specialists
+      const clinicalStaff = (staffData || []).filter((s: any) => {
+        const role = s.user_profile?.role?.name;
+        return ['DOCTOR', 'MEDICAL_DIRECTOR', 'DEPARTMENT_HEAD', 'NURSE'].includes(role || '');
+      });
+      setStaffList(clinicalStaff as unknown as StaffMember[]);
       setRosterList(rosterData);
-      if (staffData?.length > 0) setSelectedStaffId(staffData[0].id);
+      if (clinicalStaff?.length > 0) setSelectedStaffId(clinicalStaff[0].id);
     } catch (err) {
       console.error('Failed to load doctors and nursing:', err);
       setError(parseApiError(err).message);
@@ -103,14 +116,19 @@ export const DoctorsNursingPage: React.FC = () => {
     {
       key: 'name',
       header: 'Clinician / Specialist',
-      render: (s) => (
-        <div>
-          <div className="font-semibold text-white">
-            {s.user_profile?.first_name} {s.user_profile?.last_name}
+      render: (s) => {
+        const rawName = s.user_profile?.full_name || `${s.user_profile?.first_name || ''} ${s.user_profile?.last_name || ''}`.trim();
+        const cleanName = rawName.replace(/^Dr\.?\s*/i, '');
+        const isDoc = ['DOCTOR', 'MEDICAL_DIRECTOR', 'DEPARTMENT_HEAD'].includes(s.user_profile?.role?.name || '');
+        return (
+          <div>
+            <div className="font-semibold text-white">
+              {isDoc ? `Dr. ${cleanName}` : cleanName}
+            </div>
+            <div className="text-[11px] text-slate-500">{s.qualification || s.designation}</div>
           </div>
-          <div className="text-[11px] text-slate-500">{s.qualification || s.designation}</div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'specialization',
@@ -193,13 +211,15 @@ export const DoctorsNursingPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowRosterModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-semibold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition"
-          >
-            <Plus className="w-4 h-4" />
-            Assign Duty Shift
-          </button>
+          {!isReadOnlyRole && (
+            <button
+              onClick={() => setShowRosterModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-semibold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition"
+            >
+              <Plus className="w-4 h-4" />
+              Assign Duty Shift
+            </button>
+          )}
         </div>
       </div>
 

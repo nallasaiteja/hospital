@@ -24,6 +24,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { billingFinanceService, authService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
@@ -47,6 +48,8 @@ type TabType =
   | 'receivables';
 
 export const InsurancePage: React.FC = () => {
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -452,21 +455,23 @@ export const InsurancePage: React.FC = () => {
                         {p.is_active ? 'ACTIVE' : 'INACTIVE'}
                       </Badge>
                     </td>
-                    <td className="p-3 text-right">
-                      <button
-                        onClick={async () => {
-                          try {
-                            await billingFinanceService.toggleInsuranceProviderActive(p.id);
-                            loadData();
-                          } catch (err: any) {
-                            setError('Failed to toggle status.');
-                          }
-                        }}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-semibold"
-                      >
-                        {p.is_active ? 'Deactivate' : 'Activate'}
-                      </button>
-                    </td>
+                    {!isReadOnlyRole && (
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await billingFinanceService.toggleInsuranceProviderActive(p.id);
+                              loadData();
+                            } catch (err: any) {
+                              setError('Failed to toggle status.');
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-semibold"
+                        >
+                          {p.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -480,12 +485,14 @@ export const InsurancePage: React.FC = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-base font-semibold text-white">Corporate Clients & Credit Terms</h3>
-            <button
-              onClick={() => setIsCorporateModalOpen(true)}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add Corporate Client
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setIsCorporateModalOpen(true)}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Corporate Client
+              </button>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {corporates.map((c) => (

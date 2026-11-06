@@ -83,6 +83,7 @@ class SupabaseAuthentication(authentication.BaseAuthentication):
                         raise exceptions.AuthenticationFailed('Staff account is suspended. Access denied.')
                     elif staff.status == StaffStatus.RESIGNED:
                         raise exceptions.AuthenticationFailed('Staff credentials have been revoked.')
+                user.profile = profile
         except exceptions.AuthenticationFailed:
             raise
         except Exception as e:

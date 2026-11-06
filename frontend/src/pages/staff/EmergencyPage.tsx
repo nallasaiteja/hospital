@@ -28,11 +28,14 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 
 export const EmergencyPage: React.FC = () => {
   const { t } = useTranslation();
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [encounters, setEncounters] = useState<EmergencyCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
@@ -352,67 +355,71 @@ export const EmergencyPage: React.FC = () => {
       header: t('emergency.colStatus', 'Status'),
       render: (c) => getStatusBadge(c.status),
     },
-    {
-      key: 'actions',
-      header: t('emergency.colActions', 'Actions'),
-      render: (c) => (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {c.status !== 'DISCHARGED' && c.status !== 'EXPIRED' && (
-            <>
-              <button
-                onClick={() => {
-                  setSelectedCase(c);
-                  setTreatmentNotes(c.treatment_summary || '');
-                  setShowTreatmentModal(true);
-                }}
-                className="px-2 py-1 text-[11px] rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium transition"
-                title="Update ER Clinical Notes & Observations"
-              >
-                {t('emergency.btnTreat', 'Treat')}
-              </button>
+    ...(!isReadOnlyRole
+      ? [
+          {
+            key: 'actions' as const,
+            header: t('emergency.colActions', 'Actions'),
+            render: (c: EmergencyCase) => (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {c.status !== 'DISCHARGED' && c.status !== 'EXPIRED' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setSelectedCase(c);
+                        setTreatmentNotes(c.treatment_summary || '');
+                        setShowTreatmentModal(true);
+                      }}
+                      className="px-2 py-1 text-[11px] rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium transition"
+                      title="Update ER Clinical Notes & Observations"
+                    >
+                      {t('emergency.btnTreat', 'Treat')}
+                    </button>
 
-              {!c.patient_id && (
-                <button
-                  onClick={() => {
-                    setSelectedCase(c);
-                    setShowReconcileModal(true);
-                  }}
-                  className="px-2 py-1 text-[11px] rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-medium transition"
-                  title="Link Unidentified Casualty to Patient MRN"
-                >
-                  {t('emergency.btnReconcile', 'Reconcile')}
-                </button>
-              )}
+                    {!c.patient_id && (
+                      <button
+                        onClick={() => {
+                          setSelectedCase(c);
+                          setShowReconcileModal(true);
+                        }}
+                        className="px-2 py-1 text-[11px] rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-medium transition"
+                        title="Link Unidentified Casualty to Patient MRN"
+                      >
+                        {t('emergency.btnReconcile', 'Reconcile')}
+                      </button>
+                    )}
 
-              {c.status !== 'ADMITTED_IPD' && (
-                <button
-                  onClick={() => {
-                    setSelectedCase(c);
-                    setInitialDiagnosis(c.chief_complaint);
-                    setShowIPDRequestModal(true);
-                  }}
-                  className="px-2 py-1 text-[11px] rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-semibold transition"
-                  title="Initiate Direct Inpatient Admission from ER"
-                >
-                  {t('emergency.btnAdmitIPD', 'Admit IPD')}
-                </button>
-              )}
+                    {c.status !== 'ADMITTED_IPD' && (
+                      <button
+                        onClick={() => {
+                          setSelectedCase(c);
+                          setInitialDiagnosis(c.chief_complaint);
+                          setShowIPDRequestModal(true);
+                        }}
+                        className="px-2 py-1 text-[11px] rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-semibold transition"
+                        title="Initiate Direct Inpatient Admission from ER"
+                      >
+                        {t('emergency.btnAdmitIPD', 'Admit IPD')}
+                      </button>
+                    )}
 
-              <button
-                onClick={() => {
-                  setSelectedCase(c);
-                  setShowDischargeModal(true);
-                }}
-                className="px-2 py-1 text-[11px] rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-medium transition"
-                title="Discharge from Casualty"
-              >
-                {t('emergency.btnDischarge', 'Discharge')}
-              </button>
-            </>
-          )}
-        </div>
-      ),
-    },
+                    <button
+                      onClick={() => {
+                        setSelectedCase(c);
+                        setShowDischargeModal(true);
+                      }}
+                      className="px-2 py-1 text-[11px] rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-medium transition"
+                      title="Discharge from Casualty"
+                    >
+                      {t('emergency.btnDischarge', 'Discharge')}
+                    </button>
+                  </>
+                )}
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -435,16 +442,18 @@ export const EmergencyPage: React.FC = () => {
             </div>
           </div>
         </div>
-        <button
-          onClick={() => {
-            setTriageError(null);
-            setShowTriageModal(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-rose-500/20 transition shrink-0"
-        >
-          <Ambulance className="w-4 h-4" />
-          {t('emergency.btnRapidTriage', 'Rapid Casualty Triage')}
-        </button>
+        {!isReadOnlyRole && (
+          <button
+            onClick={() => {
+              setTriageError(null);
+              setShowTriageModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-rose-500/20 transition shrink-0"
+          >
+            <Ambulance className="w-4 h-4" />
+            {t('emergency.btnRapidTriage', 'Rapid Casualty Triage')}
+          </button>
+        )}
       </div>
 
       {actionSuccess && <AlertBanner type="success" message={actionSuccess} onClose={() => setActionSuccess(null)} />}
@@ -653,10 +662,15 @@ export const EmergencyPage: React.FC = () => {
               label="Assigned Emergency Physician / Team"
               value={assignedDoctorId}
               onChange={(e) => setAssignedDoctorId(e.target.value)}
-              options={doctors.map((d) => ({
-                value: d.id,
-                label: `Dr. ${d.user_profile?.first_name || ''} ${d.user_profile?.last_name || ''} (${d.specialization || 'Casualty Officer'})`,
-              }))}
+              options={doctors.map((d) => {
+                const rawName = d?.user_profile?.full_name || `${d?.user_profile?.first_name || ''} ${d?.user_profile?.last_name || ''}`.trim() || 'Physician';
+                const cleanName = rawName.replace(/^Dr\.?\s*/i, '');
+                const specialty = d?.specialization || d?.designation || d?.department_name || 'Emergency Care';
+                return {
+                  value: d.id,
+                  label: `Dr. ${cleanName} (${specialty})`,
+                };
+              })}
             />
           )}
 
@@ -828,10 +842,15 @@ export const EmergencyPage: React.FC = () => {
               label="Admitting Doctor"
               value={admittingDoctorId}
               onChange={(e) => setAdmittingDoctorId(e.target.value)}
-              options={doctors.map((d) => ({
-                value: d.id,
-                label: `Dr. ${d.user_profile?.first_name || ''} ${d.user_profile?.last_name || ''} (${d.specialization || 'Consultant'})`,
-              }))}
+              options={doctors.map((d) => {
+                const rawName = d?.user_profile?.full_name || `${d?.user_profile?.first_name || ''} ${d?.user_profile?.last_name || ''}`.trim() || 'Physician';
+                const cleanName = rawName.replace(/^Dr\.?\s*/i, '');
+                const specialty = d?.specialization || d?.designation || d?.department_name || 'Consultant';
+                return {
+                  value: d.id,
+                  label: `Dr. ${cleanName} (${specialty})`,
+                };
+              })}
               required
             />
           )}

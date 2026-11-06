@@ -28,8 +28,9 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // 1. If staff profile has assigned branch, prefer that
         // 2. Otherwise default to is_main_branch = True
         // 3. Otherwise first branch
-        if (staffProfile?.branch_id) {
-          const match = branchList.find((b) => b.id === staffProfile.branch_id);
+        const assignedId = staffProfile?.branch_id || staffProfile?.branch;
+        if (assignedId) {
+          const match = branchList.find((b) => b.id === assignedId);
           if (match) {
             setCurrentBranch(match);
             return;
@@ -62,6 +63,13 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [staffProfile]);
 
   const switchBranch = (branchId: string) => {
+    // Only ORG-scoped roles (SUPER_ADMIN, HOSPITAL_ADMIN, INVESTMENT_MANAGER) can switch across branches
+    if (role && !['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'INVESTMENT_MANAGER'].includes(role)) {
+      const assignedId = staffProfile?.branch_id || staffProfile?.branch;
+      if (assignedId && branchId !== assignedId) {
+        return;
+      }
+    }
     const selected = branches.find((b) => b.id === branchId);
     if (selected) {
       setCurrentBranch(selected);

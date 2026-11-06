@@ -5,9 +5,10 @@ from django.utils import timezone
 from rest_framework import status, views, viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from apps.authentication.permissions import IsStaffMember
+from apps.authentication.permissions import IsStaffMember, IsFinancialStaff, IsReadOnlyOrAdmin, resolve_user_profile
+from apps.core.activity_log_service import ActivityLogService
 from apps.core.models import Branch
-from apps.authentication.models import PatientProfile, StaffProfile
+from apps.authentication.models import PatientProfile, StaffProfile, RoleEnum
 from apps.authentication.utils import get_staff_profile, get_patient_profile
 from .models import (
     Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentMethod,
@@ -30,7 +31,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     Patient Invoices with itemized line charges (consultations, beds, lab, pharmacy, procedures).
     """
     serializer_class = InvoiceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsReadOnlyOrAdmin]
+    rbac_module = 'BILLING'
 
     def get_queryset(self):
         user = self.request.user
@@ -96,10 +98,31 @@ class RecordPaymentView(views.APIView):
     """
     Cashier/Receptionist payment collection with real-time balance reconciliation.
     """
-    permission_classes = [IsAuthenticated, IsStaffMember]
+    permission_classes = [IsAuthenticated, IsStaffMember, IsReadOnlyOrAdmin]
+    rbac_module = 'BILLING'
 
     @transaction.atomic
     def post(self, request):
+        if not request.user.is_superuser:
+            prof = resolve_user_profile(request)
+            allowed_payment_roles = [
+                RoleEnum.CASHIER, RoleEnum.BILLING_EXECUTIVE, RoleEnum.RECEPTIONIST,
+                RoleEnum.ACCOUNTANT, RoleEnum.FINANCE_MANAGER, RoleEnum.SUPER_ADMIN
+            ]
+            if not prof or not prof.role or prof.role.name not in allowed_payment_roles:
+                ActivityLogService.record(
+                    action='PAYMENT_RECORD_DENIED',
+                    entity_type='Payment',
+                    module='BILLING',
+                    request=request,
+                    user_profile=prof,
+                    status='DENIED',
+                    description="Unauthorized attempt to record financial payment.",
+                )
+                return Response(
+                    {'error': 'Only authorized Billing, Cashier, Reception, or Finance staff can record payments.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
         data = request.data
         invoice = Invoice.objects.select_for_update().filter(id=data['invoice_id']).first()
         if not invoice:
@@ -163,6 +186,16 @@ class RecordPaymentView(views.APIView):
         except Exception:
             pass
 
+        ActivityLogService.record(
+            action='PAYMENT_RECORDED',
+            entity_type='Payment',
+            entity_id=str(payment.id),
+            module='BILLING',
+            request=request,
+            branch=payment.branch,
+            new_values={'payment_number': pay_num, 'amount': str(amount), 'invoice_number': invoice.invoice_number},
+            description=f"Recorded payment {pay_num} of ₹{amount} against invoice {invoice.invoice_number}.",
+        )
         return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
 
 
@@ -171,7 +204,8 @@ class InsuranceClaimViewSet(viewsets.ModelViewSet):
     TPA Cashless Pre-authorizations and Claims Tracking.
     """
     serializer_class = InsuranceClaimSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsReadOnlyOrAdmin]
+    rbac_module = 'INSURANCE'
 
     def get_queryset(self):
         user = self.request.user
@@ -204,7 +238,8 @@ class InsuranceProviderViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ChartOfAccountViewSet(viewsets.ModelViewSet):
     serializer_class = ChartOfAccountSerializer
-    permission_classes = [IsAuthenticated, IsStaffMember]
+    permission_classes = [IsAuthenticated, IsStaffMember, IsFinancialStaff, IsReadOnlyOrAdmin]
+    rbac_module = 'FIN_ACCOUNTS'
 
     def get_queryset(self):
         return ChartOfAccount.objects.select_related('category', 'branch')
@@ -216,7 +251,8 @@ class JournalEntryViewSet(viewsets.ModelViewSet):
     Strictly enforces: sum(Debit) == sum(Credit) before posting!
     """
     serializer_class = JournalEntrySerializer
-    permission_classes = [IsAuthenticated, IsStaffMember]
+    permission_classes = [IsAuthenticated, IsStaffMember, IsFinancialStaff, IsReadOnlyOrAdmin]
+    rbac_module = 'GENERAL_LEDGER'
 
     def get_queryset(self):
         qs = JournalEntry.objects.prefetch_related('lines__account').select_related('branch', 'posted_by__user_profile')
@@ -369,12 +405,14 @@ class ProfitAndLossView(views.APIView):
 
 class BankAccountViewSet(viewsets.ModelViewSet):
     serializer_class = BankAccountSerializer
-    permission_classes = [IsAuthenticated, IsStaffMember]
+    permission_classes = [IsAuthenticated, IsStaffMember, IsFinancialStaff, IsReadOnlyOrAdmin]
+    rbac_module = 'BANKING'
     queryset = BankAccount.objects.prefetch_related('transactions').all()
 
 
 class ReconcileBankTransactionView(views.APIView):
-    permission_classes = [IsAuthenticated, IsStaffMember]
+    permission_classes = [IsAuthenticated, IsStaffMember, IsFinancialStaff, IsReadOnlyOrAdmin]
+    rbac_module = 'BANKING'
 
     def post(self, request, pk):
         tx = BankTransaction.objects.filter(id=pk).first()
@@ -387,17 +425,20 @@ class ReconcileBankTransactionView(views.APIView):
 
 class InvestmentViewSet(viewsets.ModelViewSet):
     serializer_class = InvestmentRegisterSerializer
-    permission_classes = [IsAuthenticated, IsStaffMember]
+    permission_classes = [IsAuthenticated, IsStaffMember, IsFinancialStaff, IsReadOnlyOrAdmin]
+    rbac_module = 'INVESTMENTS'
     queryset = InvestmentRegister.objects.all()
 
 
 class LoanViewSet(viewsets.ModelViewSet):
     serializer_class = LoanRegisterSerializer
-    permission_classes = [IsAuthenticated, IsStaffMember]
+    permission_classes = [IsAuthenticated, IsStaffMember, IsFinancialStaff, IsReadOnlyOrAdmin]
+    rbac_module = 'LOANS'
     queryset = LoanRegister.objects.all()
 
 
 class BudgetPlanViewSet(viewsets.ModelViewSet):
     serializer_class = BudgetPlanSerializer
-    permission_classes = [IsAuthenticated, IsStaffMember]
+    permission_classes = [IsAuthenticated, IsStaffMember, IsFinancialStaff, IsReadOnlyOrAdmin]
+    rbac_module = 'BUDGETING'
     queryset = BudgetPlan.objects.select_related('branch', 'department').all()

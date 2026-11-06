@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import clsx from 'clsx';
 
-export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
 interface ModalProps {
   isOpen: boolean;
@@ -51,6 +51,7 @@ export const Modal: React.FC<ModalProps> = ({
     md: 'sm:max-w-lg',
     lg: 'sm:max-w-2xl',
     xl: 'sm:max-w-4xl',
+    full: 'sm:max-w-7xl max-w-[96vw]',
   };
 
   return (

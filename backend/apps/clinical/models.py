@@ -96,6 +96,13 @@ class Appointment(BaseUUIDModel):
     diagnosis = models.TextField(blank=True)
     prescription_summary = models.TextField(blank=True)
     follow_up_date = models.DateField(null=True, blank=True)
+    is_signed = models.BooleanField(default=False)
+    signed_at = models.DateTimeField(null=True, blank=True)
+    symptom_duration = models.CharField(max_length=100, blank=True)
+    secondary_diagnosis = models.TextField(blank=True)
+    icd10_code = models.CharField(max_length=50, blank=True)
+    general_examination = models.TextField(blank=True)
+    systemic_examination = models.TextField(blank=True)
     invoice = models.ForeignKey('billing_finance.Invoice', on_delete=models.SET_NULL, null=True, blank=True, related_name='appointment_records')
 
     class Meta:
@@ -759,3 +766,149 @@ class DutyRoster(BaseUUIDModel):
 
     def __str__(self):
         return f"{self.staff.user_profile.full_name} ({self.roster_date} - {self.shift})"
+
+
+# =============================================================================
+# DOCTOR MODULE EXTENSIONS: ADDENDUMS, REFERRALS, DOCUMENTS & NOTIFICATIONS
+# =============================================================================
+
+class ConsultationAddendum(BaseUUIDModel):
+    """
+    Audited amendment / addendum to a completed and signed consultation record.
+    Prevents unauthorized overwriting of historical clinical findings.
+    """
+    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='addendums')
+    doctor = models.ForeignKey(StaffProfile, on_delete=models.PROTECT, related_name='consultation_addendums')
+    reason_for_amendment = models.TextField(help_text="Clinical justification for adding this addendum")
+    addendum_notes = models.TextField(help_text="Additional observations, corrected notes or lab follow-ups")
+
+    class Meta:
+        db_table = 'hms_consultation_addendums'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Addendum for {self.appointment.appointment_number} by Dr. {self.doctor.user_profile.last_name}"
+
+
+class ReferralPriority(models.TextChoices):
+    ROUTINE = 'ROUTINE', 'Routine'
+    URGENT = 'URGENT', 'Urgent'
+    EMERGENCY = 'EMERGENCY', 'Emergency'
+
+
+class ReferralStatus(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
+    ACCEPTED = 'ACCEPTED', 'Accepted'
+    COMPLETED = 'COMPLETED', 'Completed'
+    DECLINED = 'DECLINED', 'Declined'
+    CANCELLED = 'CANCELLED', 'Cancelled'
+
+
+class ClinicalReferral(BaseUUIDModel):
+    """
+    Specialist and inter-departmental patient referrals initiated by doctors.
+    """
+    referral_number = models.CharField(max_length=50, unique=True, db_index=True)
+    patient = models.ForeignKey(PatientProfile, on_delete=models.PROTECT, related_name='clinical_referrals')
+    referring_doctor = models.ForeignKey(StaffProfile, on_delete=models.PROTECT, related_name='outgoing_referrals')
+    receiving_doctor = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='incoming_referrals')
+    receiving_department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='department_referrals')
+    branch = models.ForeignKey(Branch, on_delete=models.PROTECT, related_name='clinical_referrals')
+    appointment = models.ForeignKey(Appointment, on_delete=models.SET_NULL, null=True, blank=True, related_name='referrals')
+    admission = models.ForeignKey(InpatientAdmission, on_delete=models.SET_NULL, null=True, blank=True, related_name='referrals')
+    priority = models.CharField(max_length=20, choices=ReferralPriority.choices, default=ReferralPriority.ROUTINE)
+    status = models.CharField(max_length=20, choices=ReferralStatus.choices, default=ReferralStatus.PENDING)
+    referral_reason = models.TextField()
+    clinical_notes = models.TextField(blank=True)
+    receiving_doctor_notes = models.TextField(blank=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'hms_clinical_referrals'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.referral_number}] Ref to {self.receiving_department.name} ({self.status})"
+
+
+class MedicalDocumentType(models.TextChoices):
+    MEDICAL_CERTIFICATE = 'MEDICAL_CERTIFICATE', 'Medical Certificate'
+    SICK_LEAVE_CERTIFICATE = 'SICK_LEAVE_CERTIFICATE', 'Sick Leave Certificate'
+    FITNESS_CERTIFICATE = 'FITNESS_CERTIFICATE', 'Fitness Certificate'
+    DISCHARGE_SUMMARY = 'DISCHARGE_SUMMARY', 'Discharge Summary'
+    TREATMENT_SUMMARY = 'TREATMENT_SUMMARY', 'Treatment Summary'
+    REFERRAL_SUMMARY = 'REFERRAL_SUMMARY', 'Referral Summary'
+
+
+class MedicalDocument(BaseUUIDModel):
+    """
+    Legally valid medical certificates, discharge summaries, and clinical reports
+    issued and digitally signed by authorized medical practitioners.
+    """
+    document_number = models.CharField(max_length=50, unique=True, db_index=True)
+    document_type = models.CharField(max_length=35, choices=MedicalDocumentType.choices)
+    patient = models.ForeignKey(PatientProfile, on_delete=models.PROTECT, related_name='medical_documents')
+    doctor = models.ForeignKey(StaffProfile, on_delete=models.PROTECT, related_name='issued_medical_documents')
+    branch = models.ForeignKey(Branch, on_delete=models.PROTECT, related_name='medical_documents')
+    appointment = models.ForeignKey(Appointment, on_delete=models.SET_NULL, null=True, blank=True, related_name='medical_documents')
+    admission = models.ForeignKey(InpatientAdmission, on_delete=models.SET_NULL, null=True, blank=True, related_name='medical_documents')
+    referral = models.ForeignKey(ClinicalReferral, on_delete=models.SET_NULL, null=True, blank=True, related_name='medical_documents')
+    title = models.CharField(max_length=200)
+    diagnosis = models.TextField()
+    clinical_summary = models.TextField()
+    recommendations = models.TextField(blank=True)
+    leave_from_date = models.DateField(null=True, blank=True)
+    leave_to_date = models.DateField(null=True, blank=True)
+    fitness_date = models.DateField(null=True, blank=True)
+    issue_date = models.DateField(default=timezone.localdate)
+    is_signed = models.BooleanField(default=True)
+    signed_at = models.DateTimeField(default=timezone.now)
+    digital_signature = models.CharField(max_length=255, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        db_table = 'hms_medical_documents'
+        ordering = ['-issue_date', '-created_at']
+
+    def __str__(self):
+        return f"[{self.document_number}] {self.document_type} - {self.patient.user_profile.full_name}"
+
+
+class DoctorNotificationType(models.TextChoices):
+    APPOINTMENT_ASSIGNED = 'APPOINTMENT_ASSIGNED', 'New Appointment Assigned'
+    PATIENT_CHECKED_IN = 'PATIENT_CHECKED_IN', 'Patient Checked In'
+    PATIENT_WAITING = 'PATIENT_WAITING', 'Patient Waiting'
+    LAB_REPORT_AVAILABLE = 'LAB_REPORT_AVAILABLE', 'Lab Report Available'
+    CRITICAL_ALERT = 'CRITICAL_ALERT', 'Critical Investigation Alert'
+    REFERRAL_RECEIVED = 'REFERRAL_RECEIVED', 'New Referral Received'
+    INPATIENT_ALERT = 'INPATIENT_ALERT', 'Inpatient Clinical Alert'
+    FOLLOW_UP_REMINDER = 'FOLLOW_UP_REMINDER', 'Follow-up Reminder'
+    LEAVE_STATUS = 'LEAVE_STATUS', 'Leave Application Status'
+    ANNOUNCEMENT = 'ANNOUNCEMENT', 'Hospital Announcement'
+    APPOINTMENT_CONFLICT = 'APPOINTMENT_CONFLICT', 'Leave Overlap Appointment Conflict'
+
+
+class DoctorNotification(BaseUUIDModel):
+    """
+    Real-time notification and clinical task stream for doctors and hospital coordinators.
+    """
+    recipient_doctor = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, null=True, blank=True, related_name='doctor_notifications')
+    recipient_role = models.CharField(max_length=50, blank=True)  # e.g., 'RECEPTIONIST', 'HR_MANAGER'
+    branch = models.ForeignKey(Branch, on_delete=models.PROTECT, related_name='doctor_notifications')
+    notification_type = models.CharField(max_length=35, choices=DoctorNotificationType.choices)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    priority = models.CharField(max_length=20, default='ROUTINE')  # ROUTINE, URGENT, CRITICAL
+    patient = models.ForeignKey(PatientProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='clinical_notifications')
+    target_url = models.CharField(max_length=255, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'hms_doctor_notifications'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.notification_type}] {self.title} -> {self.recipient_doctor or self.recipient_role}"
+

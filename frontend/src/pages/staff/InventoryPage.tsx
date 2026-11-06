@@ -41,9 +41,12 @@ import { Modal } from '../../components/common/Modal';
 import { Select } from '../../components/common/Select';
 import { Input } from '../../components/common/Input';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const InventoryPage: React.FC = () => {
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<
     | 'suppliers'
     | 'requisitions'
@@ -583,12 +586,14 @@ export const InventoryPage: React.FC = () => {
                 Maintains vendor credentials, tax IDs (GST/PAN), bank accounts, and active status.
               </p>
             </div>
-            <button
-              onClick={() => setShowSupplierModal(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400"
-            >
-              + Add Supplier
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowSupplierModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400"
+              >
+                + Add Supplier
+              </button>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -602,7 +607,7 @@ export const InventoryPage: React.FC = () => {
                   <th className="p-3">Tax / GST ID</th>
                   <th className="p-3">Terms</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Action</th>
+                  {!isReadOnlyRole && <th className="p-3 text-right">Action</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -622,18 +627,20 @@ export const InventoryPage: React.FC = () => {
                         {s.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
-                    <td className="p-3 text-right">
-                      <button
-                        onClick={() => handleToggleSupplier(s.id)}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded transition ${
-                          s.is_active
-                            ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
-                            : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                        }`}
-                      >
-                        {s.is_active ? 'Deactivate' : 'Activate'}
-                      </button>
-                    </td>
+                    {!isReadOnlyRole && (
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => handleToggleSupplier(s.id)}
+                          className={`px-2.5 py-1 text-xs font-semibold rounded transition ${
+                            s.is_active
+                              ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
+                              : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                          }`}
+                        >
+                          {s.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -655,12 +662,14 @@ export const InventoryPage: React.FC = () => {
                 Medicines, Surgical Supplies, Diagnostic Reagents, Equipment, and General Materials.
               </p>
             </div>
-            <button
-              onClick={() => setShowReqModal(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400"
-            >
-              + Create Requisition
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowReqModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400"
+              >
+                + Create Requisition
+              </button>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -674,7 +683,7 @@ export const InventoryPage: React.FC = () => {
                   <th className="p-3">Urgency</th>
                   <th className="p-3">Delivery By</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Actions</th>
+                  {!isReadOnlyRole && <th className="p-3 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -701,27 +710,29 @@ export const InventoryPage: React.FC = () => {
                         {r.status}
                       </Badge>
                     </td>
-                    <td className="p-3 text-right">
-                      <div className="flex items-center gap-1.5 justify-end">
-                        {r.status === 'SUBMITTED' && (
+                    {!isReadOnlyRole && (
+                      <td className="p-3 text-right">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          {r.status === 'SUBMITTED' && (
+                            <button
+                              onClick={() => handleApproveRequisition(r.id)}
+                              className="px-2 py-1 text-xs rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"
+                            >
+                              Approve
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleApproveRequisition(r.id)}
-                            className="px-2 py-1 text-xs rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"
+                            onClick={() => {
+                              setQuoteReqId(r.id);
+                              setShowQuoteModal(true);
+                            }}
+                            className="px-2 py-1 text-xs rounded bg-slate-800 text-cyan-400 border border-slate-700 hover:bg-slate-700"
                           >
-                            Approve
+                            + Quote
                           </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            setQuoteReqId(r.id);
-                            setShowQuoteModal(true);
-                          }}
-                          className="px-2 py-1 text-xs rounded bg-slate-800 text-cyan-400 border border-slate-700 hover:bg-slate-700"
-                        >
-                          + Quote
-                        </button>
-                      </div>
-                    </td>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -743,12 +754,14 @@ export const InventoryPage: React.FC = () => {
                 Multi-supplier quotations evaluated side-by-side with mandatory justification for non-lowest awards.
               </p>
             </div>
-            <button
-              onClick={() => setShowQuoteModal(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-purple-500 text-white font-bold text-xs hover:bg-purple-400"
-            >
-              + Record Vendor Quote
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowQuoteModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-purple-500 text-white font-bold text-xs hover:bg-purple-400"
+              >
+                + Record Vendor Quote
+              </button>
+            )}
           </div>
 
           {/* Comparative Statements List */}
@@ -779,7 +792,7 @@ export const InventoryPage: React.FC = () => {
                         <th className="p-2">Payment Terms</th>
                         <th className="p-2">Total Quoted Amount</th>
                         <th className="p-2">Status</th>
-                        <th className="p-2 text-right">Award Decision</th>
+                        {!isReadOnlyRole && <th className="p-2 text-right">Award Decision</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 font-mono">
@@ -795,20 +808,22 @@ export const InventoryPage: React.FC = () => {
                               {q.status}
                             </Badge>
                           </td>
-                          <td className="p-2 text-right">
-                            {cs.approval_status !== 'APPROVED' && q.status !== 'ACCEPTED' && (
-                              <button
-                                onClick={() => {
-                                  setAwardCSId(cs.id);
-                                  setAwardQuoteId(q.id);
-                                  setShowAwardModal(true);
-                                }}
-                                className="px-2.5 py-1 text-xs rounded bg-purple-500 text-white font-bold hover:bg-purple-400"
-                              >
-                                Select & Award
-                              </button>
-                            )}
-                          </td>
+                          {!isReadOnlyRole && (
+                            <td className="p-2 text-right">
+                              {cs.approval_status !== 'APPROVED' && q.status !== 'ACCEPTED' && (
+                                <button
+                                  onClick={() => {
+                                    setAwardCSId(cs.id);
+                                    setAwardQuoteId(q.id);
+                                    setShowAwardModal(true);
+                                  }}
+                                  className="px-2.5 py-1 text-xs rounded bg-purple-500 text-white font-bold hover:bg-purple-400"
+                                >
+                                  Select & Award
+                                </button>
+                              )}
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -849,12 +864,14 @@ export const InventoryPage: React.FC = () => {
                 Approval controls, amendments, and delivery location tracking.
               </p>
             </div>
-            <button
-              onClick={() => setShowPOModal(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400"
-            >
-              + Create Purchase Order
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowPOModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400"
+              >
+                + Create Purchase Order
+              </button>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -868,7 +885,7 @@ export const InventoryPage: React.FC = () => {
                   <th className="p-3">Total Value</th>
                   <th className="p-3">Approval</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Actions</th>
+                  {!isReadOnlyRole && <th className="p-3 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -889,37 +906,39 @@ export const InventoryPage: React.FC = () => {
                         {po.status}
                       </Badge>
                     </td>
-                    <td className="p-3 text-right">
-                      <div className="flex items-center gap-1.5 justify-end">
-                        {po.approval_status !== 'APPROVED' && (
-                          <button
-                            onClick={() => handleApprovePO(po.id)}
-                            className="px-2 py-1 text-xs rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"
-                          >
-                            Approve
-                          </button>
-                        )}
-                        {po.approval_status === 'APPROVED' && po.status !== 'ISSUED' && po.status !== 'RECEIVED' && (
-                          <button
-                            onClick={() => handleIssuePO(po.id)}
-                            className="px-2 py-1 text-xs rounded bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400"
-                          >
-                            Issue
-                          </button>
-                        )}
-                        {po.status === 'ISSUED' && (
-                          <button
-                            onClick={() => {
-                              setGrnPOId(po.id);
-                              setShowGRNModal(true);
-                            }}
-                            className="px-2 py-1 text-xs rounded bg-purple-500 text-white font-bold hover:bg-purple-400"
-                          >
-                            Record GRN
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                    {!isReadOnlyRole && (
+                      <td className="p-3 text-right">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          {po.approval_status !== 'APPROVED' && (
+                            <button
+                              onClick={() => handleApprovePO(po.id)}
+                              className="px-2 py-1 text-xs rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"
+                            >
+                              Approve
+                            </button>
+                          )}
+                          {po.approval_status === 'APPROVED' && po.status !== 'ISSUED' && po.status !== 'RECEIVED' && (
+                            <button
+                              onClick={() => handleIssuePO(po.id)}
+                              className="px-2 py-1 text-xs rounded bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400"
+                            >
+                              Issue
+                            </button>
+                          )}
+                          {po.status === 'ISSUED' && (
+                            <button
+                              onClick={() => {
+                                setGrnPOId(po.id);
+                                setShowGRNModal(true);
+                              }}
+                              className="px-2 py-1 text-xs rounded bg-purple-500 text-white font-bold hover:bg-purple-400"
+                            >
+                              Record GRN
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -1021,7 +1040,7 @@ export const InventoryPage: React.FC = () => {
                         </Badge>
                       </td>
                       <td className="p-3 text-right">
-                        {inv.payment_status !== 'PAID' && (
+                        {!isReadOnlyRole && inv.payment_status !== 'PAID' && (
                           <button
                             onClick={() => {
                               setSchedInvoiceId(inv.id);
@@ -1056,12 +1075,14 @@ export const InventoryPage: React.FC = () => {
                 Returns defective/expired goods back to vendors, deducting physical inventory and issuing credit notes.
               </p>
             </div>
-            <button
-              onClick={() => setShowReturnModal(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-rose-500 text-white font-bold text-xs hover:bg-rose-400"
-            >
-              + Process Return
-            </button>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => setShowReturnModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-rose-500 text-white font-bold text-xs hover:bg-rose-400"
+              >
+                + Process Return
+              </button>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -1115,7 +1136,7 @@ export const InventoryPage: React.FC = () => {
                   <th className="p-3">Utilized</th>
                   <th className="p-3">Remaining Balance</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Action</th>
+                  {!isReadOnlyRole && <th className="p-3 text-right">Action</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -1132,19 +1153,21 @@ export const InventoryPage: React.FC = () => {
                         {cn.status}
                       </Badge>
                     </td>
-                    <td className="p-3 text-right">
-                      {cn.remaining_balance > 0 && (
-                        <button
-                          onClick={() => {
-                            setSelectedCreditNote(cn);
-                            setShowApplyCreditModal(true);
-                          }}
-                          className="px-2.5 py-1 text-xs rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"
-                        >
-                          Apply to Invoice
-                        </button>
-                      )}
-                    </td>
+                    {!isReadOnlyRole && (
+                      <td className="p-3 text-right">
+                        {cn.remaining_balance > 0 && (
+                          <button
+                            onClick={() => {
+                              setSelectedCreditNote(cn);
+                              setShowApplyCreditModal(true);
+                            }}
+                            className="px-2.5 py-1 text-xs rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"
+                          >
+                            Apply to Invoice
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -1170,7 +1193,7 @@ export const InventoryPage: React.FC = () => {
                   <th className="p-3">Scheduled Date</th>
                   <th className="p-3">Installment Amount</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Settlement</th>
+                  {!isReadOnlyRole && <th className="p-3 text-right">Settlement</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -1184,16 +1207,18 @@ export const InventoryPage: React.FC = () => {
                     <td className="p-3">
                       <Badge variant={ps.status === 'PAID' ? 'success' : 'warning'}>{ps.status}</Badge>
                     </td>
-                    <td className="p-3 text-right">
-                      {ps.status !== 'PAID' && (
-                        <button
-                          onClick={() => handleSettleSchedule(ps.id)}
-                          className="px-2.5 py-1 text-xs rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"
-                        >
-                          Record Settlement
-                        </button>
-                      )}
-                    </td>
+                    {!isReadOnlyRole && (
+                      <td className="p-3 text-right">
+                        {ps.status !== 'PAID' && (
+                          <button
+                            onClick={() => handleSettleSchedule(ps.id)}
+                            className="px-2.5 py-1 text-xs rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"
+                          >
+                            Record Settlement
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

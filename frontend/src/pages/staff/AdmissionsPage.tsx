@@ -46,9 +46,12 @@ import { Select } from '../../components/common/Select';
 import { Input } from '../../components/common/Input';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const AdmissionsPage: React.FC = () => {
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'census' | 'admissions' | 'transfers' | 'running_bills' | 'discharge' | 'reports'
   >('dashboard');
@@ -449,69 +452,81 @@ export const AdmissionsPage: React.FC = () => {
       header: 'Actions',
       render: (a) => (
         <div className="flex items-center gap-1.5 flex-wrap">
-          {a.status === 'REQUESTED' && (
+          {isReadOnlyRole ? (
             <button
-              onClick={() => {
-                setSelectedAdmission(a);
-                setShowAllocateBedModal(true);
-              }}
-              className="px-2.5 py-1 text-[11px] rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold transition flex items-center gap-1"
+              onClick={() => handleOpenRunningBill(a)}
+              className="px-2 py-1 text-[11px] rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium transition"
+              title="View itemized running charges"
             >
-              <BedIcon className="w-3 h-3" />
-              Allocate Bed
+              View Bill
             </button>
-          )}
-
-          {a.status === 'ADMITTED' && (
+          ) : (
             <>
-              <button
-                onClick={() => handleOpenRunningBill(a)}
-                className="px-2 py-1 text-[11px] rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium transition"
-                title="View itemized running charges & collect deposit"
-              >
-                Bill
-              </button>
+              {a.status === 'REQUESTED' && (
+                <button
+                  onClick={() => {
+                    setSelectedAdmission(a);
+                    setShowAllocateBedModal(true);
+                  }}
+                  className="px-2.5 py-1 text-[11px] rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold transition flex items-center gap-1"
+                >
+                  <BedIcon className="w-3 h-3" />
+                  Allocate Bed
+                </button>
+              )}
 
-              <button
-                onClick={() => {
-                  setTransferAdmissionId(a.id);
-                  setShowTransferModal(true);
-                }}
-                className="px-2 py-1 text-[11px] rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-medium transition"
-                title="Transfer bed / ward"
-              >
-                Transfer
-              </button>
+              {a.status === 'ADMITTED' && (
+                <>
+                  <button
+                    onClick={() => handleOpenRunningBill(a)}
+                    className="px-2 py-1 text-[11px] rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium transition"
+                    title="View itemized running charges & collect deposit"
+                  >
+                    Bill
+                  </button>
 
-              <button
-                onClick={async () => {
-                  try {
-                    await ipdService.admissionAction(a.id, 'REQUEST_DISCHARGE');
-                    triggerSuccessAlert(`Discharge initiated for ${a.admission_number}. 4-point clearance enabled.`);
-                    loadAllData();
-                  } catch (err: any) {
-                    triggerErrorAlert(err);
-                  }
-                }}
-                className="px-2 py-1 text-[11px] rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-medium transition"
-                title="Initiate clinical discharge process"
-              >
-                Discharge
-              </button>
+                  <button
+                    onClick={() => {
+                      setTransferAdmissionId(a.id);
+                      setShowTransferModal(true);
+                    }}
+                    className="px-2 py-1 text-[11px] rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-medium transition"
+                    title="Transfer bed / ward"
+                  >
+                    Transfer
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      try {
+                        await ipdService.admissionAction(a.id, 'REQUEST_DISCHARGE');
+                        triggerSuccessAlert(`Discharge initiated for ${a.admission_number}. 4-point clearance enabled.`);
+                        loadAllData();
+                      } catch (err: any) {
+                        triggerErrorAlert(err);
+                      }
+                    }}
+                    className="px-2 py-1 text-[11px] rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-medium transition"
+                    title="Initiate clinical discharge process"
+                  >
+                    Discharge
+                  </button>
+                </>
+              )}
+
+              {a.status === 'AWAITING_DISCHARGE' && (
+                <button
+                  onClick={() => {
+                    setSelectedAdmission(a);
+                    setShowDischargeClearanceModal(true);
+                  }}
+                  className="px-2.5 py-1 text-[11px] rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-bold transition flex items-center gap-1"
+                >
+                  <CheckSquare className="w-3 h-3" />
+                  Clearance & Finalize
+                </button>
+              )}
             </>
-          )}
-
-          {a.status === 'AWAITING_DISCHARGE' && (
-            <button
-              onClick={() => {
-                setSelectedAdmission(a);
-                setShowDischargeClearanceModal(true);
-              }}
-              className="px-2.5 py-1 text-[11px] rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-bold transition flex items-center gap-1"
-            >
-              <CheckSquare className="w-3 h-3" />
-              Clearance & Finalize
-            </button>
           )}
         </div>
       ),
@@ -533,13 +548,15 @@ export const AdmissionsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowRequestAdmissionModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition"
-          >
-            <UserPlus className="w-4 h-4" />
-            New Admission Request
-          </button>
+          {!isReadOnlyRole && (
+            <button
+              onClick={() => setShowRequestAdmissionModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition"
+            >
+              <UserPlus className="w-4 h-4" />
+              New Admission Request
+            </button>
+          )}
           <button
             onClick={loadAllData}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
@@ -813,7 +830,7 @@ export const AdmissionsPage: React.FC = () => {
                   )}
 
                   {/* Sanitization / Cleaning Action */}
-                  {b.status === 'CLEANING' && (
+                  {b.status === 'CLEANING' && !isReadOnlyRole && (
                     <div className="mt-3 pt-2.5 border-t border-slate-800/80">
                       <button
                         onClick={() => handleBedTurnoverCleaned(b.id)}
@@ -977,7 +994,7 @@ export const AdmissionsPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Average Length of Stay"
-              value={`${reportsData?.metrics?.average_length_of_stay_days || 3.4} days`}
+              value={`${reportsData?.metrics?.average_length_of_stay_days ?? 0} days`}
               subtitle="Calculated from finalized discharges"
               icon={Clock}
             />
@@ -1102,10 +1119,15 @@ export const AdmissionsPage: React.FC = () => {
             label="Admitting Consultant Doctor"
             value={reqDoctorId}
             onChange={(e) => setReqDoctorId(e.target.value)}
-            options={doctors.map((d) => ({
-              value: d.id,
-              label: `Dr. ${d.user_profile?.first_name || ''} ${d.user_profile?.last_name || ''} (${d.specialization || 'Physician'})`,
-            }))}
+            options={doctors.map((d) => {
+              const rawName = d?.user_profile?.full_name || `${d?.user_profile?.first_name || ''} ${d?.user_profile?.last_name || ''}`.trim() || 'Physician';
+              const cleanName = rawName.replace(/^Dr\.?\s*/i, '');
+              const specialty = d?.specialization || d?.designation || d?.department_name || 'Consultant';
+              return {
+                value: d.id,
+                label: `Dr. ${cleanName} (${specialty})`,
+              };
+            })}
             required
           />
 

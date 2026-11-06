@@ -17,7 +17,14 @@ from apps.authentication.models import (
     PatientProfile,
     StaffStatus,
 )
-from apps.authentication.permissions import IsStaffMember, IsSuperAdmin, HasRole
+from apps.authentication.permissions import IsStaffMember, IsSuperAdmin, HasRole, resolve_user_profile
+from apps.authentication.rbac_matrix import (
+    ROLE_MODULE_ACTIONS,
+    STRICT_READ_ONLY_ROLES,
+    HR_ASSIGNABLE_ROLES,
+    get_role_data_scope,
+)
+from apps.core.activity_log_service import ActivityLogService
 from apps.authentication.serializers import (
     UserProfileSerializer,
     StaffProfileSerializer,
@@ -56,11 +63,15 @@ class CurrentUserView(APIView):
                 'message': 'Profile has not been initialized in HMS. Complete profile initialization.',
             }, status=status.HTTP_200_OK)
 
+        role_name = user_profile.role.name
         data = {
             'is_initialized': True,
             'user': UserProfileSerializer(user_profile).data,
-            'role': user_profile.role.name,
+            'role': role_name,
             'permissions': [p.code for p in user_profile.role.permissions.all()],
+            'module_permissions': ROLE_MODULE_ACTIONS.get(role_name, {}),
+            'data_scope': get_role_data_scope(role_name),
+            'is_read_only': role_name in STRICT_READ_ONLY_ROLES,
             'claims': claims,
         }
 
@@ -198,22 +209,25 @@ class StaffProvisioningView(APIView):
     )
     @transaction.atomic
     def post(self, request):
-        # 1. Authorization check: Must be Super Admin or Branch Manager
-        user_claims = getattr(request, 'supabase_claims', {})
-        sub = user_claims.get('sub') or request.user.username
-
-        is_authorized = request.user.is_superuser
-        if not is_authorized:
-            try:
-                requester_profile = UserProfile.objects.select_related('role').get(supabase_user_id=sub)
-                if requester_profile.role.name in [RoleEnum.SUPER_ADMIN, RoleEnum.BRANCH_MANAGER]:
-                    is_authorized = True
-            except UserProfile.DoesNotExist:
-                pass
+        # 1. Authorization check: Strictly Super Admin or HR Manager ONLY.
+        # Branch Manager / Hospital Admin are strictly forbidden from creating staff accounts.
+        requester_profile = resolve_user_profile(request)
+        is_authorized = request.user.is_superuser or (
+            requester_profile and requester_profile.role and requester_profile.role.name in [RoleEnum.SUPER_ADMIN, RoleEnum.HR_MANAGER]
+        )
 
         if not is_authorized:
+            ActivityLogService.record(
+                action='STAFF_PROVISION_DENIED',
+                entity_type='StaffProfile',
+                module='USERS_ROLES',
+                request=request,
+                user_profile=requester_profile,
+                status='DENIED',
+                description='Unauthorized attempt to provision staff account. Only Super Admin or HR Manager can provision staff.',
+            )
             return Response(
-                {'detail': 'Only administrators or branch managers can provision staff members.'},
+                {'detail': 'Only Super Administrators or HR Managers can provision staff accounts. Branch Managers have read-only monitoring access.'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -226,6 +240,29 @@ class StaffProvisioningView(APIView):
         role_name = data['role']
         branch_id = data['branch_id']
         dept_id = data.get('department_id')
+
+        # Enforce HR Manager role assignment restrictions & branch scoping
+        if not request.user.is_superuser and requester_profile and requester_profile.role.name == RoleEnum.HR_MANAGER:
+            if role_name not in HR_ASSIGNABLE_ROLES:
+                ActivityLogService.record(
+                    action='PRIVILEGE_ESCALATION_DENIED',
+                    entity_type='StaffProfile',
+                    module='USERS_ROLES',
+                    request=request,
+                    user_profile=requester_profile,
+                    status='DENIED',
+                    description=f"HR Manager attempted to assign restricted administrative role '{role_name}'.",
+                )
+                return Response(
+                    {'detail': f"HR Managers can only assign approved operational roles and cannot assign '{role_name}'."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            hr_staff = getattr(requester_profile, 'staff_profile', None)
+            if hr_staff and hr_staff.branch_id and str(branch_id) != str(hr_staff.branch_id):
+                return Response(
+                    {'detail': 'HR Managers can only provision staff within their assigned hospital branch.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         # Check if staff with this email already exists
         if UserProfile.objects.filter(email=email).exists():
@@ -298,20 +335,23 @@ class StaffProvisioningView(APIView):
             joining_date=datetime.date.today(),
         )
 
-        # 7. Record Audit Event
-        AuditLog.objects.create(
-            actor_user_id=sub if isinstance(sub, uuid.UUID) else (uuid.UUID(sub) if len(str(sub)) == 36 else None),
-            actor_email=request.user.email or 'admin@aurahms.org',
+        # 7. Record Audit Event via ActivityLogService
+        ActivityLogService.record(
             action='STAFF_PROVISIONED',
             entity_type='StaffProfile',
             entity_id=str(staff_profile.id),
+            module='USERS_ROLES',
+            request=request,
+            user_profile=requester_profile,
             branch=branch,
             new_values={
                 'employee_id': employee_id,
                 'email': email,
                 'role': role.name,
                 'branch': branch.name,
+                'department': department.name if department else None,
             },
+            description=f"Provisioned staff account {employee_id} ({email}) as {role.display_name} in {branch.name}.",
         )
 
         return Response(

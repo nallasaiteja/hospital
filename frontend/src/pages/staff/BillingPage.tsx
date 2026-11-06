@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { billingFinanceService, patientService, clinicalService } from '../../services/api';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
@@ -55,7 +56,24 @@ type TabType =
 export const BillingPage: React.FC = () => {
   const { t } = useTranslation();
   const { currentBranch } = useBranch();
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialTab = searchParams.get('tab') as TabType | null;
+  const defaultTab: TabType =
+    initialTab && ['invoices', 'ipd_billing', 'services', 'tariffs', 'packages', 'deposits', 'receipts', 'discounts', 'credit_notes', 'cashier_shifts', 'gateway', 'dashboard'].includes(initialTab)
+      ? initialTab
+      : role === 'CASHIER' || role === 'BILLING_EXECUTIVE'
+      ? 'invoices'
+      : 'dashboard';
+  const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
+
+  useEffect(() => {
+    const tabParam = new URLSearchParams(window.location.search).get('tab') as TabType | null;
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [window.location.search]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -407,24 +425,28 @@ export const BillingPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsOpenShiftOpen(true)}
-            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
-          >
-            <Clock className="w-4 h-4" /> {t('common.clinicalShift', 'Open Shift')}
-          </button>
-          <button
-            onClick={() => setIsCreateDepositOpen(true)}
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
-          >
-            <Wallet className="w-4 h-4" /> {t('billing.settleBill', 'Collect Deposit')}
-          </button>
-          <button
-            onClick={() => setIsCreateInvoiceOpen(true)}
-            className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> {t('dashboard.createBill', 'New Bill')}
-          </button>
+          {!isReadOnlyRole && (
+            <>
+              <button
+                onClick={() => setIsOpenShiftOpen(true)}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <Clock className="w-4 h-4" /> {t('common.clinicalShift', 'Open Shift')}
+              </button>
+              <button
+                onClick={() => setIsCreateDepositOpen(true)}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <Wallet className="w-4 h-4" /> {t('billing.settleBill', 'Collect Deposit')}
+              </button>
+              <button
+                onClick={() => setIsCreateInvoiceOpen(true)}
+                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> {t('dashboard.createBill', 'New Bill')}
+              </button>
+            </>
+          )}
           <button
             onClick={loadData}
             className="p-2 border border-slate-700 hover:bg-slate-800 rounded-lg text-slate-300 transition-colors"
@@ -453,7 +475,8 @@ export const BillingPage: React.FC = () => {
           { key: 'credit_notes', label: t('common.notes', 'Credit Notes & Refunds'), icon: ArrowDownLeft },
           { key: 'cashier_shifts', label: t('roles.cashier', 'Cashier Shifts'), icon: Clock },
           { key: 'gateway', label: t('billing.settleBill', 'Gateway & Settlements'), icon: CreditCard }
-        ].map(tab => {
+        ]
+          .map(tab => {
           const Icon = tab.icon;
           return (
             <button
@@ -589,36 +612,47 @@ export const BillingPage: React.FC = () => {
                         </Badge>
                       </td>
                       <td className="p-3 text-right space-x-1.5">
-                        {inv.balance_amount !== '0.00' && (
+                        {!isReadOnlyRole && (
                           <>
+                            {inv.balance_amount !== '0.00' && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setSelectedInvoice(inv);
+                                    setPaymentForm({ amount: inv.balance_amount, payment_method: 'UPI', transaction_reference: '' });
+                                    setIsRecordPaymentOpen(true);
+                                  }}
+                                  className="px-2.5 py-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/40 rounded text-xs font-semibold"
+                                >
+                                  Collect
+                                </button>
+                                <button
+                                  onClick={() => handleInitiateGatewayOrder(inv)}
+                                  className="px-2.5 py-1 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/40 rounded text-xs font-semibold"
+                                >
+                                  Razorpay
+                                </button>
+                              </>
+                            )}
                             <button
                               onClick={() => {
                                 setSelectedInvoice(inv);
-                                setPaymentForm({ amount: inv.balance_amount, payment_method: 'UPI', transaction_reference: '' });
-                                setIsRecordPaymentOpen(true);
+                                setDiscountForm({ invoice_id: inv.id, discount_type: 'FIXED_AMOUNT', discount_value: '', reason: '' });
+                                setIsRequestDiscountOpen(true);
                               }}
-                              className="px-2.5 py-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/40 rounded text-xs font-semibold"
+                              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"
+                              title="Request Discount"
                             >
-                              Collect
-                            </button>
-                            <button
-                              onClick={() => handleInitiateGatewayOrder(inv)}
-                              className="px-2.5 py-1 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/40 rounded text-xs font-semibold"
-                            >
-                              Razorpay
+                              Discount
                             </button>
                           </>
                         )}
                         <button
-                          onClick={() => {
-                            setSelectedInvoice(inv);
-                            setDiscountForm({ invoice_id: inv.id, discount_type: 'FIXED_AMOUNT', discount_value: '', reason: '' });
-                            setIsRequestDiscountOpen(true);
-                          }}
-                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"
-                          title="Request Discount"
+                          onClick={() => window.print()}
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-xs"
+                          title="Print / View Invoice"
                         >
-                          Discount
+                          <Printer className="w-3.5 h-3.5 inline" />
                         </button>
                       </td>
                     </tr>

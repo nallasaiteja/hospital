@@ -18,7 +18,8 @@ from .models import (
     EmergencyEncounter, TriageAcuity, EmergencyStatus,
     Ward, WardType, Bed, BedStatus,
     InpatientAdmission, AdmissionStatus, PatientTransfer,
-    DailyProgressNote, LabOrder, RadiologyOrder
+    DailyProgressNote, LabOrder, RadiologyOrder,
+    DoctorNotification, DoctorNotificationType
 )
 from .serializers import (
     EmergencyEncounterSerializer, WardSerializer, BedSerializer,
@@ -477,7 +478,44 @@ class InpatientAdmissionActionView(views.APIView):
 
                 admission.bed = new_bed
                 admission.status = AdmissionStatus.ADMITTED
+
+                # Financial integration: Ensure running IPD bill exists
+                if not admission.invoice:
+                    inv_number = f"INV-IPD-{now.strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+                    inv = Invoice.objects.create(
+                        invoice_number=inv_number,
+                        patient=admission.patient,
+                        branch=new_bed.ward.branch,
+                        admission=admission,
+                        encounter_type='IPD',
+                        is_interim=True,
+                        subtotal=Decimal('0.00'),
+                        total_amount=Decimal('0.00'),
+                        deposit_applied_amount=admission.admission_deposit,
+                        paid_amount=admission.admission_deposit,
+                        balance_amount=Decimal('0.00'),
+                        status=InvoiceStatus.ISSUED,
+                        notes=f"Inpatient Admission #{admission.admission_number} - Bed {new_bed.bed_number} ({new_bed.ward.name})"
+                    )
+                    admission.invoice = inv
+
                 admission.save()
+
+                if admission.admitting_doctor:
+                    try:
+                        DoctorNotification.objects.create(
+                            recipient_doctor=admission.admitting_doctor,
+                            branch=admission.branch,
+                            notification_type=DoctorNotificationType.INPATIENT_ALERT,
+                            title=f"Bed Allocated: {admission.patient.user_profile.full_name}",
+                            message=f"Bed {new_bed.bed_number} ({new_bed.ward.name}) has been allocated for {admission.patient.user_profile.full_name}. Active inpatient stay began.",
+                            priority='ROUTINE',
+                            patient=admission.patient,
+                            target_url=f"/staff/inpatient?admission={admission.id}",
+                            metadata={'admission_id': str(admission.id), 'bed_number': new_bed.bed_number, 'ward': new_bed.ward.name}
+                        )
+                    except Exception:
+                        pass
 
                 log_audit(
                     request.user,

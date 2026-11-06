@@ -411,9 +411,15 @@ class SecurityAuditEventSerializer(serializers.ModelSerializer):
 
 
 class UserManagementUpdateSerializer(serializers.Serializer):
+    role = serializers.CharField(required=False)
     role_name = serializers.CharField(required=False)
     is_active = serializers.BooleanField(required=False)
-    branch_id = serializers.UUIDField(required=False)
+    branch_id = serializers.UUIDField(required=False, allow_null=True)
     department_id = serializers.UUIDField(required=False, allow_null=True)
     designation = serializers.CharField(required=False, max_length=120)
+
+    def validate(self, attrs):
+        if 'role' in attrs and 'role_name' not in attrs:
+            attrs['role_name'] = attrs['role']
+        return attrs
 

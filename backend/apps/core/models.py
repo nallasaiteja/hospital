@@ -119,3 +119,7 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"[{self.created_at}] {self.actor_email or 'System'} -> {self.action} on {self.entity_type} {self.entity_id}"
+
+    def delete(self, *args, **kwargs):
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied("Audit logs are immutable and cannot be deleted.")

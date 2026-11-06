@@ -17,6 +17,9 @@ import { PatientLabReportsPage } from './pages/patient/PatientLabReportsPage';
 import { PatientBillingPage } from './pages/patient/PatientBillingPage';
 import { StaffLoginPage } from './pages/staff/StaffLoginPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { WaitingLoungeDisplayPage } from './pages/public/WaitingLoungeDisplayPage';
+import { LoungeTVPage } from './pages/LoungeTVPage';
+import { CareersPage } from './pages/public/CareersPage';
 
 // All 27 Hospital Modules
 import { StaffDashboard } from './pages/staff/StaffDashboard'; // 1. Dashboard
@@ -26,6 +29,7 @@ import { AppointmentsPage } from './pages/staff/AppointmentsPage'; // 3. OPD & A
 import { EmergencyPage } from './pages/staff/EmergencyPage'; // 4. Emergency & Casualty
 import { AdmissionsPage } from './pages/staff/AdmissionsPage'; // 5. IPD & Admissions
 import { DoctorsNursingPage } from './pages/staff/DoctorsNursingPage'; // 6. Doctors & Nursing
+import { DoctorWorkspacePage } from './pages/staff/DoctorWorkspacePage'; // Complete Doctor Module Workspace
 import { LaboratoryPage } from './pages/staff/LaboratoryPage'; // 7. Laboratory & Diagnostics
 import { RadiologyPage } from './pages/staff/RadiologyPage'; // 8. Radiology & Imaging
 import { PharmacyPage } from './pages/staff/PharmacyPage'; // 9. Pharmacy
@@ -48,6 +52,9 @@ import { ReportsPage } from './pages/staff/ReportsPage'; // 25. Reports & Analyt
 import { UsersRolesPage } from './pages/staff/UsersRolesPage'; // 26. Users, Roles & Permissions
 import { SettingsAuditPage } from './pages/staff/SettingsAuditPage'; // 27. Settings & Audit Logs
 import { VoiceTranslationPage } from './pages/VoiceTranslationPage'; // Voice Language Translation Utility
+import { BranchManagerDashboard } from './pages/staff/BranchManagerDashboard'; // Dedicated Branch Manager Command Center (14 Sections)
+import { HRDashboardPage } from './pages/staff/HRDashboardPage'; // Dedicated HR Management Command Center (13 Modules)
+import { DepartmentHeadDashboardPage } from './pages/staff/DepartmentHeadDashboardPage'; // Dedicated Department Head Operations Hub (12 Modules)
 
 export const App: React.FC = () => {
   return (
@@ -58,6 +65,9 @@ export const App: React.FC = () => {
             <Routes>
             {/* Public Entry Points */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/careers" element={<CareersPage />} />
+            <Route path="/lounge-tv" element={<LoungeTVPage />} />
+            <Route path="/opd-display" element={<LoungeTVPage />} />
             <Route path="/patient/login" element={<PatientLoginPage />} />
             <Route path="/patient/register" element={<PatientRegisterPage />} />
             <Route path="/staff/login" element={<StaffLoginPage />} />
@@ -78,6 +88,7 @@ export const App: React.FC = () => {
               <Route path="lab-reports" element={<PatientLabReportsPage />} />
               <Route path="billing" element={<PatientBillingPage />} />
               <Route path="voice-translation" element={<VoiceTranslationPage />} />
+              <Route path="lounge-tv" element={<LoungeTVPage />} />
               <Route path="" element={<Navigate to="dashboard" replace />} />
             </Route>
 
@@ -90,6 +101,10 @@ export const App: React.FC = () => {
                 </ProtectedRoute>
               }
             >
+              {/* Dedicated Branch Manager Command Center (14 Specific Sections) */}
+              <Route path="branch-manager" element={<BranchManagerDashboard />} />
+              <Route path="branch-manager/:tab" element={<BranchManagerDashboard />} />
+
               {/* 1. Dashboard */}
               <Route path="dashboard" element={<StaffDashboard />} />
 
@@ -100,6 +115,30 @@ export const App: React.FC = () => {
               {/* 3. OPD & Appointments */}
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="consultations" element={<AppointmentsPage />} />
+              <Route
+                path="appointments/book"
+                element={
+                  <ProtectedRoute requireStaff allowedRoles={['RECEPTIONIST']}>
+                    <AppointmentsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="appointments/walk-in"
+                element={
+                  <ProtectedRoute requireStaff allowedRoles={['RECEPTIONIST']}>
+                    <AppointmentsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="appointments/token"
+                element={
+                  <ProtectedRoute requireStaff allowedRoles={['RECEPTIONIST']}>
+                    <AppointmentsPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* 4. Emergency & Casualty */}
               <Route path="emergency" element={<EmergencyPage />} />
@@ -109,6 +148,8 @@ export const App: React.FC = () => {
 
               {/* 6. Doctors & Nursing */}
               <Route path="doctors-nursing" element={<DoctorsNursingPage />} />
+              <Route path="doctor-workspace" element={<DoctorWorkspacePage />} />
+              <Route path="doctor-workspace/:tab" element={<DoctorWorkspacePage />} />
 
               {/* 7. Laboratory & Diagnostics */}
               <Route path="laboratory" element={<LaboratoryPage />} />
@@ -157,8 +198,14 @@ export const App: React.FC = () => {
               {/* 21. Profit and Loss & Financial Reports */}
               <Route path="profit-loss" element={<ProfitLossPage />} />
 
-              {/* 22. HR and Payroll */}
-              <Route path="hr-payroll" element={<HRPayrollPage />} />
+              {/* Dedicated Department Head Operations Hub (12 Modules) */}
+              <Route path="department-head" element={<DepartmentHeadDashboardPage />} />
+              <Route path="department-head/:tab" element={<DepartmentHeadDashboardPage />} />
+
+              {/* Dedicated HR Management Command Center (13 Modules) */}
+              <Route path="hr-management" element={<HRDashboardPage />} />
+              <Route path="hr-management/:tab" element={<HRDashboardPage />} />
+              <Route path="hr-payroll" element={<HRDashboardPage />} />
 
               {/* 23. Equipment & Asset Management */}
               <Route path="assets" element={<AssetsPage />} />
@@ -179,6 +226,7 @@ export const App: React.FC = () => {
 
               {/* Standalone Voice Language Translation Utility */}
               <Route path="voice-translation" element={<VoiceTranslationPage />} />
+              <Route path="lounge-tv" element={<LoungeTVPage isStaffView={true} />} />
 
               {/* Default redirect to Dashboard */}
               <Route path="" element={<Navigate to="dashboard" replace />} />

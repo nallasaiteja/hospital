@@ -28,6 +28,7 @@ import { Select } from '../../components/common/Select';
 import { Input } from '../../components/common/Input';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface MedicineRecord {
   id: string;
@@ -94,6 +95,8 @@ interface ReturnRecord {
 
 export const PharmacyPage: React.FC = () => {
   const { currentBranch } = useBranch();
+  const { role } = useAuth();
+  const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<'prescriptions' | 'ipd_issue' | 'formulary' | 'returns' | 'alerts'>('prescriptions');
   const [medicines, setMedicines] = useState<MedicineRecord[]>([]);
   const [prescriptions, setPrescriptions] = useState<PrescriptionRecord[]>([]);
@@ -405,8 +408,8 @@ export const PharmacyPage: React.FC = () => {
       key: 'total_stock',
       header: 'Usable Stock & Level',
       render: (m) => {
-        const minLevel = m.min_stock_level || m.reorder_level || 20;
-        const isLow = m.total_stock <= minLevel;
+        const minLevel = m.min_stock_level ?? m.reorder_level ?? 0;
+        const isLow = minLevel > 0 && m.total_stock <= minLevel;
         return (
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -416,7 +419,7 @@ export const PharmacyPage: React.FC = () => {
               <span className="text-xs text-slate-400">{m.unit_of_measure || 'units'}</span>
             </div>
             <div className="text-[10px] text-slate-500">
-              Min: {minLevel} | Max: {m.max_stock_level || 500}
+              Min: {minLevel > 0 ? minLevel : '—'} | Max: {m.max_stock_level ? m.max_stock_level : '—'}
             </div>
             {isLow && <Badge variant="danger" size="sm">Low Stock</Badge>}
           </div>
@@ -477,34 +480,38 @@ export const PharmacyPage: React.FC = () => {
       render: (p) => (
         <div>
           {!p.is_dispensed ? (
-            <button
-              onClick={() => {
-                setSelectedRx(p);
-                setSelectedItemIndex(0);
-                setDispenseError(null);
-                setDispenseSuccess(null);
-                // Attempt to pick first valid batch for the first medicine
-                const firstItem = p.items?.[0];
-                const matchedMed = medicines.find(
-                  (m) =>
-                    m.id === firstItem?.medicine ||
-                    m.brand_name.toLowerCase() === firstItem?.medicine_name?.toLowerCase()
-                );
-                if (matchedMed && matchedMed.batches?.length > 0) {
-                  // pick first non-expired batch
-                  const validBatch = matchedMed.batches.find((b) => !b.is_expired);
-                  if (validBatch) setSelectedBatchId(validBatch.id);
-                } else {
-                  setSelectedBatchId('');
-                }
-                setDispenseQty(firstItem?.total_quantity || 1);
-                setShowDispenseModal(true);
-              }}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition flex items-center gap-1.5 shadow-sm"
-            >
-              <Pill className="w-3.5 h-3.5" />
-              Dispense Rx
-            </button>
+            isReadOnlyRole ? (
+              <span className="text-xs text-amber-400 font-medium">Pending Dispensing</span>
+            ) : (
+              <button
+                onClick={() => {
+                  setSelectedRx(p);
+                  setSelectedItemIndex(0);
+                  setDispenseError(null);
+                  setDispenseSuccess(null);
+                  // Attempt to pick first valid batch for the first medicine
+                  const firstItem = p.items?.[0];
+                  const matchedMed = medicines.find(
+                    (m) =>
+                      m.id === firstItem?.medicine ||
+                      m.brand_name.toLowerCase() === firstItem?.medicine_name?.toLowerCase()
+                  );
+                  if (matchedMed && matchedMed.batches?.length > 0) {
+                    // pick first non-expired batch
+                    const validBatch = matchedMed.batches.find((b) => !b.is_expired);
+                    if (validBatch) setSelectedBatchId(validBatch.id);
+                  } else {
+                    setSelectedBatchId('');
+                  }
+                  setDispenseQty(firstItem?.total_quantity || 1);
+                  setShowDispenseModal(true);
+                }}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition flex items-center gap-1.5 shadow-sm"
+              >
+                <Pill className="w-3.5 h-3.5" />
+                Dispense Rx
+              </button>
+            )
           ) : (
             <span className="text-xs text-emerald-400 font-mono flex items-center gap-1">
               <CheckCircle className="w-3.5 h-3.5" /> Completed
@@ -544,20 +551,24 @@ export const PharmacyPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowCatalogueModal(true)}
-            className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-2 transition"
-          >
-            <Plus className="w-4 h-4 text-cyan-400" />
-            Add Formulary Item
-          </button>
-          <button
-            onClick={() => setShowReturnModal(true)}
-            className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-2 transition"
-          >
-            <RotateCcw className="w-4 h-4 text-amber-400" />
-            Patient Return
-          </button>
+          {!isReadOnlyRole && (
+            <>
+              <button
+                onClick={() => setShowCatalogueModal(true)}
+                className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-2 transition"
+              >
+                <Plus className="w-4 h-4 text-cyan-400" />
+                Add Formulary Item
+              </button>
+              <button
+                onClick={() => setShowReturnModal(true)}
+                className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-2 transition"
+              >
+                <RotateCcw className="w-4 h-4 text-amber-400" />
+                Patient Return
+              </button>
+            </>
+          )}
           <button
             onClick={fetchData}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
