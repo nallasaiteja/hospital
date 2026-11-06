@@ -896,15 +896,43 @@ class OPDQueueActionView(views.APIView):
             appointment.consultation_ended_at = now
 
         elif action == 'NO_SHOW':
+            user_prof = resolve_user_profile(request)
+            role_name = getattr(user_prof.role, 'name', '') if user_prof and user_prof.role else ''
+            CLINICAL_ROLES = [
+                RoleEnum.DOCTOR,
+                RoleEnum.MEDICAL_DIRECTOR,
+                RoleEnum.DEPARTMENT_HEAD,
+                RoleEnum.SUPER_ADMIN,
+                RoleEnum.HOSPITAL_ADMIN,
+            ]
+            if role_name not in CLINICAL_ROLES:
+                return Response(
+                    {'error': 'Access Denied: Only attending doctors are authorized to mark appointments as No Show.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
             if appointment.status == AppointmentStatus.COMPLETED:
                 return Response({'error': 'Cannot mark a completed appointment as No Show.'}, status=status.HTTP_400_BAD_REQUEST)
             appointment.status = AppointmentStatus.NO_SHOW
 
         elif action == 'CANCEL':
+            user_prof = resolve_user_profile(request)
+            role_name = getattr(user_prof.role, 'name', '') if user_prof and user_prof.role else ''
+            CLINICAL_ROLES = [
+                RoleEnum.DOCTOR,
+                RoleEnum.MEDICAL_DIRECTOR,
+                RoleEnum.DEPARTMENT_HEAD,
+                RoleEnum.SUPER_ADMIN,
+                RoleEnum.HOSPITAL_ADMIN,
+            ]
+            if role_name not in CLINICAL_ROLES:
+                return Response(
+                    {'error': 'Access Denied: Only attending doctors are authorized to cancel consultations.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
             if appointment.status == AppointmentStatus.COMPLETED:
                 return Response({'error': 'Cannot cancel an appointment that is already completed.'}, status=status.HTTP_400_BAD_REQUEST)
             appointment.status = AppointmentStatus.CANCELLED
-            appointment.cancellation_reason = request.data.get('reason', 'Cancelled by staff')
+            appointment.cancellation_reason = request.data.get('reason', 'Cancelled by doctor')
 
         else:
             return Response({'error': f'Unknown action "{action}".'}, status=status.HTTP_400_BAD_REQUEST)

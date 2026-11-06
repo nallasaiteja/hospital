@@ -682,12 +682,15 @@ export const AppointmentsPage: React.FC = () => {
 
   // 6. Queue Actions Execution
   const handleQueueAction = async (aptId: string, action: string, payload?: any) => {
+    if (['NO_SHOW', 'CANCEL', 'START_CONSULTATION', 'CALL_NEXT'].includes(action) && !canConductConsultation) {
+      setPageError('Access Denied (403 Forbidden): Only attending doctors are authorized to mark appointments as No Show or Cancel consultations.');
+      return;
+    }
     try {
       await opdService.executeQueueAction(aptId, action, payload);
       fetchOPDData();
     } catch (err: any) {
       setPageError(parseApiError(err).message);
-
     }
   };
 
@@ -1108,13 +1111,15 @@ export const AppointmentsPage: React.FC = () => {
                     <Clock className="w-3 h-3 text-amber-400" /> Waiting in Lounge
                   </span>
                 )}
-                <button
-                  onClick={() => handleQueueAction(item.id, 'NO_SHOW')}
-                  className="px-2 py-1 text-xs text-slate-400 hover:text-rose-400 transition"
-                  title={t('appointments.noShow', 'No Show')}
-                >
-                  {t('appointments.noShow', 'No Show')}
-                </button>
+                {canConductConsultation && (
+                  <button
+                    onClick={() => handleQueueAction(item.id, 'NO_SHOW')}
+                    className="px-2 py-1 text-xs text-slate-400 hover:text-rose-400 transition"
+                    title={t('appointments.noShow', 'No Show')}
+                  >
+                    {t('appointments.noShow', 'No Show')}
+                  </button>
+                )}
               </>
             )}
 
@@ -1145,11 +1150,17 @@ export const AppointmentsPage: React.FC = () => {
               </span>
             )}
 
-            {['SCHEDULED', 'CHECKED_IN', 'IN_CONSULTATION'].includes(item.status) && (
+            {item.status === 'NO_SHOW' && (
+              <span className="text-xs text-slate-400/80 font-medium flex items-center gap-1">
+                <Clock className="w-3 h-3 text-slate-400" /> {t('appointments.statusNoShow', 'No Show')}
+              </span>
+            )}
+
+            {canConductConsultation && ['SCHEDULED', 'CHECKED_IN', 'IN_CONSULTATION'].includes(item.status) && (
               <button
                 onClick={() => {
                   setCancelModalItem(item);
-                  setCancelReason(item.status === 'IN_CONSULTATION' ? 'Consultation cancelled by doctor' : 'Cancelled by staff');
+                  setCancelReason(item.status === 'IN_CONSULTATION' ? 'Consultation cancelled by doctor' : 'Cancelled by doctor');
                 }}
                 className="px-2 py-1 text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition"
                 title={t('common.cancel', 'Cancel')}
@@ -3114,8 +3125,8 @@ export const AppointmentsPage: React.FC = () => {
         </Modal>
       )}
 
-      {/* MODAL 5: Cancel Appointment Confirmation Modal */}
-      {cancelModalItem && (
+      {/* MODAL 5: Cancel Appointment Confirmation Modal (Strictly Doctor Authorized) */}
+      {canConductConsultation && cancelModalItem && (
         <Modal
           isOpen={!!cancelModalItem}
           onClose={() => setCancelModalItem(null)}
