@@ -193,6 +193,12 @@ export const HRDashboardPage: React.FC = () => {
     loadDashboardData();
   }, [currentBranch?.id]);
 
+  useEffect(() => {
+    const handleDuty = () => loadDashboardData();
+    window.addEventListener('hms_staff_duty_changed', handleDuty);
+    return () => window.removeEventListener('hms_staff_duty_changed', handleDuty);
+  }, []);
+
   const handleExportData = async (metric: string) => {
     try {
       await reportsDashboardService.downloadExport({

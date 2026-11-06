@@ -120,6 +120,41 @@ export const authService = {
   },
 
   /**
+   * Toggle or set the active clinical duty status for staff/clinicians.
+   */
+  async toggleDutyStatus(isOnDuty?: boolean): Promise<{
+    success: boolean;
+    is_on_duty: boolean;
+    staff_profile: StaffProfile;
+    message: string;
+  }> {
+    const payload = isOnDuty !== undefined ? { is_on_duty: isOnDuty } : {};
+    const res = await api.post<{
+      success: boolean;
+      is_on_duty: boolean;
+      staff_profile: StaffProfile;
+      message: string;
+    }>('/auth/duty-status/', payload);
+    return res.data;
+  },
+
+  /**
+   * Get current duty status of the authenticated staff member.
+   */
+  async getDutyStatus(): Promise<{
+    is_on_duty: boolean;
+    employee_id: string;
+    staff_profile: StaffProfile;
+  }> {
+    const res = await api.get<{
+      is_on_duty: boolean;
+      employee_id: string;
+      staff_profile: StaffProfile;
+    }>('/auth/duty-status/');
+    return res.data;
+  },
+
+  /**
    * Initialize a patient profile upon Supabase public registration.
    */
   async initPatientProfile(payload: {

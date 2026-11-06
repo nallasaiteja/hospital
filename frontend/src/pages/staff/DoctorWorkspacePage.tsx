@@ -432,6 +432,17 @@ const handleTabChange = (tab: string, context?: any) => {
     if (activeTab === 'profile') loadProfile();
   }, [activeTab, selectedAppointmentId]);
 
+  // Synchronize on-duty status when toggled from sidebar or profile
+  useEffect(() => {
+    const handleDutyChange = (e: any) => {
+      if (e.detail?.staff_profile) {
+        setProfileData((prev: any) => prev ? { ...prev, is_on_duty: e.detail.staff_profile.is_on_duty } : prev);
+      }
+    };
+    window.addEventListener('hms_staff_duty_changed', handleDutyChange);
+    return () => window.removeEventListener('hms_staff_duty_changed', handleDutyChange);
+  }, []);
+
   // Handle Save Consultation
   const handleSaveConsultation = async (action: 'SAVE_DRAFT' | 'COMPLETE_AND_SIGN') => {
     if (!selectedAppointmentId || !consultationData) return;
@@ -3026,8 +3037,19 @@ const handleTabChange = (tab: string, context?: any) => {
             <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-2xl font-bold">
               Dr
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">12. Dr. {profileData.name}</h2>
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-white">12. Dr. {profileData.name}</h2>
+                <span className={clsx(
+                  'px-2.5 py-0.5 rounded-full text-[10px] font-semibold border flex items-center gap-1.5',
+                  profileData.is_on_duty
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                )}>
+                  <span className={clsx('w-1.5 h-1.5 rounded-full', profileData.is_on_duty ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400')} />
+                  {profileData.is_on_duty ? 'Active On Duty' : 'Off Duty'}
+                </span>
+              </div>
               <p className="text-xs text-slate-400 mt-0.5">
                 {profileData.qualification} • {profileData.specialization} • Reg Lic: {profileData.medical_license_number || profileData.employee_id}
               </p>

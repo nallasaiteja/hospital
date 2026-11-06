@@ -1,5 +1,6 @@
 import uuid
 import datetime
+import logging
 from django.db import transaction
 from django.conf import settings
 from rest_framework import status
@@ -7,6 +8,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiResponse
+
+logger = logging.getLogger(__name__)
 
 from apps.core.models import Branch, Department, AuditLog
 from apps.authentication.models import (
@@ -82,6 +85,18 @@ class CurrentUserView(APIView):
             data['patient_profile'] = PatientProfileSerializer(user_profile.patient_profile).data
 
         return Response(data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        user_profile = resolve_user_profile(request)
+        if not user_profile:
+            return Response({'error': 'UserProfile not found for current session.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if hasattr(user_profile, 'staff_profile') and 'is_on_duty' in request.data:
+            staff = user_profile.staff_profile
+            staff.is_on_duty = bool(request.data['is_on_duty'])
+            staff.save(update_fields=['is_on_duty', 'updated_at'])
+
+        return self.get(request)
 
 
 class PatientProfileInitView(APIView):
@@ -474,3 +489,108 @@ class UserPreferencesView(APIView):
 
     def post(self, request):
         return self.patch(request)
+
+
+class StaffDutyStatusToggleView(APIView):
+    """
+    Toggles or sets the active duty status (is_on_duty) for an authenticated staff member.
+    Synchronizes across:
+    1. StaffProfile.is_on_duty in PostgreSQL
+    2. EmployeeAttendance (Daily Clock-In/Clock-Out)
+    3. ActivityLog audit trail
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user_profile = resolve_user_profile(request)
+        if not user_profile or not hasattr(user_profile, 'staff_profile'):
+            return Response(
+                {'error': 'Duty status can only be toggled for authenticated hospital staff members.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        staff = user_profile.staff_profile
+        requested_status = request.data.get('is_on_duty')
+        if requested_status is None:
+            target_status = not staff.is_on_duty
+        else:
+            target_status = bool(requested_status)
+
+        staff.is_on_duty = target_status
+        staff.save(update_fields=['is_on_duty', 'updated_at'])
+
+        # Synchronize EmployeeAttendance
+        try:
+            from apps.operations_hr.models import EmployeeAttendance, AttendanceStatus
+            from django.utils import timezone
+            import datetime
+
+            now = timezone.localtime()
+            today = now.date()
+
+            att, created = EmployeeAttendance.objects.get_or_create(
+                staff=staff,
+                date=today,
+                defaults={
+                    'clock_in': now.time() if target_status else None,
+                    'status': AttendanceStatus.PRESENT if target_status else AttendanceStatus.ABSENT,
+                    'approval_status': 'APPROVED'
+                }
+            )
+            if not created:
+                if target_status:
+                    att.status = AttendanceStatus.PRESENT
+                    if not att.clock_in:
+                        att.clock_in = now.time()
+                else:
+                    att.clock_out = now.time()
+                    if att.clock_in:
+                        t_in = datetime.datetime.combine(today, att.clock_in)
+                        t_out = datetime.datetime.combine(today, att.clock_out)
+                        diff = (t_out - t_in).total_seconds() / 3600.0
+                        if diff > 0:
+                            att.total_hours_worked = round(diff, 2)
+                att.save()
+        except Exception as e:
+            logger.warning(f"Could not synchronize EmployeeAttendance on duty toggle: {e}")
+
+        # Record activity log audit event
+        try:
+            ActivityLogService.record(
+                action='STAFF_DUTY_STATUS_CHANGED',
+                entity_type='StaffProfile',
+                entity_id=str(staff.id),
+                details={
+                    'employee_id': staff.employee_id,
+                    'is_on_duty': target_status,
+                    'actor_email': getattr(request.user, 'email', '')
+                },
+                user=request.user
+            )
+        except Exception:
+            pass
+
+        return Response({
+            'success': True,
+            'is_on_duty': staff.is_on_duty,
+            'staff_profile': StaffProfileSerializer(staff).data,
+            'message': f"Duty status updated to {'On Duty' if staff.is_on_duty else 'Off Duty'}."
+        }, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        return self.post(request)
+
+    def get(self, request):
+        user_profile = resolve_user_profile(request)
+        if not user_profile or not hasattr(user_profile, 'staff_profile'):
+            return Response(
+                {'error': 'Only hospital staff have a duty status.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        staff = user_profile.staff_profile
+        return Response({
+            'is_on_duty': staff.is_on_duty,
+            'employee_id': staff.employee_id,
+            'staff_profile': StaffProfileSerializer(staff).data
+        }, status=status.HTTP_200_OK)
+

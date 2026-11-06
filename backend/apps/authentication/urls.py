@@ -6,6 +6,7 @@ from apps.authentication.views import (
     StaffDirectoryView,
     RoleListView,
     UserPreferencesView,
+    StaffDutyStatusToggleView,
 )
 from apps.authentication.rbac_views import (
     UserManagementListView,
@@ -26,6 +27,7 @@ urlpatterns = [
     # Session & Identity
     path('me/', CurrentUserView.as_view(), name='current-user'),
     path('preferences/', UserPreferencesView.as_view(), name='user-preferences'),
+    path('duty-status/', StaffDutyStatusToggleView.as_view(), name='staff-duty-status-toggle'),
     path('patient/profile-init/', PatientProfileInitView.as_view(), name='patient-profile-init'),
     path('staff/provision/', StaffProvisioningView.as_view(), name='staff-provision'),
     path('staff/', StaffDirectoryView.as_view(), name='staff-directory'),

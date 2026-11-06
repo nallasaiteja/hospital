@@ -16,6 +16,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshProfile: () => Promise<CurrentUserResponse | null>;
   updateUserLanguage: (newLang: string) => Promise<void>;
+  updateDutyStatus: (onDuty?: boolean) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -119,6 +120,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return await fetchProfile();
   };
 
+  const updateDutyStatus = async (onDuty?: boolean): Promise<boolean> => {
+    try {
+      const res = await authService.toggleDutyStatus(onDuty);
+      if (res && res.staff_profile) {
+        setStaffProfile(res.staff_profile);
+        window.dispatchEvent(new CustomEvent('hms_staff_duty_changed', { detail: res }));
+        return res.is_on_duty;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update duty status:', err);
+      throw err;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -132,6 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         refreshProfile,
         updateUserLanguage,
+        updateDutyStatus,
       }}
     >
       {children}

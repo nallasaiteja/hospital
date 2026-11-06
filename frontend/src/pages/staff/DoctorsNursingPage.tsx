@@ -90,6 +90,12 @@ export const DoctorsNursingPage: React.FC = () => {
     fetchData();
   }, [currentBranch?.id]);
 
+  useEffect(() => {
+    const handleDuty = () => fetchData();
+    window.addEventListener('hms_staff_duty_changed', handleDuty);
+    return () => window.removeEventListener('hms_staff_duty_changed', handleDuty);
+  }, []);
+
   const handleAssignShift = async (e: React.FormEvent) => {
     e.preventDefault();
     try {

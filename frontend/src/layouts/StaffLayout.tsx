@@ -69,7 +69,7 @@ interface NavGroup {
 
 export const StaffLayout: React.FC = () => {
   const { t } = useTranslation();
-  const { userProfile, staffProfile, role, logout } = useAuth();
+  const { userProfile, staffProfile, role, logout, updateDutyStatus } = useAuth();
   const { branches, currentBranch, switchBranch } = useBranch();
   const location = useLocation();
   const navigate = useNavigate();
@@ -79,8 +79,41 @@ export const StaffLayout: React.FC = () => {
   const [showBranchMenu, setShowBranchMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [isOnDuty, setIsOnDuty] = useState(true);
+  const [isOnDuty, setIsOnDuty] = useState(staffProfile?.is_on_duty ?? true);
+  const [isTogglingDuty, setIsTogglingDuty] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+
+  // Synchronize on-duty status from live staffProfile in AuthContext
+  useEffect(() => {
+    if (staffProfile) {
+      setIsOnDuty(staffProfile.is_on_duty);
+    }
+  }, [staffProfile?.is_on_duty]);
+
+  // Synchronize duty status changes across windows and tabs
+  useEffect(() => {
+    const handleDutyChange = (e: any) => {
+      if (e.detail?.staff_profile?.is_on_duty !== undefined) {
+        setIsOnDuty(e.detail.staff_profile.is_on_duty);
+      }
+    };
+    window.addEventListener('hms_staff_duty_changed', handleDutyChange);
+    return () => window.removeEventListener('hms_staff_duty_changed', handleDutyChange);
+  }, []);
+
+  const handleToggleDuty = async () => {
+    if (isTogglingDuty || !staffProfile) return;
+    setIsTogglingDuty(true);
+    const nextStatus = !isOnDuty;
+    try {
+      const updatedStatus = await updateDutyStatus(nextStatus);
+      setIsOnDuty(updatedStatus);
+    } catch (err: any) {
+      console.error('Failed to toggle staff duty status:', err);
+    } finally {
+      setIsTogglingDuty(false);
+    }
+  };
 
   // Close mobile drawer on route change
   useEffect(() => {
@@ -633,15 +666,19 @@ export const StaffLayout: React.FC = () => {
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-semibold text-slate-400">{t('common.clinicalShift', 'Clinical Shift')}</span>
               <button
-                onClick={() => setIsOnDuty(!isOnDuty)}
+                onClick={handleToggleDuty}
+                disabled={isTogglingDuty || !staffProfile}
+                title={isOnDuty ? 'Click to set clinical shift to Off Duty' : 'Click to set clinical shift to On Duty'}
                 className={clsx(
-                  'px-2 py-0.5 rounded-full text-[10px] font-semibold transition',
+                  'px-2.5 py-0.5 rounded-full text-[10px] font-semibold transition flex items-center gap-1.5',
                   isOnDuty
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
+                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20',
+                  (isTogglingDuty || !staffProfile) && 'opacity-60 cursor-not-allowed'
                 )}
               >
-                {isOnDuty ? t('auth.onDuty', 'On Duty') : t('auth.offDuty', 'Off Duty')}
+                <span className={clsx('w-1.5 h-1.5 rounded-full', isOnDuty ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400')} />
+                {isTogglingDuty ? '...' : (isOnDuty ? t('auth.onDuty', 'On Duty') : t('auth.offDuty', 'Off Duty'))}
               </button>
             </div>
             <p className="text-[10px] text-slate-500 font-mono">
