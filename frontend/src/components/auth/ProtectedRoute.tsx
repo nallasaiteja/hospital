@@ -62,6 +62,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     const fallbackRoute =
       role === 'PATIENT' ? '/patient/dashboard' :
       role === 'LAB_TECHNICIAN' ? '/staff/laboratory' :
+      role === 'RADIOLOGY_TECHNICIAN' ? '/staff/radiology' :
       role === 'PHARMACIST' ? '/staff/pharmacy' :
       role === 'FINANCE_MANAGER' || role === 'ACCOUNTANT' ? '/staff/profit-loss' :
       role === 'INSURANCE_COORDINATOR' ? '/staff/insurance' :
@@ -72,6 +73,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       role === 'DEPARTMENT_HEAD' ? '/staff/department-head' :
       role === 'HR_MANAGER' ? '/staff/hr-management' :
       role === 'INVENTORY_MANAGER' || role === 'PROCUREMENT_OFFICER' ? '/staff/inventory' :
+      role === 'INVESTMENT_MANAGER' ? '/staff/investments' :
+      role === 'MEDICAL_DIRECTOR' ? '/staff/doctor-workspace' :
+      role === 'NURSE' ? '/staff/nurse-workspace?tab=patients' :
       '/staff/dashboard';
     return <Navigate to={fallbackRoute} replace />;
   }
@@ -107,6 +111,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
             <Link
               to={
                 role === 'LAB_TECHNICIAN' ? '/staff/laboratory' :
+                role === 'RADIOLOGY_TECHNICIAN' ? '/staff/radiology' :
                 role === 'PHARMACIST' ? '/staff/pharmacy' :
                 role === 'FINANCE_MANAGER' || role === 'ACCOUNTANT' ? '/staff/profit-loss' :
                 role === 'INSURANCE_COORDINATOR' ? '/staff/insurance' :
@@ -117,6 +122,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
                 role === 'DEPARTMENT_HEAD' ? '/staff/department-head' :
                 role === 'HR_MANAGER' ? '/staff/hr-management' :
                 role === 'INVENTORY_MANAGER' || role === 'PROCUREMENT_OFFICER' ? '/staff/inventory' :
+                role === 'INVESTMENT_MANAGER' ? '/staff/investments' :
+                role === 'MEDICAL_DIRECTOR' ? '/staff/doctor-workspace' :
+                role === 'NURSE' ? '/staff/nurse-workspace?tab=patients' :
                 '/staff/dashboard'
               }
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-cyan-500/20"

@@ -211,7 +211,7 @@ export const RadiologyPage: React.FC = () => {
       header: 'Study Code',
       render: (r) => (
         <div>
-          <span className="font-mono text-cyan-400 font-bold">{r.order_number}</span>
+          <span className="font-mono text-cyan-800 font-bold">{r.order_number}</span>
           <span className="block text-[10px] text-slate-500">{new Date(r.created_at).toLocaleDateString()}</span>
         </div>
       ),
@@ -221,10 +221,10 @@ export const RadiologyPage: React.FC = () => {
       header: 'Patient Details',
       render: (r) => (
         <div>
-          <div className="font-semibold text-white">
+          <div className="font-semibold text-slate-900">
             {r.patient?.user_profile?.full_name || r.patient_name || 'Patient'}
           </div>
-          <div className="text-[11px] text-slate-400 font-mono">
+          <div className="text-[11px] text-slate-500 font-mono">
             MRN: {r.patient?.medical_record_number || r.patient_mrn}
           </div>
         </div>
@@ -235,7 +235,7 @@ export const RadiologyPage: React.FC = () => {
       header: 'Modality & Study',
       render: (r) => (
         <div>
-          <div className="font-medium text-slate-200">{r.study_name}</div>
+          <div className="font-medium text-slate-800">{r.study_name}</div>
           <div className="flex items-center gap-1.5 mt-0.5">
             <Badge variant="accent" size="sm">
               {r.modality}
@@ -250,7 +250,7 @@ export const RadiologyPage: React.FC = () => {
     {
       key: 'clinical_indication',
       header: 'Clinical Indication',
-      render: (r) => <span className="text-slate-400 text-xs line-clamp-2">{r.clinical_indication}</span>,
+      render: (r) => <span className="text-slate-600 text-xs line-clamp-2">{r.clinical_indication}</span>,
     },
     {
       key: 'status',
@@ -286,7 +286,7 @@ export const RadiologyPage: React.FC = () => {
                     setScheduledDate(new Date().toISOString().split('T')[0]);
                     setShowScheduleModal(true);
                   }}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-800 hover:bg-cyan-900 transition flex items-center gap-1"
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-50 text-cyan-800 border border-cyan-200 hover:bg-cyan-100 transition flex items-center gap-1 shadow-xs"
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   Schedule
@@ -300,7 +300,7 @@ export const RadiologyPage: React.FC = () => {
                     setPacsUid(`1.2.840.10008.5.1.4.1.1.${Date.now()}`);
                     setShowCompleteModal(true);
                   }}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-950 text-indigo-300 border border-indigo-800 hover:bg-indigo-900 transition flex items-center gap-1"
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100 transition flex items-center gap-1 shadow-xs"
                 >
                   <Activity className="w-3.5 h-3.5" />
                   Complete Scan
@@ -316,7 +316,7 @@ export const RadiologyPage: React.FC = () => {
                     setRecommendations(r.key_recommendations || '');
                     setShowReportModal(true);
                   }}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white transition flex items-center gap-1"
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition flex items-center gap-1 shadow-xs"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   Report Study
@@ -331,9 +331,9 @@ export const RadiologyPage: React.FC = () => {
                 setSelectedOrder(r);
                 setShowViewReportModal(true);
               }}
-              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-teal-300 hover:bg-slate-700 transition flex items-center gap-1"
+              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition flex items-center gap-1 shadow-xs"
             >
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-3.5 h-3.5 text-slate-500" />
               View Report
             </button>
           )}
@@ -345,13 +345,13 @@ export const RadiologyPage: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Camera className="w-6 h-6 text-cyan-400" />
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Camera className="w-6 h-6 text-cyan-700" />
             Radiology & Diagnostic Medical Imaging (RIS)
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Integrated RIS/PACS engine: appointment scheduling, exam completion, radiologist diagnostic reporting, and DICOM 3.0 image linkage.
           </p>
         </div>
@@ -359,7 +359,7 @@ export const RadiologyPage: React.FC = () => {
           {!isReadOnlyRole && (
             <button
               onClick={() => setShowOrderModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-semibold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition self-start md:self-auto"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 text-white font-semibold text-xs hover:from-cyan-700 hover:to-teal-700 shadow-sm transition self-start md:self-auto"
             >
               <Plus className="w-4 h-4" />
               Request Imaging Study
@@ -367,7 +367,7 @@ export const RadiologyPage: React.FC = () => {
           )}
           <button
             onClick={fetchOrders}
-            className="p-2 border border-slate-700 hover:bg-slate-800 rounded-lg text-slate-300 transition"
+            className="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-600 shadow-xs transition"
             title="Refresh Orders"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -412,7 +412,7 @@ export const RadiologyPage: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
         <DataTable
           data={orders}
           columns={columns}
@@ -504,22 +504,22 @@ export const RadiologyPage: React.FC = () => {
                 onChange={(e) => setIndication(e.target.value)}
                 rows={3}
                 placeholder="e.g. Acute onset right-sided hemiparesis, rule out intracranial hemorrhage..."
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15"
                 required
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setShowOrderModal(false)}
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-xs transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400 transition"
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white font-bold shadow-xs transition"
               >
                 Place Imaging Requisition
               </button>
@@ -536,19 +536,19 @@ export const RadiologyPage: React.FC = () => {
           title={`Schedule Imaging Procedure — ${selectedOrder?.order_number}`}
         >
           <form onSubmit={handleScheduleOrder} className="space-y-4">
-            <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs space-y-1 text-slate-300">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1 text-slate-700">
               <div>
                 <span className="text-slate-500">Study:</span>{' '}
-                <strong className="text-cyan-300">{selectedOrder?.study_name}</strong> ({selectedOrder?.modality})
+                <strong className="text-cyan-800">{selectedOrder?.study_name}</strong> ({selectedOrder?.modality})
               </div>
               <div>
-                <span className="text-slate-500">Patient:</span> {selectedOrder?.patient?.user_profile?.full_name}
+                <span className="text-slate-500">Patient:</span> <strong className="text-slate-900">{selectedOrder?.patient?.user_profile?.full_name}</strong>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Date:</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Date:</label>
                 <Input
                   type="date"
                   value={scheduledDate}
@@ -557,7 +557,7 @@ export const RadiologyPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Time:</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Time:</label>
                 <Input
                   type="time"
                   value={scheduledTime}
@@ -568,7 +568,7 @@ export const RadiologyPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Suite / Scanning Room:</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Suite / Scanning Room:</label>
               <Select
                 value={suiteRoom}
                 onChange={(e) => setSuiteRoom(e.target.value)}
@@ -581,17 +581,17 @@ export const RadiologyPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setShowScheduleModal(false)}
-                className="px-3 py-1.5 border border-slate-700 hover:bg-slate-800 text-slate-300 rounded text-xs"
+                className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold shadow-xs transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-semibold"
+                className="px-4 py-1.5 bg-cyan-700 hover:bg-cyan-800 text-white rounded-lg text-xs font-semibold shadow-xs transition"
               >
                 Confirm Appointment Schedule
               </button>
@@ -609,7 +609,7 @@ export const RadiologyPage: React.FC = () => {
         >
           <form onSubmit={handleCompleteProcedure} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 PACS Study Instance UID (DICOM Tag 0020,000D):
               </label>
               <Input
@@ -620,7 +620,7 @@ export const RadiologyPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Radiation Exposure Dose Index (DLP / CTDIvol):
               </label>
               <Input
@@ -630,17 +630,17 @@ export const RadiologyPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setShowCompleteModal(false)}
-                className="px-3 py-1.5 border border-slate-700 hover:bg-slate-800 text-slate-300 rounded text-xs"
+                className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold shadow-xs transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-semibold"
+                className="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg text-xs font-semibold shadow-xs transition"
               >
                 Mark Scan Done & Route to Radiologist
               </button>
@@ -658,19 +658,19 @@ export const RadiologyPage: React.FC = () => {
           size="lg"
         >
           <form onSubmit={(e) => handleReportProcedure(e, 'APPROVE')} className="space-y-4">
-            <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs space-y-1 text-slate-300">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1 text-slate-700">
               <div>
                 <span className="text-slate-500">Patient:</span>{' '}
-                <strong className="text-slate-200">{selectedOrder?.patient?.user_profile?.full_name}</strong> &bull; MRN: {selectedOrder?.patient?.medical_record_number}
+                <strong className="text-slate-900">{selectedOrder?.patient?.user_profile?.full_name}</strong> &bull; MRN: {selectedOrder?.patient?.medical_record_number}
               </div>
               <div>
                 <span className="text-slate-500">PACS Study UID:</span>{' '}
-                <span className="font-mono text-cyan-400">{selectedOrder?.pacs_study_uid || '1.2.840.10008.5.1.4.1.1.20261022'}</span>
+                <span className="font-mono text-cyan-800 font-bold">{selectedOrder?.pacs_study_uid || '1.2.840.10008.5.1.4.1.1.20261022'}</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Imaging Technique:</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Imaging Technique:</label>
               <Input
                 value={technique}
                 onChange={(e) => setTechnique(e.target.value)}
@@ -679,31 +679,31 @@ export const RadiologyPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Radiological Findings:</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Radiological Findings:</label>
               <textarea
                 value={findings}
                 onChange={(e) => setFindings(e.target.value)}
                 rows={4}
                 placeholder="Parenchymal density, contours, osseous structures, ventricular system..."
                 required
-                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-sans"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15 font-sans"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Diagnostic Impression:</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Diagnostic Impression:</label>
               <textarea
                 value={impression}
                 onChange={(e) => setImpression(e.target.value)}
                 rows={2}
                 placeholder="Final definitive radiological conclusion..."
                 required
-                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-bold"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15 font-bold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Key Recommendations:</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Key Recommendations:</label>
               <Input
                 value={recommendations}
                 onChange={(e) => setRecommendations(e.target.value)}
@@ -711,17 +711,17 @@ export const RadiologyPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
               <button
                 type="button"
                 onClick={(e) => handleReportProcedure(e, 'DRAFT')}
-                className="px-3.5 py-1.5 border border-slate-700 hover:bg-slate-800 text-slate-300 rounded text-xs"
+                className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold shadow-xs transition"
               >
                 Save Draft
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded text-xs font-semibold"
+                className="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold shadow-xs transition"
               >
                 Verify & Digitally Release Report
               </button>
@@ -739,66 +739,66 @@ export const RadiologyPage: React.FC = () => {
           size="lg"
         >
           <div className="space-y-4">
-            <div className="p-6 bg-slate-950 border border-slate-800 rounded-xl space-y-4 text-xs font-sans">
-              <div className="border-b border-slate-800 pb-3 flex justify-between items-start">
+            <div className="p-6 bg-white border border-slate-200 rounded-xl space-y-4 text-xs font-sans shadow-xs">
+              <div className="border-b border-slate-200 pb-3 flex justify-between items-start">
                 <div>
-                  <h2 className="text-base font-bold text-slate-100">DEPARTMENT OF RADIODIAGNOSIS & IMAGING</h2>
-                  <p className="text-teal-400 font-semibold text-[10px] uppercase mt-0.5">NABH & AERB Certified Diagnostic Facility</p>
+                  <h2 className="text-base font-bold text-slate-900">DEPARTMENT OF RADIODIAGNOSIS & IMAGING</h2>
+                  <p className="text-teal-700 font-bold text-[10px] uppercase mt-0.5">NABH & AERB Certified Diagnostic Facility</p>
                 </div>
                 <div className="text-right">
-                  <span className="font-mono font-bold text-cyan-400">{selectedOrder.order_number}</span>
-                  <span className="block text-[10px] text-emerald-400 font-bold uppercase">VERIFIED & RELEASED</span>
+                  <span className="font-mono font-bold text-cyan-800">{selectedOrder.order_number}</span>
+                  <span className="block text-[10px] text-emerald-700 font-bold uppercase">VERIFIED & RELEASED</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
                 <div>
                   <span className="text-slate-500">Patient:</span>{' '}
-                  <strong className="text-slate-200">{selectedOrder.patient?.user_profile?.full_name || selectedOrder.patient_name}</strong>
+                  <strong className="text-slate-900">{selectedOrder.patient?.user_profile?.full_name || selectedOrder.patient_name}</strong>
                 </div>
                 <div>
                   <span className="text-slate-500">MRN:</span>{' '}
-                  <span className="font-mono text-cyan-300">{selectedOrder.patient?.medical_record_number || selectedOrder.patient_mrn}</span>
+                  <span className="font-mono text-cyan-800 font-bold">{selectedOrder.patient?.medical_record_number || selectedOrder.patient_mrn}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Modality:</span>{' '}
-                  <span className="text-slate-200">{selectedOrder.modality}</span>
+                  <span className="text-slate-800 font-semibold">{selectedOrder.modality}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Study:</span>{' '}
-                  <span className="text-slate-200">{selectedOrder.study_name}</span>
+                  <span className="text-slate-800 font-semibold">{selectedOrder.study_name}</span>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <h4 className="text-slate-400 uppercase font-bold text-[11px]">Technique</h4>
-                  <p className="text-slate-300 mt-0.5">{selectedOrder.technique || 'Standard axial helical non-contrast CT sections'}</p>
+                  <h4 className="text-slate-500 uppercase font-bold text-[11px]">Technique</h4>
+                  <p className="text-slate-700 mt-0.5">{selectedOrder.technique || 'Standard axial helical non-contrast CT sections'}</p>
                 </div>
 
                 <div>
-                  <h4 className="text-slate-400 uppercase font-bold text-[11px]">Radiological Findings</h4>
-                  <p className="text-slate-200 whitespace-pre-wrap leading-relaxed mt-0.5">
+                  <h4 className="text-slate-500 uppercase font-bold text-[11px]">Radiological Findings</h4>
+                  <p className="text-slate-800 whitespace-pre-wrap leading-relaxed mt-0.5">
                     {selectedOrder.findings || 'No acute focal intracranial abnormality. Ventricular contours and basal cisterns preserved.'}
                   </p>
                 </div>
 
-                <div className="p-3 bg-cyan-950/30 border border-cyan-800/40 rounded-lg">
-                  <h4 className="text-cyan-400 uppercase font-bold text-[11px]">Impression</h4>
-                  <p className="text-slate-100 font-semibold mt-0.5">
+                <div className="p-3 bg-cyan-50/70 border border-cyan-200 rounded-lg">
+                  <h4 className="text-cyan-900 uppercase font-bold text-[11px]">Impression</h4>
+                  <p className="text-slate-900 font-semibold mt-0.5">
                     {selectedOrder.impression || 'Normal non-contrast CT examination with no acute intracranial pathology.'}
                   </p>
                 </div>
 
                 {selectedOrder.key_recommendations && (
                   <div>
-                    <h4 className="text-slate-400 uppercase font-bold text-[11px]">Recommendations</h4>
-                    <p className="text-slate-300 mt-0.5">{selectedOrder.key_recommendations}</p>
+                    <h4 className="text-slate-500 uppercase font-bold text-[11px]">Recommendations</h4>
+                    <p className="text-slate-700 mt-0.5">{selectedOrder.key_recommendations}</p>
                   </div>
                 )}
               </div>
 
-              <div className="border-t border-slate-800 pt-3 flex justify-between items-center text-[10px] text-slate-500 font-mono">
+              <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-[10px] text-slate-500 font-mono">
                 <div>PACS Reference: {selectedOrder.pacs_study_uid || '1.2.840.10008.5.1.4.1.1.20261022'}</div>
                 <div>Verified by: Dr. {selectedOrder.radiologist?.user_profile?.last_name || 'Senior Consultant Radiologist'}</div>
               </div>
@@ -807,14 +807,14 @@ export const RadiologyPage: React.FC = () => {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => window.print()}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-medium flex items-center gap-1.5 transition"
+                className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
               >
-                <Printer className="w-4 h-4" />
+                <Printer className="w-4 h-4 text-slate-500" />
                 Print Imaging Report
               </button>
               <button
                 onClick={() => setShowViewReportModal(false)}
-                className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-semibold"
+                className="px-4 py-1.5 bg-cyan-700 hover:bg-cyan-800 text-white rounded-lg text-xs font-semibold shadow-xs transition"
               >
                 Done
               </button>

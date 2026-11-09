@@ -225,7 +225,6 @@ ROLE_MODULE_ACTIONS = {
     RoleEnum.PROCUREMENT_OFFICER: {
         'INVENTORY': ['view', 'create', 'edit', 'approve', 'export'],
         'ASSETS': ['view', 'create', 'edit'],
-        'REPORTS': ['view', 'export'],
     },
     RoleEnum.BILLING_EXECUTIVE: {
         'PATIENTS': ['view'],

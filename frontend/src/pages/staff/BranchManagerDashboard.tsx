@@ -182,28 +182,28 @@ export const BranchManagerDashboard: React.FC = () => {
     <div className="space-y-6">
       {/* 1. Header Banner & Strict Read-Only Governance Pill (Overview Only) */}
       {activeTab === 'overview' && (
-        <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-100/30 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5" />
+                <span className="px-3 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-semibold flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-cyan-600" />
                   {branchName}
                 </span>
-                <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5" />
+                <span className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-amber-600" />
                   Strict Read-Only Permission Model
                 </span>
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5" />
+                <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                   Branch Manager Command Center
                 </span>
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
                 {t('navigation.branchManager', 'Branch Manager Command Center')}
               </h1>
-              <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl">
                 Real-time operational monitoring, multi-department telemetry, patient flow, and supervisory compliance auditing strictly isolated to your assigned branch.
               </p>
             </div>
@@ -212,14 +212,14 @@ export const BranchManagerDashboard: React.FC = () => {
               <button
                 onClick={loadDashboardData}
                 disabled={refreshing}
-                className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 text-xs font-medium flex items-center gap-2 transition disabled:opacity-50"
+                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-medium flex items-center gap-2 transition disabled:opacity-50"
               >
-                <RefreshCw className={clsx('w-3.5 h-3.5', refreshing && 'animate-spin text-cyan-400')} />
+                <RefreshCw className={clsx('w-3.5 h-3.5', refreshing && 'animate-spin text-cyan-600')} />
                 <span>{refreshing ? 'Refreshing...' : 'Refresh Telemetry'}</span>
               </button>
               <button
                 onClick={() => handleExportData('Branch_Operations_Executive_Summary')}
-                className="px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-semibold text-xs flex items-center gap-2 transition shadow-lg shadow-cyan-600/20"
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold text-xs flex items-center gap-2 transition shadow-md shadow-cyan-600/20"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export Executive Brief</span>
@@ -231,24 +231,24 @@ export const BranchManagerDashboard: React.FC = () => {
 
       {/* Clean, sleek header for non-overview sections */}
       {activeTab !== 'overview' && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <button
                 onClick={() => setTab('overview')}
-                className="text-xs text-slate-400 hover:text-cyan-400 transition flex items-center gap-1 font-medium cursor-pointer"
+                className="text-xs text-slate-500 hover:text-cyan-700 transition flex items-center gap-1 font-semibold cursor-pointer"
               >
                 ← Overview
               </button>
-              <span className="text-slate-600">•</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10px] font-semibold flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Strict Read-Only
+              <span className="text-slate-300">•</span>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold flex items-center gap-1">
+                <Lock className="w-3 h-3 text-amber-600" /> Strict Read-Only
               </span>
-              <span className="text-slate-500 text-xs font-mono">
+              <span className="text-slate-600 text-xs font-mono font-medium">
                 {branchName}
               </span>
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
               {BRANCH_MANAGER_TABS.find(t => t.id === activeTab)?.label}
             </h1>
           </div>
@@ -257,9 +257,9 @@ export const BranchManagerDashboard: React.FC = () => {
             <button
               onClick={loadDashboardData}
               disabled={refreshing}
-              className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-750 border border-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition disabled:opacity-50"
+              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition disabled:opacity-50"
             >
-              <RefreshCw className={clsx('w-3.5 h-3.5', refreshing && 'animate-spin text-cyan-400')} />
+              <RefreshCw className={clsx('w-3.5 h-3.5', refreshing && 'animate-spin text-cyan-600')} />
               <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
             </button>
           </div>
@@ -268,9 +268,9 @@ export const BranchManagerDashboard: React.FC = () => {
 
       {/* 3. Section Content Renderer */}
       {loading ? (
-        <div className="p-16 flex flex-col items-center justify-center text-slate-400 bg-slate-900 border border-slate-800 rounded-2xl">
-          <RefreshCw className="w-8 h-8 animate-spin text-cyan-400 mb-3" />
-          <p className="text-sm font-medium">Aggregating real-time branch operational telemetry...</p>
+        <div className="p-16 flex flex-col items-center justify-center text-slate-500 bg-white border border-slate-200 shadow-sm rounded-2xl">
+          <RefreshCw className="w-8 h-8 animate-spin text-cyan-600 mb-3" />
+          <p className="text-sm font-semibold text-slate-800">Aggregating real-time branch operational telemetry...</p>
           <p className="text-xs text-slate-500 mt-1">Applying Strict Read-Only Data Scopes for {branchName}</p>
         </div>
       ) : error ? (
@@ -293,7 +293,7 @@ export const BranchManagerDashboard: React.FC = () => {
                   value={data?.reception_monitoring?.total_registered_patients || 0}
                   subtitle={`+${data?.reception_monitoring?.registered_today || 0} registered today`}
                   icon={Users}
-                  trend="+4.2% this week"
+                  trend={data?.reception_monitoring?.registered_today ? `+${data.reception_monitoring.registered_today} today` : 'Live Registry'}
                   color="cyan"
                 />
                 <MetricCard
@@ -325,7 +325,7 @@ export const BranchManagerDashboard: React.FC = () => {
                   value={data?.hr_monitoring?.present_today || 0}
                   subtitle={`${data?.hr_monitoring?.total_employees || 0} active employees • ${data?.hr_monitoring?.on_approved_leave || 0} on leave`}
                   icon={UserCheck}
-                  trend="98.2% shift coverage"
+                  trend={data?.hr_monitoring?.total_employees ? `${Math.round(((data?.hr_monitoring?.present_today || 0) / data.hr_monitoring.total_employees) * 100)}% on duty` : 'Staff Roster'}
                   color="purple"
                 />
                 <MetricCard
@@ -357,15 +357,15 @@ export const BranchManagerDashboard: React.FC = () => {
               {/* Department Performance & Operational Alerts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Department Workload Summary */}
-                <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                     <div className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-cyan-400" />
-                      <h3 className="font-semibold text-sm text-white">Department Performance & Workload Telemetry</h3>
+                      <Building2 className="w-4 h-4 text-cyan-700" />
+                      <h3 className="font-bold text-sm text-slate-900">Department Performance & Workload Telemetry</h3>
                     </div>
                     <button
                       onClick={() => setTab('departments')}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1"
+                      className="text-xs text-cyan-700 hover:text-cyan-800 font-bold flex items-center gap-1"
                     >
                       View All Departments <ChevronRight className="w-3.5 h-3.5" />
                     </button>
@@ -373,28 +373,28 @@ export const BranchManagerDashboard: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-slate-800 text-slate-400 font-semibold">
-                          <th className="py-2 px-3">Department</th>
-                          <th className="py-2 px-3">Staff Available</th>
-                          <th className="py-2 px-3">Today's Visits</th>
-                          <th className="py-2 px-3">Pending Consults</th>
-                          <th className="py-2 px-3">Operational Status</th>
+                        <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                          <th className="py-2.5 px-3">Department</th>
+                          <th className="py-2.5 px-3">Staff Available</th>
+                          <th className="py-2.5 px-3">Today's Visits</th>
+                          <th className="py-2.5 px-3">Pending Consults</th>
+                          <th className="py-2.5 px-3">Operational Status</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                      <tbody className="divide-y divide-slate-100">
                         {(data?.department_monitoring || []).slice(0, 6).map((dept: any) => (
-                          <tr key={dept.id} className="hover:bg-slate-800/30 transition">
-                            <td className="py-2.5 px-3 font-medium text-white flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                          <tr key={dept.id} className="hover:bg-slate-50/70 transition">
+                            <td className="py-2.5 px-3 font-semibold text-slate-900 flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-cyan-600" />
                               {dept.name} ({dept.code})
                             </td>
-                            <td className="py-2.5 px-3 text-slate-300">
-                              <span className="font-semibold text-emerald-400">{dept.staff_available}</span> / {dept.staff_total} on duty
+                            <td className="py-2.5 px-3 text-slate-600 font-medium">
+                              <span className="font-bold text-emerald-700">{dept.staff_available}</span> / {dept.staff_total} on duty
                             </td>
-                            <td className="py-2.5 px-3 text-slate-300 font-semibold">{dept.workload_today}</td>
-                            <td className="py-2.5 px-3 text-amber-300">{dept.pending_activities}</td>
+                            <td className="py-2.5 px-3 text-slate-800 font-bold">{dept.workload_today}</td>
+                            <td className="py-2.5 px-3 text-amber-700 font-bold">{dept.pending_activities}</td>
                             <td className="py-2.5 px-3">
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                                 OPTIMAL
                               </span>
                             </td>
@@ -406,14 +406,14 @@ export const BranchManagerDashboard: React.FC = () => {
                 </div>
 
                 {/* Operational Alerts Widget */}
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-amber-400" />
-                        <h3 className="font-semibold text-sm text-white">Live Operational Alerts</h3>
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <h3 className="font-bold text-sm text-slate-900">Live Operational Alerts</h3>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
                         {data?.operational_alerts?.length || 0} NOTICES
                       </span>
                     </div>
@@ -422,21 +422,21 @@ export const BranchManagerDashboard: React.FC = () => {
                       {(data?.operational_alerts || []).slice(0, 4).map((alt: any) => (
                         <div
                           key={alt.id}
-                          className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700 transition"
+                          className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition"
                         >
                           <div className="flex items-center justify-between gap-2 mb-1">
                             <span className={clsx(
-                              'text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider',
-                              alt.severity === 'WARNING' ? 'bg-amber-500/20 text-amber-300' :
-                              alt.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300' :
-                              'bg-cyan-500/20 text-cyan-300'
+                              'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider',
+                              alt.severity === 'WARNING' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                              alt.severity === 'CRITICAL' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                              'bg-cyan-100 text-cyan-900 border border-cyan-300'
                             )}>
                               {alt.severity}
                             </span>
-                            <span className="text-[10px] text-slate-500">{alt.timestamp}</span>
+                            <span className="text-[10px] text-slate-500 font-mono">{alt.timestamp}</span>
                           </div>
-                          <div className="text-xs font-semibold text-slate-200">{alt.title}</div>
-                          <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{alt.message}</p>
+                          <div className="text-xs font-bold text-slate-900">{alt.title}</div>
+                          <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">{alt.message}</p>
                         </div>
                       ))}
                     </div>
@@ -444,9 +444,9 @@ export const BranchManagerDashboard: React.FC = () => {
 
                   <button
                     onClick={() => setTab('notifications')}
-                    className="w-full mt-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium transition text-center"
+                    className="w-full mt-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition text-center"
                   >
-                    View All Operational Alerts →
+                    View All Operational Alerts &rarr;
                   </button>
                 </div>
               </div>
@@ -489,56 +489,56 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Patient Flow Pipeline */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
-                <h3 className="font-semibold text-sm text-white mb-3 flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-cyan-400" />
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+                <h3 className="font-bold text-sm text-slate-900 mb-3 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-cyan-700" />
                   Live Patient Flow & Journey Telemetry
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                  <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-center">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Step 1: Check-in</span>
-                    <div className="text-xl font-bold text-white mt-1">{data?.reception_monitoring?.scheduled_appointments || 0}</div>
-                    <span className="text-[11px] text-slate-400">Waiting Lounge</span>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                    <span className="text-[10px] uppercase font-bold text-slate-500">Step 1: Check-in</span>
+                    <div className="text-xl font-extrabold text-slate-900 mt-1">{data?.reception_monitoring?.scheduled_appointments || 0}</div>
+                    <span className="text-[11px] text-slate-500 font-medium">Waiting Lounge</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-center">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Step 2: Consultation</span>
-                    <div className="text-xl font-bold text-cyan-400 mt-1">{data?.medical_monitoring?.opd_in_consultation || 0}</div>
-                    <span className="text-[11px] text-slate-400">With Clinician</span>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                    <span className="text-[10px] uppercase font-bold text-slate-500">Step 2: Consultation</span>
+                    <div className="text-xl font-extrabold text-cyan-800 mt-1">{data?.medical_monitoring?.opd_in_consultation || 0}</div>
+                    <span className="text-[11px] text-slate-500 font-medium">With Clinician</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-center">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Step 3: Diagnostics</span>
-                    <div className="text-xl font-bold text-amber-400 mt-1">{data?.laboratory_monitoring?.pending_tests || 0}</div>
-                    <span className="text-[11px] text-slate-400">LIS / RIS Workbench</span>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                    <span className="text-[10px] uppercase font-bold text-slate-500">Step 3: Diagnostics</span>
+                    <div className="text-xl font-extrabold text-amber-800 mt-1">{data?.laboratory_monitoring?.pending_tests || 0}</div>
+                    <span className="text-[11px] text-slate-500 font-medium">LIS / RIS Workbench</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-center">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Step 4: Formulary</span>
-                    <div className="text-xl font-bold text-emerald-400 mt-1">{data?.pharmacy_monitoring?.dispensed_today || 0}</div>
-                    <span className="text-[11px] text-slate-400">Prescription Dispensed</span>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                    <span className="text-[10px] uppercase font-bold text-slate-500">Step 4: Formulary</span>
+                    <div className="text-xl font-extrabold text-emerald-800 mt-1">{data?.pharmacy_monitoring?.dispensed_today || 0}</div>
+                    <span className="text-[11px] text-slate-500 font-medium">Prescription Dispensed</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-center">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Step 5: Discharge / Exit</span>
-                    <div className="text-xl font-bold text-purple-400 mt-1">{data?.medical_monitoring?.opd_completed_today || 0}</div>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                    <span className="text-[10px] uppercase font-bold text-slate-500">Step 5: Discharge / Exit</span>
+                    <div className="text-xl font-extrabold text-purple-800 mt-1">{data?.medical_monitoring?.opd_completed_today || 0}</div>
                     <span className="text-[11px] text-slate-400">Consultation Completed</span>
                   </div>
                 </div>
               </div>
 
               {/* Patient List (Read-Only) */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Branch Patient Registry (Read-Only)</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Permitted patient census and registration records</p>
+                    <h3 className="font-bold text-sm text-slate-900">Branch Patient Registry (Read-Only)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Permitted patient census and registration records</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="relative">
-                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         type="text"
                         placeholder="Search by MRN or Name..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+                        className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15"
                       />
                     </div>
                   </div>
@@ -547,7 +547,7 @@ export const BranchManagerDashboard: React.FC = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+                      <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
                         <th className="py-2.5 px-3">MRN / ID</th>
                         <th className="py-2.5 px-3">Patient Name</th>
                         <th className="py-2.5 px-3">Age / Gender</th>
@@ -557,40 +557,38 @@ export const BranchManagerDashboard: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Inspect Record</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {((data?.reception_monitoring?.patient_directory && data.reception_monitoring.patient_directory.length > 0)
-                        ? data.reception_monitoring.patient_directory
-                        : [
-                            { mrn: 'MRN-2026-0012', name: 'Aarav Patel', age: '34 Yrs', gender: 'Male', blood_group: 'O+ve', phone: '+91 98451 22301', branch: branchName },
-                            { mrn: 'MRN-2026-0015', name: 'Meera Nambiar', age: '28 Yrs', gender: 'Female', blood_group: 'B+ve', phone: '+91 97120 44512', branch: branchName },
-                            { mrn: 'MRN-2026-0019', name: 'David John', age: '52 Yrs', gender: 'Male', blood_group: 'A+ve', phone: '+91 94432 11984', branch: branchName },
-                            { mrn: 'MRN-2026-0024', name: 'Sunita Deshmukh', age: '45 Yrs', gender: 'Female', blood_group: 'AB+ve', phone: '+91 98231 77652', branch: branchName },
-                            { mrn: 'MRN-2026-0031', name: 'Rohan Gupta', age: '19 Yrs', gender: 'Male', blood_group: 'O-ve', phone: '+91 99100 88214', branch: branchName },
-                          ]
-                      )
-                        .filter((p: any) => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.mrn.toLowerCase().includes(searchQuery.toLowerCase()))
+                    <tbody className="divide-y divide-slate-100">
+                      {(data?.reception_monitoring?.patient_directory || [])
+                        .filter((p: any) => !searchQuery || p.name?.toLowerCase().includes(searchQuery.toLowerCase()) || p.mrn?.toLowerCase().includes(searchQuery.toLowerCase()))
                         .map((pat: any) => (
-                          <tr key={pat.mrn} className="hover:bg-slate-800/30 transition">
-                            <td className="py-3 px-3 font-mono font-bold text-cyan-400">{pat.mrn}</td>
-                            <td className="py-3 px-3 font-semibold text-white">{pat.name}</td>
-                            <td className="py-3 px-3 text-slate-300">{pat.age || '—'} • {pat.gender}</td>
+                          <tr key={pat.mrn} className="hover:bg-slate-50/70 transition">
+                            <td className="py-3 px-3 font-mono font-bold text-cyan-800">{pat.mrn}</td>
+                            <td className="py-3 px-3 font-bold text-slate-900">{pat.name}</td>
+                            <td className="py-3 px-3 text-slate-600">{pat.age || '—'} • {pat.gender}</td>
                             <td className="py-3 px-3">
-                              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono text-[10px]">
+                              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 font-mono text-[10px] font-bold">
                                 {pat.blood_group || pat.blood}
                               </span>
                             </td>
-                            <td className="py-3 px-3 text-slate-300 font-mono text-[11px]">{pat.phone || pat.contact}</td>
-                            <td className="py-3 px-3 text-slate-400 text-[11px]">{pat.branch || branchName}</td>
+                            <td className="py-3 px-3 text-slate-700 font-mono text-[11px] font-medium">{pat.phone || pat.contact}</td>
+                            <td className="py-3 px-3 text-slate-500 text-[11px] font-medium">{pat.branch || branchName}</td>
                             <td className="py-3 px-3 text-right">
                               <button
                                 onClick={() => setSelectedRecord({ title: `Patient Record: ${pat.name} (${pat.mrn})`, data: pat })}
-                                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium transition inline-flex items-center gap-1"
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs font-medium transition inline-flex items-center gap-1"
                               >
                                 <Eye className="w-3 h-3" /> View Summary
                               </button>
                             </td>
                           </tr>
                         ))}
+                      {(!data?.reception_monitoring?.patient_directory || data.reception_monitoring.patient_directory.length === 0) && (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-slate-500">
+                            No registered patient records found for this branch.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -625,17 +623,17 @@ export const BranchManagerDashboard: React.FC = () => {
                 />
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Department Performance & Operational Status</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Supervisory metrics across clinical specialties</p>
+                    <h3 className="font-bold text-sm text-slate-900">Department Performance & Operational Status</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Supervisory metrics across clinical specialties</p>
                   </div>
                   <button
                     onClick={() => handleExportData('Department_Performance')}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-medium flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
                   >
-                    <Download className="w-3 h-3" /> Export CSV
+                    <Download className="w-3.5 h-3.5 text-slate-500" /> Export CSV
                   </button>
                 </div>
 
@@ -643,38 +641,38 @@ export const BranchManagerDashboard: React.FC = () => {
                   {(data?.department_monitoring || []).map((dept: any) => (
                     <div
                       key={dept.id}
-                      className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 transition space-y-3"
+                      className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 hover:border-cyan-300 hover:shadow-xs transition space-y-3"
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider">{dept.code}</span>
-                          <h4 className="font-bold text-white text-sm">{dept.name}</h4>
+                          <span className="text-[10px] font-mono font-bold text-cyan-800 uppercase tracking-wider">{dept.code}</span>
+                          <h4 className="font-bold text-slate-900 text-sm">{dept.name}</h4>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                           ACTIVE & OPERATIONAL
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80 text-xs">
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 text-xs">
                         <div>
-                          <div className="text-[10px] text-slate-400">Clinicians On Duty</div>
-                          <div className="font-bold text-white mt-0.5">{dept.staff_available} / {dept.staff_total}</div>
+                          <div className="text-[10px] text-slate-500">Clinicians On Duty</div>
+                          <div className="font-bold text-slate-900 mt-0.5">{dept.staff_available} / {dept.staff_total}</div>
                         </div>
                         <div>
-                          <div className="text-[10px] text-slate-400">Today's Visits</div>
-                          <div className="font-bold text-cyan-400 mt-0.5">{dept.workload_today}</div>
+                          <div className="text-[10px] text-slate-500">Today's Visits</div>
+                          <div className="font-bold text-cyan-800 mt-0.5">{dept.workload_today}</div>
                         </div>
                         <div>
-                          <div className="text-[10px] text-slate-400">Queue Backlog</div>
-                          <div className="font-bold text-amber-400 mt-0.5">{dept.pending_activities}</div>
+                          <div className="text-[10px] text-slate-500">Queue Backlog</div>
+                          <div className="font-bold text-amber-700 mt-0.5">{dept.pending_activities}</div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-2 text-[11px] text-slate-400">
-                        <span>Staff Utilization: <strong className="text-slate-200">88.4%</strong></span>
+                      <div className="flex items-center justify-between pt-2 text-[11px] text-slate-500 border-t border-slate-100">
+                        <span>Staff Utilization: <strong className="text-slate-800">{dept.staff_total > 0 ? `${Math.round((dept.staff_available / dept.staff_total) * 100)}%` : '—'}</strong></span>
                         <button
                           onClick={() => setSelectedRecord({ title: `Department Telemetry: ${dept.name}`, data: dept })}
-                          className="text-cyan-400 hover:text-cyan-300 font-medium"
+                          className="text-cyan-700 hover:text-cyan-900 font-semibold"
                         >
                           View Parameters →
                         </button>
@@ -721,22 +719,22 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Shift Schedules Overview */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
-                <h3 className="font-semibold text-sm text-white mb-3 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-cyan-400" />
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                <h3 className="font-bold text-sm text-slate-900 mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-cyan-600" />
                   Hospital 24/7 Shift Schedules & Staff Allocations
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {(data?.hr_monitoring?.shift_schedules || []).map((sh: any) => (
-                    <div key={sh.id} className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                    <div key={sh.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition shadow-xs">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-white text-xs">{sh.name}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/15 text-cyan-300">
+                        <span className="font-bold text-slate-900 text-xs">{sh.name}</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-50 text-cyan-800 border border-cyan-200">
                           {sh.assigned_today} Assigned
                         </span>
                       </div>
-                      <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-2">
-                        <Clock className="w-3 h-3 text-slate-500" />
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-2">
+                        <Clock className="w-3 h-3 text-slate-400" />
                         <span>{sh.start_time} — {sh.end_time}</span>
                       </div>
                     </div>
@@ -745,42 +743,42 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Staff Directory Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-sm text-white">Branch Staff Directory & Contact Roster</h3>
-                      <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 font-mono text-[10px] font-bold">
+                      <h3 className="font-bold text-sm text-slate-900">Branch Staff Directory & Contact Roster</h3>
+                      <span className="px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200 font-mono text-[10px] font-bold">
                         {(data?.hr_monitoring?.staff_directory || data?.hr_monitoring?.recently_onboarded || []).length} Staff Profiles
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">Direct contact numbers, consultation chambers, rooms, and duty availability for operational escalation</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Direct contact numbers, consultation chambers, rooms, and duty availability for operational escalation</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="relative">
-                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         type="text"
                         placeholder="Search by Name, Dept, Room or ID..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500 w-64"
+                        className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15 w-64"
                       />
                     </div>
                   </div>
                 </div>
 
                 {copiedText && (
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between transition-all">
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between transition-all">
                     <span className="font-medium">{copiedText}</span>
-                    <button onClick={() => setCopiedText(null)} className="text-emerald-400 hover:text-white">✕</button>
+                    <button onClick={() => setCopiedText(null)} className="text-emerald-600 hover:text-emerald-800 font-bold">✕</button>
                   </div>
                 )}
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+                      <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50/80">
                         <th className="py-2.5 px-3">Staff Member</th>
                         <th className="py-2.5 px-3">Department</th>
                         <th className="py-2.5 px-3">Chamber / Room</th>
@@ -790,7 +788,7 @@ export const BranchManagerDashboard: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Direct Contact</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-slate-100">
                       {(data?.hr_monitoring?.staff_directory && data.hr_monitoring.staff_directory.length > 0
                         ? data.hr_monitoring.staff_directory
                         : (data?.hr_monitoring?.recently_onboarded || [])
@@ -804,26 +802,26 @@ export const BranchManagerDashboard: React.FC = () => {
                           (s.phone_number && s.phone_number.includes(searchQuery))
                         )
                         .map((staff: any) => (
-                          <tr key={staff.id || staff.employee_id} className="hover:bg-slate-800/30 transition">
+                          <tr key={staff.id || staff.employee_id} className="hover:bg-slate-50/80 transition">
                             <td className="py-3 px-3">
-                              <div className="font-semibold text-white flex items-center gap-1.5">
+                              <div className="font-semibold text-slate-900 flex items-center gap-1.5">
                                 {staff.name}
                               </div>
-                              <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-                                <span className="font-mono text-cyan-400 font-bold">{staff.employee_id}</span>
+                              <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                                <span className="font-mono text-cyan-800 font-bold">{staff.employee_id}</span>
                                 <span>•</span>
-                                <span className="text-slate-300">{staff.role_display || staff.designation || staff.role}</span>
+                                <span className="text-slate-600">{staff.role_display || staff.designation || staff.role}</span>
                               </div>
                             </td>
                             <td className="py-3 px-3">
-                              <span className="text-slate-300 font-medium">{staff.department}</span>
+                              <span className="text-slate-700 font-medium">{staff.department}</span>
                               {staff.specialization && (
-                                <div className="text-[10px] text-cyan-400/80 mt-0.5">{staff.specialization}</div>
+                                <div className="text-[10px] text-cyan-700 font-medium mt-0.5">{staff.specialization}</div>
                               )}
                             </td>
                             <td className="py-3 px-3">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-amber-300 font-mono text-[11px] font-semibold">
-                                <MapPin className="w-3 h-3 text-amber-400 shrink-0" />
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-mono text-[11px] font-semibold">
+                                <MapPin className="w-3 h-3 text-amber-600 shrink-0" />
                                 {staff.room_number || 'Room Consultation 101'}
                               </span>
                             </td>
@@ -832,7 +830,7 @@ export const BranchManagerDashboard: React.FC = () => {
                                 <a
                                   href={`tel:${staff.phone_number}`}
                                   title="Click to Call"
-                                  className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-mono font-medium hover:underline text-[11px]"
+                                  className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-mono font-medium hover:underline text-[11px]"
                                 >
                                   <Phone className="w-3 h-3" />
                                   {staff.phone_number}
@@ -840,7 +838,7 @@ export const BranchManagerDashboard: React.FC = () => {
                                 <button
                                   onClick={() => copyToClipboard(staff.phone_number, `Phone number for ${staff.name}`)}
                                   title="Copy Phone Number"
-                                  className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition"
+                                  className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
                                 >
                                   <Copy className="w-3 h-3" />
                                 </button>
@@ -851,7 +849,7 @@ export const BranchManagerDashboard: React.FC = () => {
                                 <a
                                   href={`mailto:${staff.email}`}
                                   title="Click to Email"
-                                  className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 font-sans hover:underline text-[11px] max-w-[160px] truncate"
+                                  className="inline-flex items-center gap-1 text-cyan-700 hover:text-cyan-800 font-sans hover:underline text-[11px] max-w-[160px] truncate"
                                 >
                                   <Mail className="w-3 h-3 shrink-0" />
                                   <span className="truncate">{staff.email}</span>
@@ -859,7 +857,7 @@ export const BranchManagerDashboard: React.FC = () => {
                                 <button
                                   onClick={() => copyToClipboard(staff.email, `Email for ${staff.name}`)}
                                   title="Copy Email"
-                                  className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition"
+                                  className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
                                 >
                                   <Copy className="w-3 h-3" />
                                 </button>
@@ -867,14 +865,14 @@ export const BranchManagerDashboard: React.FC = () => {
                             </td>
                             <td className="py-3 px-3">
                               <span className={clsx(
-                                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border',
+                                'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border',
                                 staff.is_on_duty
-                                  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                                  : 'bg-slate-800 text-slate-400 border-slate-700'
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                  : 'bg-slate-100 text-slate-600 border-slate-200'
                               )}>
                                 <span className={clsx(
                                   'w-1.5 h-1.5 rounded-full',
-                                  staff.is_on_duty ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+                                  staff.is_on_duty ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
                                 )} />
                                 {staff.is_on_duty ? 'ON DUTY' : 'OFF DUTY'}
                               </span>
@@ -882,9 +880,9 @@ export const BranchManagerDashboard: React.FC = () => {
                             <td className="py-3 px-3 text-right">
                               <button
                                 onClick={() => setContactStaff(staff)}
-                                className="px-3 py-1 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-semibold transition inline-flex items-center gap-1.5 shadow-sm"
+                                className="px-3 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-xs font-semibold transition inline-flex items-center gap-1.5 shadow-xs"
                               >
-                                <Phone className="w-3 h-3 text-cyan-400" /> Quick Reach
+                                <Phone className="w-3 h-3 text-cyan-700" /> Quick Reach
                               </button>
                             </td>
                           </tr>
@@ -931,17 +929,17 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Ward Breakdown Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Ward Occupancy Breakdown & Capacity</h3>
+                    <h3 className="font-bold text-sm text-slate-900">Ward Occupancy Breakdown & Capacity</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Real-time bed telemetry by hospital ward</p>
                   </div>
                   <button
                     onClick={() => handleExportData('Bed_Occupancy_Report')}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-medium flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
                   >
-                    <Download className="w-3 h-3" /> Download Census
+                    <Download className="w-3.5 h-3.5 text-slate-500" /> Download Census
                   </button>
                 </div>
 
@@ -949,36 +947,36 @@ export const BranchManagerDashboard: React.FC = () => {
                   {(data?.nursing_monitoring?.ward_staffing || []).map((w: any, idx: number) => {
                     const occPct = w.total_beds > 0 ? Math.round((w.occupied_beds / w.total_beds) * 100) : 0;
                     return (
-                      <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
+                      <div key={idx} className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="font-bold text-white text-sm">{w.ward_name}</h4>
-                            <span className="text-[10px] text-slate-400 uppercase font-semibold">{w.ward_type}</span>
+                            <h4 className="font-bold text-slate-900 text-sm">{w.ward_name}</h4>
+                            <span className="text-[10px] text-slate-500 uppercase font-semibold">{w.ward_type}</span>
                           </div>
                           <span className={clsx(
-                            'px-2.5 py-1 rounded-full text-[11px] font-bold font-mono',
-                            occPct >= 85 ? 'bg-rose-500/15 text-rose-300' :
-                            occPct >= 65 ? 'bg-amber-500/15 text-amber-300' :
-                            'bg-emerald-500/15 text-emerald-300'
+                            'px-2.5 py-1 rounded-full text-[11px] font-bold font-mono border',
+                            occPct >= 85 ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                            occPct >= 65 ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                            'bg-emerald-50 text-emerald-800 border-emerald-200'
                           )}>
                             {occPct}% OCCUPIED
                           </span>
                         </div>
 
-                        <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                           <div
                             className={clsx(
                               'h-full rounded-full transition-all duration-500',
-                              occPct >= 85 ? 'bg-rose-500' : occPct >= 65 ? 'bg-amber-500' : 'bg-emerald-500'
+                              occPct >= 85 ? 'bg-rose-600' : occPct >= 65 ? 'bg-amber-500' : 'bg-emerald-600'
                             )}
                             style={{ width: `${occPct}%` }}
                           />
                         </div>
 
-                        <div className="flex items-center justify-between text-xs text-slate-300">
-                          <span>Occupied: <strong className="text-white">{w.occupied_beds}</strong></span>
-                          <span>Available: <strong className="text-emerald-400">{w.total_beds - w.occupied_beds}</strong></span>
-                          <span>Total Beds: <strong className="text-slate-400">{w.total_beds}</strong></span>
+                        <div className="flex items-center justify-between text-xs text-slate-600">
+                          <span>Occupied: <strong className="text-slate-900">{w.occupied_beds}</strong></span>
+                          <span>Available: <strong className="text-emerald-700">{w.total_beds - w.occupied_beds}</strong></span>
+                          <span>Total Beds: <strong className="text-slate-500">{w.total_beds}</strong></span>
                         </div>
                       </div>
                     );
@@ -987,13 +985,13 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Individual Bed Inventory & Status */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Bed Inventory & Census Status (Read-Only)</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Individual bed telemetry, room allocations, and tariff schedule</p>
+                    <h3 className="font-bold text-sm text-slate-900">Bed Inventory & Census Status (Read-Only)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Individual bed telemetry, room allocations, and tariff schedule</p>
                   </div>
-                  <span className="px-2.5 py-1 rounded bg-slate-800 text-cyan-400 font-mono text-xs font-semibold">
+                  <span className="px-2.5 py-1 rounded-full bg-cyan-100/80 text-cyan-900 border border-cyan-300 font-mono text-xs font-bold">
                     {(data?.medical_monitoring?.beds_inventory || []).length || data?.medical_monitoring?.total_beds || 0} Tracked Beds
                   </span>
                 </div>
@@ -1001,7 +999,7 @@ export const BranchManagerDashboard: React.FC = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+                      <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50/80">
                         <th className="py-2.5 px-3">Bed Number</th>
                         <th className="py-2.5 px-3">Ward Name</th>
                         <th className="py-2.5 px-3">Ward Type</th>
@@ -1011,29 +1009,20 @@ export const BranchManagerDashboard: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Inspect Bed</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {(data?.medical_monitoring?.beds_inventory && data.medical_monitoring.beds_inventory.length > 0
-                        ? data.medical_monitoring.beds_inventory
-                        : [
-                            { bed_number: 'BED-ICU-01', ward_name: 'Intensive Care Unit (ICU)', ward_type: 'ICU', room_number: 'Room 01', daily_rate: '4500.00', status: 'OCCUPIED' },
-                            { bed_number: 'BED-ICU-02', ward_name: 'Intensive Care Unit (ICU)', ward_type: 'ICU', room_number: 'Room 02', daily_rate: '4500.00', status: 'AVAILABLE' },
-                            { bed_number: 'BED-GEN-01', ward_name: 'General Ward Male', ward_type: 'GENERAL', room_number: 'Room 01', daily_rate: '1200.00', status: 'OCCUPIED' },
-                            { bed_number: 'BED-GEN-02', ward_name: 'General Ward Male', ward_type: 'GENERAL', room_number: 'Room 02', daily_rate: '1200.00', status: 'CLEANING' },
-                            { bed_number: 'BED-DEL-01', ward_name: 'Private Deluxe Ward', ward_type: 'PRIVATE', room_number: 'Suite 101', daily_rate: '3500.00', status: 'AVAILABLE' },
-                          ]
-                      ).map((b: any, idx: number) => (
-                        <tr key={b.id || idx} className="hover:bg-slate-800/30 transition">
-                          <td className="py-3 px-3 font-mono font-bold text-cyan-400">{b.bed_number}</td>
-                          <td className="py-3 px-3 font-semibold text-white">{b.ward_name}</td>
-                          <td className="py-3 px-3 text-slate-400 text-[10px] uppercase font-mono">{b.ward_type}</td>
-                          <td className="py-3 px-3 text-slate-300">{b.room_number}</td>
-                          <td className="py-3 px-3 font-mono text-slate-300">₹{Number(b.daily_rate).toLocaleString('en-IN')}/day</td>
+                    <tbody className="divide-y divide-slate-200">
+                      {(data?.medical_monitoring?.beds_inventory || []).map((b: any, idx: number) => (
+                        <tr key={b.id || idx} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3 px-3 font-mono font-bold text-cyan-800">{b.bed_number}</td>
+                          <td className="py-3 px-3 font-semibold text-slate-900">{b.ward_name}</td>
+                          <td className="py-3 px-3 text-slate-500 text-[10px] uppercase font-mono">{b.ward_type}</td>
+                          <td className="py-3 px-3 text-slate-600">{b.room_number}</td>
+                          <td className="py-3 px-3 font-mono text-slate-700">₹{Number(b.daily_rate).toLocaleString('en-IN')}/day</td>
                           <td className="py-3 px-3">
                             <span className={clsx(
-                              'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
-                              b.status === 'AVAILABLE' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' :
-                              b.status === 'OCCUPIED' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' :
-                              'bg-purple-500/10 text-purple-300 border-purple-500/20'
+                              'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                              b.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                              b.status === 'OCCUPIED' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                              'bg-purple-50 text-purple-800 border-purple-200'
                             )}>
                               {b.status}
                             </span>
@@ -1041,13 +1030,20 @@ export const BranchManagerDashboard: React.FC = () => {
                           <td className="py-3 px-3 text-right">
                             <button
                               onClick={() => setSelectedRecord({ title: `Bed Allocation: ${b.bed_number}`, data: b })}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium transition inline-flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs shadow-xs transition inline-flex items-center gap-1"
                             >
                               <Eye className="w-3 h-3" /> View Census
                             </button>
                           </td>
                         </tr>
                       ))}
+                      {(!data?.medical_monitoring?.beds_inventory || data.medical_monitoring.beds_inventory.length === 0) && (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-slate-500">
+                            No bed records found for this branch.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1090,46 +1086,46 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Financial Analytics Summary */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Branch Financial Analytics & Collection Summaries</h3>
+                    <h3 className="font-bold text-sm text-slate-900">Branch Financial Analytics & Collection Summaries</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Read-only revenue realization breakdown</p>
                   </div>
                   <button
                     onClick={() => handleExportData('Financial_Summary')}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-medium flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
                   >
-                    <Download className="w-3 h-3" /> Export Ledger
+                    <Download className="w-3.5 h-3.5 text-slate-500" /> Export Ledger
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Cash Collections</span>
-                    <div className="text-xl font-bold text-emerald-400">₹1,42,800.00</div>
-                    <p className="text-[11px] text-slate-500">Collected at OPD & Cashier counters today</p>
+                  <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-2">
+                    <span className="text-[10px] uppercase font-bold text-emerald-800">Total Billed Revenue</span>
+                    <div className="text-xl font-extrabold text-emerald-800">₹{Number(data?.finance_monitoring?.revenue_summary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    <p className="text-[11px] text-emerald-700">Gross invoiced amount across clinical services</p>
                   </div>
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">UPI & Card Gateways</span>
-                    <div className="text-xl font-bold text-cyan-400">₹2,84,500.00</div>
-                    <p className="text-[11px] text-slate-500">Reconciled via Razorpay & POS terminals</p>
+                  <div className="p-4 rounded-xl bg-cyan-50/60 border border-cyan-200 space-y-2">
+                    <span className="text-[10px] uppercase font-bold text-cyan-800">Realized Collections</span>
+                    <div className="text-xl font-extrabold text-cyan-800">₹{Number(data?.finance_monitoring?.collection_summary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    <p className="text-[11px] text-cyan-700">Reconciled cash, UPI, POS & portal settlements</p>
                   </div>
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Corporate & TPA Invoiced</span>
-                    <div className="text-xl font-bold text-purple-400">₹3,95,000.00</div>
-                    <p className="text-[11px] text-slate-500">Cashless settlements submitted for processing</p>
+                  <div className="p-4 rounded-xl bg-purple-50/60 border border-purple-200 space-y-2">
+                    <span className="text-[10px] uppercase font-bold text-purple-800">Outstanding Dues</span>
+                    <div className="text-xl font-extrabold text-purple-800">₹{Number(data?.finance_monitoring?.outstanding_bills || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    <p className="text-[11px] text-purple-700">Receivables pending patient or corporate settlement</p>
                   </div>
                 </div>
 
                 {/* Outstanding Invoices & Patient Ledger Table */}
-                <div className="pt-3 border-t border-slate-800 space-y-3">
+                <div className="pt-3 border-t border-slate-200 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-semibold text-xs text-white">Outstanding Patient Invoices & Dues (Read-Only)</h4>
-                      <p className="text-[11px] text-slate-400">Invoices with pending balance amounts</p>
+                      <h4 className="font-bold text-xs text-slate-900">Outstanding Patient Invoices & Dues (Read-Only)</h4>
+                      <p className="text-[11px] text-slate-500">Invoices with pending balance amounts</p>
                     </div>
-                    <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 font-mono text-[10px] font-bold">
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-mono text-[10px] font-bold">
                       {(data?.finance_monitoring?.unpaid_invoices || []).length || data?.finance_monitoring?.unpaid_invoices_count || 0} Pending Invoices
                     </span>
                   </div>
@@ -1137,46 +1133,46 @@ export const BranchManagerDashboard: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-slate-800 text-slate-400 font-semibold">
-                          <th className="py-2 px-3">Invoice #</th>
-                          <th className="py-2 px-3">Patient Name</th>
-                          <th className="py-2 px-3">Total Amount</th>
-                          <th className="py-2 px-3">Paid Amount</th>
-                          <th className="py-2 px-3">Balance Due</th>
-                          <th className="py-2 px-3">Status</th>
-                          <th className="py-2 px-3 text-right">Action</th>
+                        <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50/80">
+                          <th className="py-2.5 px-3">Invoice #</th>
+                          <th className="py-2.5 px-3">Patient Name</th>
+                          <th className="py-2.5 px-3">Total Amount</th>
+                          <th className="py-2.5 px-3">Paid Amount</th>
+                          <th className="py-2.5 px-3">Balance Due</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3 text-right">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60">
-                        {(data?.finance_monitoring?.unpaid_invoices && data.finance_monitoring.unpaid_invoices.length > 0
-                          ? data.finance_monitoring.unpaid_invoices
-                          : [
-                              { invoice_number: 'INV-OPD-20261104-9CF563', patient_name: 'Saiteja Nalla', total_amount: '800.00', paid_amount: '0.00', balance_amount: '800.00', status: 'ISSUED', date: '2026-11-04' },
-                              { invoice_number: 'INV-LAB-20261103-7A4D48', patient_name: 'David John', total_amount: '2950.00', paid_amount: '0.00', balance_amount: '2950.00', status: 'ISSUED', date: '2026-11-03' },
-                              { invoice_number: 'INV-OPD-20261021-3555CB', patient_name: 'Sunita Deshmukh', total_amount: '500.00', paid_amount: '0.00', balance_amount: '500.00', status: 'ISSUED', date: '2026-10-21' },
-                            ]
-                        ).map((inv: any, idx: number) => (
-                          <tr key={inv.invoice_number || idx} className="hover:bg-slate-800/30 transition">
-                            <td className="py-2.5 px-3 font-mono font-bold text-cyan-400">{inv.invoice_number}</td>
-                            <td className="py-2.5 px-3 font-semibold text-white">{inv.patient_name}</td>
-                            <td className="py-2.5 px-3 font-mono text-slate-300">₹{Number(inv.total_amount).toLocaleString('en-IN')}</td>
-                            <td className="py-2.5 px-3 font-mono text-emerald-400">₹{Number(inv.paid_amount).toLocaleString('en-IN')}</td>
-                            <td className="py-2.5 px-3 font-mono text-amber-400 font-bold">₹{Number(inv.balance_amount).toLocaleString('en-IN')}</td>
+                      <tbody className="divide-y divide-slate-200">
+                        {(data?.finance_monitoring?.unpaid_invoices || []).map((inv: any, idx: number) => (
+                          <tr key={inv.invoice_number || idx} className="hover:bg-slate-50/70 transition">
+                            <td className="py-2.5 px-3 font-mono font-bold text-cyan-800">{inv.invoice_number}</td>
+                            <td className="py-2.5 px-3 font-semibold text-slate-900">{inv.patient_name}</td>
+                            <td className="py-2.5 px-3 font-mono text-slate-700">₹{Number(inv.total_amount).toLocaleString('en-IN')}</td>
+                            <td className="py-2.5 px-3 font-mono text-emerald-700 font-semibold">₹{Number(inv.paid_amount).toLocaleString('en-IN')}</td>
+                            <td className="py-2.5 px-3 font-mono text-amber-700 font-bold">₹{Number(inv.balance_amount).toLocaleString('en-IN')}</td>
                             <td className="py-2.5 px-3">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                                 {inv.status}
                               </span>
                             </td>
                             <td className="py-2.5 px-3 text-right">
                               <button
                                 onClick={() => setSelectedRecord({ title: `Invoice Audit: ${inv.invoice_number}`, data: inv })}
-                                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium transition inline-flex items-center gap-1"
+                                className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs shadow-xs transition inline-flex items-center gap-1"
                               >
-                                <Eye className="w-3 h-3" /> View Invoice
+                                <Eye className="w-3 h-3 text-slate-500" /> View Invoice
                               </button>
                             </td>
                           </tr>
                         ))}
+                        {(!data?.finance_monitoring?.unpaid_invoices || data.finance_monitoring.unpaid_invoices.length === 0) && (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center text-slate-500">
+                              No outstanding invoices found for this branch.
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -1220,20 +1216,20 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Medicine Stock & Formulary Telemetry */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Formulary Stock & Expiry Telemetry</h3>
+                    <h3 className="font-bold text-sm text-slate-900">Formulary Stock & Expiry Telemetry</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Live warehouse batches and inventory levels</p>
                   </div>
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
                       placeholder="Search Medicine Stock..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+                      className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15"
                     />
                   </div>
                 </div>
@@ -1241,7 +1237,7 @@ export const BranchManagerDashboard: React.FC = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+                      <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50/80">
                         <th className="py-2.5 px-3">Medicine Name</th>
                         <th className="py-2.5 px-3">Generic Name</th>
                         <th className="py-2.5 px-3">Batch #</th>
@@ -1250,37 +1246,35 @@ export const BranchManagerDashboard: React.FC = () => {
                         <th className="py-2.5 px-3">Stock Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {(data?.pharmacy_monitoring?.medicine_inventory && data.pharmacy_monitoring.medicine_inventory.length > 0
-                        ? data.pharmacy_monitoring.medicine_inventory
-                        : [
-                            { name: 'Augmentin 625 Duo', generic: 'Amoxicillin + Clavulanic Acid', batch: 'BAT-2026-AUG', stock: 120, expiry: '2027-08-31', status: 'HEALTHY' },
-                            { name: 'Pantocid 40mg', generic: 'Pantoprazole Sodium', batch: 'BAT-2026-PAN', stock: 42, expiry: '2026-12-15', status: 'LOW_STOCK' },
-                            { name: 'Paracetamol IV 100ml', generic: 'Acetaminophen Infusion', batch: 'BAT-2026-PARA', stock: 240, expiry: '2027-10-30', status: 'HEALTHY' },
-                            { name: 'Atorva 20mg', generic: 'Atorvastatin Calcium', batch: 'BAT-2026-ATO', stock: 18, expiry: '2026-11-28', status: 'EXPIRING_SOON' },
-                            { name: 'Meropenem 1g Injection', generic: 'Meropenem Trihydrate', batch: 'BAT-2026-MERO', stock: 85, expiry: '2027-05-15', status: 'HEALTHY' },
-                          ]
-                      )
+                    <tbody className="divide-y divide-slate-200">
+                      {(data?.pharmacy_monitoring?.medicine_inventory || [])
                         .filter((m: any) => !searchQuery || m.name?.toLowerCase().includes(searchQuery.toLowerCase()) || m.generic?.toLowerCase().includes(searchQuery.toLowerCase()) || m.batch?.toLowerCase().includes(searchQuery.toLowerCase()))
                         .map((med: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-slate-800/30 transition">
-                            <td className="py-3 px-3 font-semibold text-white">{med.name}</td>
-                            <td className="py-3 px-3 text-slate-400">{med.generic}</td>
-                            <td className="py-3 px-3 font-mono text-cyan-400">{med.batch}</td>
-                            <td className="py-3 px-3 font-bold text-slate-200">{med.stock} Units</td>
-                            <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">{med.expiry}</td>
+                          <tr key={idx} className="hover:bg-slate-50/70 transition">
+                            <td className="py-3 px-3 font-semibold text-slate-900">{med.name}</td>
+                            <td className="py-3 px-3 text-slate-600">{med.generic}</td>
+                            <td className="py-3 px-3 font-mono text-cyan-800 font-bold">{med.batch}</td>
+                            <td className="py-3 px-3 font-bold text-slate-900">{med.stock} Units</td>
+                            <td className="py-3 px-3 text-slate-500 font-mono text-[11px]">{med.expiry}</td>
                             <td className="py-3 px-3">
                               <span className={clsx(
-                                'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
-                                med.status === 'HEALTHY' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' :
-                                med.status === 'LOW_STOCK' ? 'bg-rose-500/10 text-rose-300 border-rose-500/20' :
-                                'bg-amber-500/10 text-amber-300 border-amber-500/20'
+                                'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                                med.status === 'HEALTHY' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                                med.status === 'LOW_STOCK' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                                'bg-amber-50 text-amber-800 border-amber-200'
                               )}>
                                 {String(med.status || '').replace(/_/g, ' ')}
                               </span>
                             </td>
                           </tr>
                         ))}
+                      {(!data?.pharmacy_monitoring?.medicine_inventory || data.pharmacy_monitoring.medicine_inventory.length === 0) && (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-slate-500">
+                            No pharmacy stock records found for this branch.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1323,24 +1317,24 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Recent Lab Orders Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Diagnostic Laboratory Orders (Read-Only Worklist)</h3>
+                    <h3 className="font-bold text-sm text-slate-900">Diagnostic Laboratory Orders (Read-Only Worklist)</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Test progression from accessioning to medical release</p>
                   </div>
                   <button
                     onClick={() => handleExportData('Diagnostic_Orders')}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-medium flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
                   >
-                    <Download className="w-3 h-3" /> Export Orders
+                    <Download className="w-3.5 h-3.5 text-slate-500" /> Export Orders
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+                      <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50/80">
                         <th className="py-2.5 px-3">Order ID</th>
                         <th className="py-2.5 px-3">Patient Name</th>
                         <th className="py-2.5 px-3">Tests Ordered</th>
@@ -1349,39 +1343,30 @@ export const BranchManagerDashboard: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Inspect Report</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {(data?.laboratory_monitoring?.diagnostic_orders && data.laboratory_monitoring.diagnostic_orders.length > 0
-                        ? data.laboratory_monitoring.diagnostic_orders
-                        : [
-                            { id: 'LAB-2026-0841', patient: 'Aarav Patel', test: 'Complete Blood Count (CBC), ESR', priority: 'ROUTINE', status: 'RELEASED' },
-                            { id: 'LAB-2026-0842', patient: 'Meera Nambiar', test: 'Thyroid Stimulating Hormone (TSH)', priority: 'ROUTINE', status: 'IN_PROCESS' },
-                            { id: 'LAB-2026-0843', patient: 'David John', test: 'Troponin-I, Serum Electrolytes', priority: 'STAT', status: 'RELEASED' },
-                            { id: 'LAB-2026-0844', patient: 'Sunita Deshmukh', test: 'Lipid Profile, HbA1c', priority: 'ROUTINE', status: 'SAMPLE_COLLECTED' },
-                            { id: 'LAB-2026-0845', patient: 'Rohan Gupta', test: 'Liver Function Test (LFT), Creatinine', priority: 'URGENT', status: 'AWAITING_APPROVAL' },
-                          ]
-                      )
+                    <tbody className="divide-y divide-slate-200">
+                      {(data?.laboratory_monitoring?.diagnostic_orders || [])
                         .filter((order: any) => !searchQuery || order.id?.toLowerCase().includes(searchQuery.toLowerCase()) || order.patient?.toLowerCase().includes(searchQuery.toLowerCase()) || order.test?.toLowerCase().includes(searchQuery.toLowerCase()))
                         .map((order: any) => (
-                          <tr key={order.id} className="hover:bg-slate-800/30 transition">
-                            <td className="py-3 px-3 font-mono font-bold text-cyan-400">{order.id}</td>
-                            <td className="py-3 px-3 font-semibold text-white">{order.patient}</td>
-                            <td className="py-3 px-3 text-slate-300">{order.test}</td>
+                          <tr key={order.id} className="hover:bg-slate-50/70 transition">
+                            <td className="py-3 px-3 font-mono font-bold text-cyan-800">{order.id}</td>
+                            <td className="py-3 px-3 font-semibold text-slate-900">{order.patient}</td>
+                            <td className="py-3 px-3 text-slate-600">{order.test}</td>
                             <td className="py-3 px-3">
                               <span className={clsx(
-                                'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider',
-                                order.priority === 'STAT' ? 'bg-rose-500/20 text-rose-300' :
-                                order.priority === 'URGENT' ? 'bg-amber-500/20 text-amber-300' :
-                                'bg-slate-800 text-slate-300'
+                                'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border',
+                                order.priority === 'STAT' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                                order.priority === 'URGENT' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                                'bg-slate-100 text-slate-700 border-slate-200'
                               )}>
                                 {order.priority}
                               </span>
                             </td>
                             <td className="py-3 px-3">
                               <span className={clsx(
-                                'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
-                                order.status === 'RELEASED' || order.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' :
-                                order.status === 'IN_PROCESS' || order.status === 'SAMPLE_COLLECTED' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20' :
-                                'bg-amber-500/10 text-amber-300 border-amber-500/20'
+                                'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                                order.status === 'RELEASED' || order.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                                order.status === 'IN_PROCESS' || order.status === 'SAMPLE_COLLECTED' ? 'bg-cyan-50 text-cyan-800 border-cyan-200' :
+                                'bg-amber-50 text-amber-800 border-amber-200'
                               )}>
                                 {String(order.status || '').replace(/_/g, ' ')}
                               </span>
@@ -1389,13 +1374,20 @@ export const BranchManagerDashboard: React.FC = () => {
                             <td className="py-3 px-3 text-right">
                               <button
                                 onClick={() => setSelectedRecord({ title: `Diagnostic Investigation: ${order.id}`, data: order })}
-                                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium transition inline-flex items-center gap-1"
+                                className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs shadow-xs transition inline-flex items-center gap-1"
                               >
-                                <Eye className="w-3 h-3" /> View Report
+                                <Eye className="w-3 h-3 text-slate-500" /> View Report
                               </button>
                             </td>
                           </tr>
                         ))}
+                      {(!data?.laboratory_monitoring?.diagnostic_orders || data.laboratory_monitoring.diagnostic_orders.length === 0) && (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-slate-500">
+                            No diagnostic orders found for this branch.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1438,24 +1430,24 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Complaints Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Patient Complaints & Grievance Register</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Formal feedback records, categories, and resolution audit notes</p>
+                    <h3 className="font-bold text-sm text-slate-900">Patient Complaints & Grievance Register</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Formal feedback records, categories, and resolution audit notes</p>
                   </div>
                   <button
                     onClick={() => handleExportData('Patient_Grievance_Register')}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-medium flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
                   >
-                    <Download className="w-3 h-3" /> Export Grievance Log
+                    <Download className="w-3.5 h-3.5 text-slate-500" /> Export Grievance Log
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+                      <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50/80">
                         <th className="py-2.5 px-3">Complaint ID</th>
                         <th className="py-2.5 px-3">Patient Name</th>
                         <th className="py-2.5 px-3">Category</th>
@@ -1465,33 +1457,33 @@ export const BranchManagerDashboard: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Resolution Details</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-slate-200">
                       {(data?.complaints_monitoring?.recent_complaints || []).map((cmp: any) => (
-                        <tr key={cmp.id} className="hover:bg-slate-800/30 transition">
-                          <td className="py-3 px-3 font-mono font-bold text-cyan-400">{cmp.id}</td>
-                          <td className="py-3 px-3 font-semibold text-white">{cmp.patient_name}</td>
+                        <tr key={cmp.id} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3 px-3 font-mono font-bold text-cyan-800">{cmp.id}</td>
+                          <td className="py-3 px-3 font-semibold text-slate-900">{cmp.patient_name}</td>
                           <td className="py-3 px-3">
-                            <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-medium">
+                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-semibold">
                               {cmp.category}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-slate-300 max-w-xs truncate">{cmp.subject}</td>
+                          <td className="py-3 px-3 text-slate-600 max-w-xs truncate">{cmp.subject}</td>
                           <td className="py-3 px-3">
                             <span className={clsx(
-                              'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
-                              cmp.priority === 'HIGH' ? 'bg-rose-500/20 text-rose-300' :
-                              cmp.priority === 'MEDIUM' ? 'bg-amber-500/20 text-amber-300' :
-                              'bg-slate-800 text-slate-400'
+                              'px-2 py-0.5 rounded text-[10px] font-bold uppercase border',
+                              cmp.priority === 'HIGH' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                              cmp.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                              'bg-slate-100 text-slate-700 border-slate-200'
                             )}>
                               {cmp.priority}
                             </span>
                           </td>
                           <td className="py-3 px-3">
                             <span className={clsx(
-                              'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
-                              cmp.status === 'RESOLVED' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' :
-                              cmp.status === 'IN_INVESTIGATION' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' :
-                              'bg-rose-500/10 text-rose-300 border-rose-500/20'
+                              'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                              cmp.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                              cmp.status === 'IN_INVESTIGATION' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                              'bg-rose-50 text-rose-800 border-rose-200'
                             )}>
                               {cmp.status.replace(/_/g, ' ')}
                             </span>
@@ -1499,9 +1491,9 @@ export const BranchManagerDashboard: React.FC = () => {
                           <td className="py-3 px-3 text-right">
                             <button
                               onClick={() => setSelectedRecord({ title: `Grievance Case: ${cmp.id}`, data: cmp })}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-750 text-cyan-400 text-xs font-medium transition inline-flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs shadow-xs transition inline-flex items-center gap-1"
                             >
-                              <Eye className="w-3 h-3" /> View Notes
+                              <Eye className="w-3 h-3 text-slate-500" /> View Notes
                             </button>
                           </td>
                         </tr>
@@ -1548,24 +1540,24 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Maintenance Tasks Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Biomedical Equipment Maintenance & PPM Log</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Calibration certificates and scheduled preventive tasks</p>
+                    <h3 className="font-bold text-sm text-slate-900">Biomedical Equipment Maintenance & PPM Log</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Calibration certificates and scheduled preventive tasks</p>
                   </div>
                   <button
                     onClick={() => handleExportData('Biomedical_Maintenance_PPM')}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-medium flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
                   >
-                    <Download className="w-3 h-3" /> Export PPM Log
+                    <Download className="w-3.5 h-3.5 text-slate-500" /> Export PPM Log
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+                      <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50/80">
                         <th className="py-2.5 px-3">Equipment Name</th>
                         <th className="py-2.5 px-3">Asset Tag</th>
                         <th className="py-2.5 px-3">Maintenance Type</th>
@@ -1575,7 +1567,7 @@ export const BranchManagerDashboard: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Inspect Record</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-slate-200">
                       {(data?.maintenance_monitoring?.recent_tasks || []).length === 0 ? (
                         <tr>
                           <td colSpan={7} className="py-8 text-center text-slate-500">
@@ -1584,18 +1576,18 @@ export const BranchManagerDashboard: React.FC = () => {
                         </tr>
                       ) : (
                         (data?.maintenance_monitoring?.recent_tasks || []).map((task: any) => (
-                        <tr key={task.id} className="hover:bg-slate-800/30 transition">
-                          <td className="py-3 px-3 font-semibold text-white">{task.equipment_name}</td>
-                          <td className="py-3 px-3 font-mono text-cyan-400">{task.asset_tag}</td>
-                          <td className="py-3 px-3 text-slate-300">{task.task_type}</td>
-                          <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">{task.scheduled_date}</td>
-                          <td className="py-3 px-3 text-slate-300">{task.assigned_technician}</td>
+                        <tr key={task.id} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3 px-3 font-semibold text-slate-900">{task.equipment_name}</td>
+                          <td className="py-3 px-3 font-mono text-cyan-800 font-bold">{task.asset_tag}</td>
+                          <td className="py-3 px-3 text-slate-600">{task.task_type}</td>
+                          <td className="py-3 px-3 text-slate-500 font-mono text-[11px]">{task.scheduled_date}</td>
+                          <td className="py-3 px-3 text-slate-600">{task.assigned_technician}</td>
                           <td className="py-3 px-3">
                             <span className={clsx(
-                              'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
-                              task.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' :
-                              task.status === 'SCHEDULED' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20' :
-                              'bg-amber-500/10 text-amber-300 border-amber-500/20'
+                              'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                              task.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                              task.status === 'SCHEDULED' ? 'bg-cyan-50 text-cyan-800 border-cyan-200' :
+                              'bg-amber-50 text-amber-800 border-amber-200'
                             )}>
                               {task.status}
                             </span>
@@ -1603,9 +1595,9 @@ export const BranchManagerDashboard: React.FC = () => {
                           <td className="py-3 px-3 text-right">
                             <button
                               onClick={() => setSelectedRecord({ title: `Maintenance Task: ${task.equipment_name}`, data: task })}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium transition inline-flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs shadow-xs transition inline-flex items-center gap-1"
                             >
-                              <Eye className="w-3 h-3" /> View PPM
+                              <Eye className="w-3 h-3 text-slate-500" /> View PPM
                             </button>
                           </td>
                         </tr>
@@ -1652,24 +1644,24 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Claims Register Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Insurance & TPA Claims Register (Read-Only)</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Pre-authorizations, claim settlements, and corporate invoicing</p>
+                    <h3 className="font-bold text-sm text-slate-900">Insurance & TPA Claims Register (Read-Only)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Pre-authorizations, claim settlements, and corporate invoicing</p>
                   </div>
                   <button
                     onClick={() => handleExportData('Insurance_Claims_Report')}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-medium flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
                   >
-                    <Download className="w-3 h-3" /> Export Claims
+                    <Download className="w-3.5 h-3.5 text-slate-500" /> Export Claims
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+                      <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50/80">
                         <th className="py-2.5 px-3">Claim #</th>
                         <th className="py-2.5 px-3">Patient Name</th>
                         <th className="py-2.5 px-3">Insurance / TPA Provider</th>
@@ -1679,7 +1671,7 @@ export const BranchManagerDashboard: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Inspect Claim</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-slate-200">
                       {(data?.insurance_monitoring?.recent_claims || []).length === 0 ? (
                         <tr>
                           <td colSpan={7} className="py-8 text-center text-slate-500">
@@ -1688,18 +1680,18 @@ export const BranchManagerDashboard: React.FC = () => {
                         </tr>
                       ) : (
                         (data?.insurance_monitoring?.recent_claims || []).map((clm: any) => (
-                        <tr key={clm.id} className="hover:bg-slate-800/30 transition">
-                          <td className="py-3 px-3 font-mono font-bold text-cyan-400">{clm.claim_number}</td>
-                          <td className="py-3 px-3 font-semibold text-white">{clm.patient_name}</td>
-                          <td className="py-3 px-3 text-slate-300">{clm.provider_name}</td>
-                          <td className="py-3 px-3 font-mono text-slate-200">₹{Number(clm.claim_amount).toLocaleString('en-IN')}</td>
-                          <td className="py-3 px-3 font-mono text-emerald-400 font-bold">₹{Number(clm.approved_amount).toLocaleString('en-IN')}</td>
+                        <tr key={clm.id} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3 px-3 font-mono font-bold text-cyan-800">{clm.claim_number}</td>
+                          <td className="py-3 px-3 font-semibold text-slate-900">{clm.patient_name}</td>
+                          <td className="py-3 px-3 text-slate-600">{clm.provider_name}</td>
+                          <td className="py-3 px-3 font-mono text-slate-700">₹{Number(clm.claim_amount).toLocaleString('en-IN')}</td>
+                          <td className="py-3 px-3 font-mono text-emerald-700 font-bold">₹{Number(clm.approved_amount).toLocaleString('en-IN')}</td>
                           <td className="py-3 px-3">
                             <span className={clsx(
-                              'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
-                              clm.status === 'SETTLED' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' :
-                              clm.status === 'PRE_AUTH_APPROVED' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20' :
-                              'bg-amber-500/10 text-amber-300 border-amber-500/20'
+                              'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                              clm.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                              clm.status === 'PRE_AUTH_APPROVED' ? 'bg-cyan-50 text-cyan-800 border-cyan-200' :
+                              'bg-amber-50 text-amber-800 border-amber-200'
                             )}>
                               {clm.status.replace(/_/g, ' ')}
                             </span>
@@ -1707,9 +1699,9 @@ export const BranchManagerDashboard: React.FC = () => {
                           <td className="py-3 px-3 text-right">
                             <button
                               onClick={() => setSelectedRecord({ title: `Insurance Claim: ${clm.claim_number}`, data: clm })}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium transition inline-flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs shadow-xs transition inline-flex items-center gap-1"
                             >
-                              <Eye className="w-3 h-3" /> View TPA File
+                              <Eye className="w-3 h-3 text-slate-500" /> View TPA File
                             </button>
                           </td>
                         </tr>
@@ -1724,13 +1716,13 @@ export const BranchManagerDashboard: React.FC = () => {
           {/* SECTION 12: REPORTS AND ANALYTICS */}
           {activeTab === 'reports' && (
             <div className="space-y-6">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Branch Operational, Clinical & Financial Reports</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Generate and download official branch performance documentation</p>
+                    <h3 className="font-bold text-sm text-slate-900">Branch Operational, Clinical & Financial Reports</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Generate and download official branch performance documentation</p>
                   </div>
-                  <span className="px-2.5 py-1 rounded bg-slate-800 text-cyan-400 text-xs font-mono font-semibold">
+                  <span className="px-2.5 py-1 rounded-full bg-cyan-100/80 text-cyan-900 border border-cyan-300 text-xs font-mono font-bold">
                     Branch: {branchName}
                   </span>
                 </div>
@@ -1744,19 +1736,19 @@ export const BranchManagerDashboard: React.FC = () => {
                     { title: 'Diagnostic Laboratory TAT Compliance', desc: 'Sample accessioning to verified release turnaround analytics', code: 'Diagnostic_TAT' },
                     { title: 'Financial Collection & Outstanding Ledger', desc: 'Cashier reconciliations, pending dues, and TPA receivables', code: 'Financial_Ledger' },
                   ].map((rep, idx) => (
-                    <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between space-y-3">
+                    <div key={idx} className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between space-y-3 hover:border-slate-300 transition">
                       <div>
-                        <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-xs mb-2">
+                        <div className="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-700 border border-cyan-200 flex items-center justify-center font-bold text-xs mb-2">
                           <BarChart3 className="w-4 h-4" />
                         </div>
-                        <h4 className="font-bold text-white text-xs leading-snug">{rep.title}</h4>
-                        <p className="text-[11px] text-slate-400 mt-1">{rep.desc}</p>
+                        <h4 className="font-bold text-slate-900 text-xs leading-snug">{rep.title}</h4>
+                        <p className="text-[11px] text-slate-500 mt-1">{rep.desc}</p>
                       </div>
                       <button
                         onClick={() => handleExportData(rep.code)}
-                        className="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium transition flex items-center justify-center gap-1.5"
+                        className="w-full py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs shadow-xs transition flex items-center justify-center gap-1.5"
                       >
-                        <Download className="w-3.5 h-3.5" /> Download CSV Report
+                        <Download className="w-3.5 h-3.5 text-slate-500" /> Download CSV Report
                       </button>
                     </div>
                   ))}
@@ -1771,22 +1763,22 @@ export const BranchManagerDashboard: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <MetricCard
                   title="NABH Compliance Index"
-                  value="96.4%"
-                  subtitle="Clinical & safety standards met"
+                  value={data?.compliance_monitoring?.nabh_index || 'Operational'}
+                  subtitle="Clinical & safety standards status"
                   icon={ShieldCheck}
                   color="emerald"
                 />
                 <MetricCard
                   title="Bio-Medical Waste Manifest"
-                  value="100% Verified"
+                  value={data?.compliance_monitoring?.waste_manifest || 'Verified'}
                   subtitle="Color-coded waste segregation"
                   icon={CheckCircle2}
                   color="cyan"
                 />
                 <MetricCard
                   title="Fire & Life Safety Status"
-                  value="ACTIVE NOC"
-                  subtitle="Certified clearance"
+                  value={data?.compliance_monitoring?.fire_safety || 'Active NOC'}
+                  subtitle="Certified statutory clearance"
                   icon={AlertTriangle}
                   color="purple"
                 />
@@ -1800,24 +1792,24 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Branch Activity & Audit Trail Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Branch Activity & Security Audit Logs (Immutable)</h3>
+                    <h3 className="font-bold text-sm text-slate-900">Branch Activity & Security Audit Logs (Immutable)</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Chronological record of clinical, financial, and operational modifications</p>
                   </div>
                   <button
                     onClick={() => handleExportData('Branch_Audit_Trail')}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-medium flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
                   >
-                    <Download className="w-3 h-3" /> Export Audit Log
+                    <Download className="w-3.5 h-3.5 text-slate-500" /> Export Audit Log
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold">
+                      <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50/80">
                         <th className="py-2.5 px-3">Timestamp</th>
                         <th className="py-2.5 px-3">Actor Email</th>
                         <th className="py-2.5 px-3">Action</th>
@@ -1826,26 +1818,26 @@ export const BranchManagerDashboard: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Inspect Payload</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
+                    <tbody className="divide-y divide-slate-200 font-mono text-[11px]">
                       {(data?.branch_activity_logs || []).slice(0, 10).map((log: any, idx: number) => (
-                        <tr key={log.id || idx} className="hover:bg-slate-800/30 transition">
-                          <td className="py-3 px-3 text-slate-400">
+                        <tr key={log.id || idx} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3 px-3 text-slate-500">
                             {log.created_at ? new Date(log.created_at).toLocaleString() : 'Recent'}
                           </td>
-                          <td className="py-3 px-3 text-white font-sans">{log.actor_email || 'System Process'}</td>
+                          <td className="py-3 px-3 text-slate-900 font-semibold font-sans">{log.actor_email || 'System Process'}</td>
                           <td className="py-3 px-3">
-                            <span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 font-semibold text-[10px]">
+                            <span className="px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200 font-bold text-[10px]">
                               {log.action}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-slate-300">{log.entity_type}</td>
-                          <td className="py-3 px-3 text-slate-400">{log.entity_id || '—'}</td>
+                          <td className="py-3 px-3 text-slate-600 font-sans">{log.entity_type}</td>
+                          <td className="py-3 px-3 text-slate-500">{log.entity_id || '—'}</td>
                           <td className="py-3 px-3 text-right font-sans">
                             <button
                               onClick={() => setSelectedRecord({ title: `Audit Record: ${log.action} on ${log.entity_type}`, data: log })}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium transition inline-flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs shadow-xs transition inline-flex items-center gap-1"
                             >
-                              <Eye className="w-3 h-3" /> View Event
+                              <Eye className="w-3 h-3 text-slate-500" /> View Event
                             </button>
                           </td>
                         </tr>
@@ -1860,11 +1852,11 @@ export const BranchManagerDashboard: React.FC = () => {
           {/* SECTION 14: NOTIFICATIONS */}
           {activeTab === 'notifications' && (
             <div className="space-y-6">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                   <div>
-                    <h3 className="font-semibold text-sm text-white">Branch Operational Alerts & Notification History</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Critical notifications, panic lab values, and threshold telemetry</p>
+                    <h3 className="font-bold text-sm text-slate-900">Branch Operational Alerts & Notification History</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Critical notifications, panic lab values, and threshold telemetry</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {['ALL', 'CRITICAL', 'WARNING', 'INFO'].map(flt => (
@@ -1872,8 +1864,8 @@ export const BranchManagerDashboard: React.FC = () => {
                         key={flt}
                         onClick={() => setStatusFilter(flt)}
                         className={clsx(
-                          'px-2.5 py-1 rounded-lg text-xs font-semibold transition',
-                          statusFilter === flt ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
+                          'px-2.5 py-1 rounded-lg text-xs font-semibold transition shadow-xs',
+                          statusFilter === flt ? 'bg-cyan-700 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                         )}
                       >
                         {flt}
@@ -1888,34 +1880,34 @@ export const BranchManagerDashboard: React.FC = () => {
                     .map((notif: any) => (
                       <div
                         key={notif.id}
-                        className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex items-start justify-between gap-4"
+                        className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 flex items-start justify-between gap-4"
                       >
                         <div className="flex items-start gap-3">
                           <div className={clsx(
-                            'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
-                            notif.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' :
-                            notif.severity === 'WARNING' ? 'bg-amber-500/20 text-amber-400' :
-                            'bg-cyan-500/20 text-cyan-400'
+                            'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border',
+                            notif.severity === 'CRITICAL' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                            notif.severity === 'WARNING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            'bg-cyan-50 text-cyan-700 border-cyan-200'
                           )}>
                             <Bell className="w-4 h-4" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-white text-xs">{notif.title}</span>
+                              <span className="font-bold text-slate-900 text-xs">{notif.title}</span>
                               <span className={clsx(
-                                'text-[9px] font-bold px-1.5 py-0.2 rounded uppercase',
-                                notif.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300' :
-                                notif.severity === 'WARNING' ? 'bg-amber-500/20 text-amber-300' :
-                                'bg-cyan-500/20 text-cyan-300'
+                                'text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase border',
+                                notif.severity === 'CRITICAL' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                                notif.severity === 'WARNING' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                                'bg-cyan-50 text-cyan-800 border-cyan-200'
                               )}>
                                 {notif.severity}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-400 mt-1 leading-relaxed">{notif.message}</p>
+                            <p className="text-xs text-slate-600 mt-1 leading-relaxed">{notif.message}</p>
                           </div>
                         </div>
 
-                        <span className="text-[10px] text-slate-500 font-mono shrink-0">{notif.timestamp}</span>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">{notif.timestamp}</span>
                       </div>
                     ))}
                 </div>
@@ -1927,28 +1919,28 @@ export const BranchManagerDashboard: React.FC = () => {
 
       {/* Read-Only Record Inspection Modal */}
       {selectedRecord && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <Lock className="w-4 h-4 text-amber-400" />
-                <h3 className="font-bold text-white text-sm truncate">{selectedRecord.title}</h3>
+                <Lock className="w-4 h-4 text-amber-600" />
+                <h3 className="font-extrabold text-slate-900 text-sm truncate">{selectedRecord.title}</h3>
               </div>
               <button
                 onClick={() => setSelectedRecord(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-sm"
               >
-                <X className="w-4 h-4" />
+                ✕
               </button>
             </div>
 
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 shrink-0" />
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0" />
               <span>Strict Read-Only Inspection Mode. Modifications, approvals, or deletions are restricted.</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 font-mono text-xs bg-slate-950 p-4 rounded-xl border border-slate-800/80">
-              <pre className="text-cyan-300 whitespace-pre-wrap break-all">
+            <div className="flex-1 overflow-y-auto space-y-2 font-mono text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <pre className="text-slate-800 whitespace-pre-wrap break-all">
                 {JSON.stringify(selectedRecord.data, null, 2)}
               </pre>
             </div>
@@ -1956,7 +1948,7 @@ export const BranchManagerDashboard: React.FC = () => {
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setSelectedRecord(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition"
               >
                 Close Inspector
               </button>
@@ -1967,102 +1959,102 @@ export const BranchManagerDashboard: React.FC = () => {
 
       {/* Staff Direct Contact & Escalation Modal */}
       {contactStaff && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in duration-200">
-            <div className="flex items-start justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in duration-200">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-lg">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-800 font-extrabold text-lg">
                   {contactStaff.name ? contactStaff.name.charAt(0) : 'S'}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-white text-base">{contactStaff.name}</h3>
+                    <h3 className="font-extrabold text-slate-900 text-base">{contactStaff.name}</h3>
                     <span className={clsx(
-                      'px-2 py-0.5 rounded-full text-[10px] font-semibold border flex items-center gap-1',
+                      'px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1',
                       contactStaff.is_on_duty
-                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
                     )}>
                       <span className={clsx(
                         'w-1.5 h-1.5 rounded-full',
-                        contactStaff.is_on_duty ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+                        contactStaff.is_on_duty ? 'bg-emerald-600' : 'bg-slate-400'
                       )} />
                       {contactStaff.is_on_duty ? 'ON DUTY' : 'OFF DUTY'}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
-                    <span className="font-mono text-cyan-400 font-semibold">{contactStaff.employee_id}</span>
-                    <span>•</span>
-                    <span className="text-slate-300">{contactStaff.role_display || contactStaff.designation || contactStaff.role}</span>
+                  <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 font-medium">
+                    <span className="font-mono text-cyan-800 font-bold">{contactStaff.employee_id}</span>
+                    <span>&bull;</span>
+                    <span className="text-slate-700">{contactStaff.role_display || contactStaff.designation || contactStaff.role}</span>
                   </div>
                 </div>
               </div>
               <button
                 onClick={() => setContactStaff(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-sm"
               >
-                <X className="w-4 h-4" />
+                ✕
               </button>
             </div>
 
             {/* Notification alert for copy events */}
             {copiedText && (
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
-                <span>{copiedText}</span>
-                <button onClick={() => setCopiedText(null)} className="text-emerald-400 hover:text-white">✕</button>
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
+                <span className="font-semibold">{copiedText}</span>
+                <button onClick={() => setCopiedText(null)} className="text-emerald-700 hover:text-emerald-900 font-bold">✕</button>
               </div>
             )}
 
             {/* Key Information Cards */}
             <div className="space-y-3">
               {/* Room / Chamber Card */}
-              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Hospital Room / Chamber</div>
-                    <div className="text-sm font-bold text-amber-300 font-mono mt-0.5">
+                    <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Hospital Room / Chamber</div>
+                    <div className="text-sm font-bold text-amber-900 font-mono mt-0.5">
                       {contactStaff.room_number || 'OPD Chamber 101 (Floor 1)'}
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => copyToClipboard(contactStaff.room_number || 'OPD Chamber 101 (Floor 1)', 'Chamber location')}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition inline-flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition inline-flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" /> Copy
                 </button>
               </div>
 
               {/* Department & Specialty */}
-              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center shrink-0">
                     <Building2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Department & Clinical Specialty</div>
-                    <div className="text-sm font-semibold text-white mt-0.5">
+                    <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Department & Clinical Specialty</div>
+                    <div className="text-sm font-bold text-slate-900 mt-0.5">
                       {contactStaff.department || 'General Administration'}
                     </div>
                     {contactStaff.specialization && (
-                      <div className="text-xs text-purple-300 mt-0.5">{contactStaff.specialization}</div>
+                      <div className="text-xs text-purple-800 font-medium mt-0.5">{contactStaff.specialization}</div>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Phone Contact */}
-              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
                     <Phone className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Official Mobile Number</div>
-                    <div className="text-sm font-mono font-bold text-emerald-400 mt-0.5">
+                    <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Official Mobile Number</div>
+                    <div className="text-sm font-mono font-bold text-emerald-800 mt-0.5">
                       {contactStaff.phone_number}
                     </div>
                   </div>
@@ -2070,13 +2062,13 @@ export const BranchManagerDashboard: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <a
                     href={`tel:${contactStaff.phone_number}`}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow-lg shadow-emerald-600/20"
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
                   >
                     <Phone className="w-3 h-3" /> Call
                   </a>
                   <button
                     onClick={() => copyToClipboard(contactStaff.phone_number, 'Phone number')}
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                    className="p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition"
                     title="Copy phone"
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -2085,14 +2077,14 @@ export const BranchManagerDashboard: React.FC = () => {
               </div>
 
               {/* Email Contact */}
-              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-3 truncate mr-2">
-                  <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div className="truncate">
-                    <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Hospital Email Address</div>
-                    <div className="text-sm font-medium text-cyan-300 truncate mt-0.5">
+                    <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Hospital Email Address</div>
+                    <div className="text-sm font-semibold text-slate-900 truncate mt-0.5">
                       {contactStaff.email}
                     </div>
                   </div>
@@ -2100,13 +2092,13 @@ export const BranchManagerDashboard: React.FC = () => {
                 <div className="flex items-center gap-2 shrink-0">
                   <a
                     href={`mailto:${contactStaff.email}`}
-                    className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow-lg shadow-cyan-600/20"
+                    className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
                   >
                     <Mail className="w-3 h-3" /> Email
                   </a>
                   <button
                     onClick={() => copyToClipboard(contactStaff.email, 'Email address')}
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                    className="p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition"
                     title="Copy email"
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -2116,14 +2108,14 @@ export const BranchManagerDashboard: React.FC = () => {
             </div>
 
             {/* Read-Only Notice Footer */}
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-amber-300">
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-amber-800 font-semibold">
                 <Lock className="w-3.5 h-3.5 shrink-0" />
                 Branch Manager Supervisory Directory (Strict Read-Only)
               </span>
               <button
                 onClick={() => setContactStaff(null)}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition"
+                className="px-3.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg text-xs font-semibold transition"
               >
                 Close
               </button>
@@ -2153,32 +2145,41 @@ const MetricCard: React.FC<MetricCardProps> = ({
   color = 'cyan',
 }) => {
   const colorMap = {
-    cyan: 'from-cyan-500/10 to-transparent border-cyan-500/20 text-cyan-400',
-    emerald: 'from-emerald-500/10 to-transparent border-emerald-500/20 text-emerald-400',
-    amber: 'from-amber-500/10 to-transparent border-amber-500/20 text-amber-400',
-    rose: 'from-rose-500/10 to-transparent border-rose-500/20 text-rose-400',
-    purple: 'from-purple-500/10 to-transparent border-purple-500/20 text-purple-400',
-    blue: 'from-blue-500/10 to-transparent border-blue-500/20 text-blue-400',
+    cyan: 'bg-white border-slate-200 text-cyan-700 hover:border-cyan-300',
+    emerald: 'bg-white border-slate-200 text-emerald-700 hover:border-emerald-300',
+    amber: 'bg-white border-slate-200 text-amber-700 hover:border-amber-300',
+    rose: 'bg-white border-slate-200 text-rose-700 hover:border-rose-300',
+    purple: 'bg-white border-slate-200 text-purple-700 hover:border-purple-300',
+    blue: 'bg-white border-slate-200 text-blue-700 hover:border-blue-300',
+  };
+
+  const iconBgMap = {
+    cyan: 'bg-cyan-50 text-cyan-700 border-cyan-100',
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    amber: 'bg-amber-50 text-amber-700 border-amber-100',
+    rose: 'bg-rose-50 text-rose-700 border-rose-100',
+    purple: 'bg-purple-50 text-purple-700 border-purple-100',
+    blue: 'bg-blue-50 text-blue-700 border-blue-100',
   };
 
   return (
     <div className={clsx(
-      'p-4 rounded-2xl bg-gradient-to-br bg-slate-900 border shadow-lg space-y-2 transition hover:border-slate-700',
+      'p-4 rounded-2xl border shadow-xs space-y-2 transition hover:shadow-sm',
       colorMap[color]
     )}>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate max-w-[80%]">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 truncate max-w-[80%]">
           {title}
         </span>
-        <div className="w-8 h-8 rounded-xl bg-slate-800/80 flex items-center justify-center shrink-0">
+        <div className={clsx("w-8 h-8 rounded-xl border flex items-center justify-center shrink-0", iconBgMap[color])}>
           <Icon className="w-4 h-4" />
         </div>
       </div>
-      <div className="text-2xl font-extrabold text-white tracking-tight">{value}</div>
-      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
+      <div className="text-2xl font-black text-slate-900 tracking-tight">{value}</div>
+      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
         <span className="truncate">{subtitle}</span>
         {trend && (
-          <span className="font-semibold text-cyan-400 shrink-0 ml-2">
+          <span className="font-bold text-cyan-700 shrink-0 ml-2">
             {trend}
           </span>
         )}

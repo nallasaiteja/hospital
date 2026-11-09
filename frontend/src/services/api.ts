@@ -807,7 +807,7 @@ export const billingFinanceService = {
   createInvoice: async (payload: any) => (await api.post('/billing-finance/invoices/', payload)).data,
   generateInpatientBill: async (payload: { admission_id: string; is_final?: boolean }) => (await api.post('/billing-finance/invoices/generate-inpatient-bill/', payload)).data,
   recordPayment: async (payload: any) => (await api.post('/billing-finance/payments/record/', payload)).data,
-  getDashboardStats: async () => (await api.get('/billing-finance/dashboard-stats/')).data,
+  getDashboardStats: async (params?: { branch_id?: string }) => (await api.get('/billing-finance/dashboard-stats/', { params })).data,
 
   // Service catalogue & tariffs
   getServices: async (params?: any) => (await api.get('/billing-finance/services/', { params })).data,
@@ -1420,6 +1420,9 @@ export const reportsDashboardService = {
 
   getDiagnosticsDashboard: (params?: DashboardFilterParams) =>
     api.get('/dashboards-reports/diagnostics/', { params }).then(r => r.data),
+
+  getRadiologyDashboard: (params?: DashboardFilterParams) =>
+    api.get('/dashboards-reports/radiology/', { params }).then(r => r.data),
 
   getInventoryDashboard: (params?: DashboardFilterParams) =>
     api.get('/dashboards-reports/inventory/', { params }).then(r => r.data),

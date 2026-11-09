@@ -4,18 +4,43 @@
   :root {
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-heading: 'Plus Jakarta Sans', sans-serif;
+
+    /* Global Design System Tokens */
+    --color-bg-app: #ffffff;
+    --color-bg-surface: #ffffff;
+    --color-bg-secondary: #f8fafc;
+    --color-bg-panel: #f1f5f9;
+    --color-border: #e2e8f0;
+    --color-border-hover: #cbd5e1;
+    --color-border-active: #0891b2;
+
+    /* Typography */
+    --color-text-heading: #172b4d;
+    --color-text-section: #1e293b;
+    --color-text-body: #334155;
+    --color-text-secondary: #64748b;
+    --color-text-muted: #94a3b8;
+    --color-placeholder: #94a3b8;
+
+    /* Branding */
+    --color-primary-cyan: #0891b2;
+    --color-secondary-blue: #2563eb;
+    --color-dark-navy: #172b4d;
+    --color-light-cyan: #ecfeff;
+    --color-light-blue: #eff6ff;
   }
 
   html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
     overflow-x: hidden;
+    background-color: #ffffff;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #020617; /* Dark slate-950 base */
-    color: #f8fafc;
+    background-color: #ffffff;
+    color: #334155;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -25,11 +50,14 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     letter-spacing: -0.02em;
+    color: #172b4d;
   }
 
   /* Prevent iOS zoom on input focus while keeping sharp rendering */
   input, select, textarea {
     font-size: 16px;
+    background-color: #ffffff;
+    color: #1e293b;
   }
   @media (min-width: 640px) {
     input, select, textarea {
@@ -38,20 +66,21 @@
   }
 }
 
-/* Custom Glassmorphism & UI Utilities */
+/* Custom Glassmorphism & UI Utilities (Light Theme) */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(51, 65, 85, 0.6);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
 .glass-card {
-  background: rgba(15, 23, 42, 0.95);
+  background: #ffffff;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(30, 41, 59, 1);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 
 /* Pulse indicator for live hospital wards/monitoring */
@@ -78,10 +107,10 @@
   min-width: 44px;
 }
 
-/* Smooth Touch-Friendly Scrollbars */
+/* Smooth Touch-Friendly Scrollbars (Light Theme) */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -89,12 +118,12 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.35);
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.6);
+  background: #94a3b8;
 }
 
 /* Safe Area Inset Support for notch/home-bar devices */
@@ -136,10 +165,523 @@
     padding-bottom: 1.25rem;
   }
   
-  /* Ensure horizontal scroll containers on mobile do not cause page horizontal blowout */
   .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
     max-width: 100%;
   }
 }
 
+/* =============================================================================
+   PREMIUM WHITE THEME SYSTEM-WIDE NORMALIZATION
+   ============================================================================= */
+
+/* Surfaces and Backgrounds */
+.bg-slate-950,
+.bg-slate-900 {
+  background-color: #ffffff !important;
+}
+
+/* Neutralize all dark gradient surfaces across entire app */
+:not([class*="bg-clip-text"])[class*="from-slate-900"],
+:not([class*="bg-clip-text"])[class*="from-slate-950"],
+:not([class*="bg-clip-text"])[class*="to-slate-900"],
+:not([class*="bg-clip-text"])[class*="to-slate-950"],
+:not([class*="bg-clip-text"])[class*="from-cyan-950"],
+:not([class*="bg-clip-text"])[class*="to-cyan-950"],
+:not([class*="bg-clip-text"])[class*="from-blue-950"],
+:not([class*="bg-clip-text"])[class*="to-blue-950"],
+:not([class*="bg-clip-text"])[class*="bg-gradient-to-"][class*="from-slate-"],
+:not([class*="bg-clip-text"])[class*="bg-gradient-to-"][class*="to-slate-"] {
+  background-image: none !important;
+  background-color: #ffffff !important;
+}
+
+.bg-slate-950\/90,
+.bg-slate-950\/80,
+.bg-slate-950\/70,
+.bg-slate-950\/60,
+.bg-slate-950\/40,
+.bg-slate-900\/95,
+.bg-slate-900\/90,
+.bg-slate-900\/80,
+.bg-slate-900\/60,
+.bg-slate-900\/40 {
+  background-color: #ffffff !important;
+}
+
+.bg-slate-850 {
+  background-color: #f8fafc !important;
+}
+
+.bg-slate-800 {
+  background-color: #f8fafc !important;
+}
+
+.bg-slate-800\/90,
+.bg-slate-800\/80,
+.bg-slate-800\/60,
+.bg-slate-800\/50,
+.bg-slate-800\/40 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Hover States on Surfaces */
+.hover\:bg-slate-900:hover,
+.hover\:bg-slate-850:hover,
+.hover\:bg-slate-800:hover,
+.hover\:bg-slate-800\/80:hover,
+.hover\:bg-slate-800\/60:hover,
+.hover\:bg-slate-800\/50:hover,
+.hover\:bg-slate-800\/40:hover,
+.hover\:bg-slate-750:hover,
+.hover\:bg-slate-700:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Borders */
+.border-slate-800,
+.border-slate-800\/80,
+.border-slate-800\/60,
+.border-slate-800\/50,
+.border-slate-800\/40 {
+  border-color: #e2e8f0 !important;
+}
+
+.border-slate-700,
+.border-slate-700\/80,
+.border-slate-700\/60 {
+  border-color: #cbd5e1 !important;
+}
+
+.divide-slate-800,
+.divide-slate-800\/80,
+.divide-slate-800\/60 {
+  border-color: #f1f5f9 !important;
+}
+
+/* Text Hierarchy */
+.text-slate-100,
+.text-slate-200 {
+  color: #1e293b !important;
+}
+
+.text-slate-300 {
+  color: #334155 !important;
+}
+
+.text-slate-400 {
+  color: #64748b !important;
+}
+
+.text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* Text-white inside cards, tables, inputs, labels becomes dark navy */
+/* But preserved inside buttons with primary colored gradients or badges */
+:not(button):not(a):not(span[class*="bg-cyan-"]):not(span[class*="bg-blue-"]):not(span[class*="bg-emerald-"]):not(span[class*="bg-rose-"]):not(span[class*="bg-purple-"]) > .text-white,
+p.text-white,
+h1.text-white,
+h2.text-white,
+h3.text-white,
+h4.text-white,
+h5.text-white,
+h6.text-white,
+strong.text-white,
+span.text-white:not([class*="bg-"]):not([class*="from-"]) {
+  color: #172b4d !important;
+}
+
+/* Inputs, Selects, and Textareas */
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+select,
+textarea {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #0891b2 !important;
+  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.15) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Modals */
+div[role="dialog"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Modal Backdrop */
+.fixed.inset-0.bg-black\/80 {
+  background-color: rgba(15, 23, 42, 0.40) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Tables */
+table thead {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+table thead th {
+  color: #475569 !important;
+}
+
+table tbody tr {
+  color: #334155 !important;
+}
+
+table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Primary Button Styling */
+button[class*="from-cyan-"][class*="to-blue-"],
+a[class*="from-cyan-"][class*="to-blue-"],
+button[class*="bg-cyan-500"]:not([class*="bg-cyan-500/"]),
+button[class*="bg-cyan-600"] {
+  background-image: linear-gradient(to right, #0891b2, #2563eb) !important;
+  color: #ffffff !important;
+}
+
+button[class*="from-cyan-"][class*="to-blue-"]:hover,
+a[class*="from-cyan-"][class*="to-blue-"]:hover {
+  filter: brightness(1.08) !important;
+}
+
+/* Secondary Button Styling */
+button.bg-slate-800,
+button.bg-slate-800\/90,
+button.bg-slate-800\/80 {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+button.bg-slate-800:hover,
+button.bg-slate-800\/90:hover,
+button.bg-slate-800\/80:hover {
+  background-color: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+}
+
+/* =============================================================================
+   ACCENT CONTRAST OPTIMIZATION OVER WHITE BACKGROUND
+   Maps washed-out light neons to rich, deep, elegant saturated colors
+   ============================================================================= */
+
+/* High-Contrast Vibrant Text for White Surfaces */
+.text-cyan-200,
+.text-cyan-300,
+.text-cyan-400,
+.text-cyan-500 {
+  color: #0e7490 !important; /* Rich oceanic cyan - 6.2:1 contrast ratio */
+}
+
+.hover\:text-cyan-200:hover,
+.hover\:text-cyan-300:hover,
+.hover\:text-cyan-400:hover,
+.hover\:text-cyan-500:hover {
+  color: #155e75 !important;
+}
+
+.text-blue-200,
+.text-blue-300,
+.text-blue-400,
+.text-blue-500 {
+  color: #1d4ed8 !important; /* Royal cobalt blue - 6.8:1 contrast ratio */
+}
+
+.hover\:text-blue-200:hover,
+.hover\:text-blue-300:hover,
+.hover\:text-blue-400:hover,
+.hover\:text-blue-500:hover {
+  color: #1e40af !important;
+}
+
+.text-sky-200,
+.text-sky-300,
+.text-sky-400,
+.text-sky-500 {
+  color: #0369a1 !important; /* Deep cerulean - 6.4:1 contrast ratio */
+}
+
+.hover\:text-sky-300:hover,
+.hover\:text-sky-400:hover {
+  color: #075985 !important;
+}
+
+.text-teal-200,
+.text-teal-300,
+.text-teal-400,
+.text-teal-500 {
+  color: #0f766e !important; /* Deep clinical teal - 6.1:1 contrast ratio */
+}
+
+.hover\:text-teal-300:hover,
+.hover\:text-teal-400:hover {
+  color: #115e59 !important;
+}
+
+.text-emerald-200,
+.text-emerald-300,
+.text-emerald-400,
+.text-emerald-500 {
+  color: #047857 !important; /* Deep emerald - 6.3:1 contrast ratio */
+}
+
+.hover\:text-emerald-300:hover,
+.hover\:text-emerald-400:hover {
+  color: #065f46 !important;
+}
+
+.text-amber-200,
+.text-amber-300,
+.text-amber-400,
+.text-amber-500 {
+  color: #b45309 !important; /* Deep warm amber - 5.8:1 contrast ratio */
+}
+
+.hover\:text-amber-300:hover,
+.hover\:text-amber-400:hover {
+  color: #92400e !important;
+}
+
+.text-yellow-200,
+.text-yellow-300,
+.text-yellow-400,
+.text-yellow-500 {
+  color: #854d0e !important; /* Dark golden brown for yellow badges on white */
+}
+
+.text-rose-200,
+.text-rose-300,
+.text-rose-400,
+.text-rose-500 {
+  color: #be123c !important; /* Deep ruby crimson - 6.5:1 contrast ratio */
+}
+
+.hover\:text-rose-300:hover,
+.hover\:text-rose-400:hover {
+  color: #9f1239 !important;
+}
+
+.text-indigo-200,
+.text-indigo-300,
+.text-indigo-400,
+.text-indigo-500 {
+  color: #4338ca !important; /* Deep executive indigo - 7.4:1 contrast ratio */
+}
+
+.hover\:text-indigo-300:hover,
+.hover\:text-indigo-400:hover {
+  color: #3730a3 !important;
+}
+
+.text-purple-200,
+.text-purple-300,
+.text-purple-400,
+.text-purple-500 {
+  color: #7e22ce !important; /* Deep regal purple - 7.1:1 contrast ratio */
+}
+
+.hover\:text-purple-300:hover,
+.hover\:text-purple-400:hover {
+  color: #6b21a8 !important;
+}
+
+/* Pastel Badges & Pill Containers over White Background */
+.bg-cyan-500\/10,
+.bg-cyan-500\/15,
+.bg-cyan-500\/20,
+.bg-cyan-500\/25,
+.bg-cyan-500\/30,
+.bg-cyan-400\/10,
+.bg-cyan-400\/20 {
+  background-color: #ecfeff !important;
+  border: 1px solid #a5f3fc !important;
+  color: #155e75 !important;
+}
+
+.bg-blue-500\/10,
+.bg-blue-500\/15,
+.bg-blue-500\/20,
+.bg-blue-500\/25,
+.bg-blue-500\/30,
+.bg-blue-400\/10,
+.bg-blue-400\/20 {
+  background-color: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #1e40af !important;
+}
+
+.bg-emerald-500\/10,
+.bg-emerald-500\/15,
+.bg-emerald-500\/20,
+.bg-emerald-500\/25,
+.bg-emerald-500\/30,
+.bg-emerald-950\/60,
+.bg-cyan-950,
+.bg-cyan-950\/80,
+.bg-cyan-950\/60,
+.bg-cyan-950\/50,
+.bg-cyan-950\/40,
+.bg-cyan-950\/30 {
+  background-color: #ecfeff !important;
+  border-color: #a5f3fc !important;
+  color: #155e75 !important;
+}
+
+.bg-emerald-950,
+.bg-emerald-950\/80,
+.bg-emerald-950\/60,
+.bg-emerald-950\/50,
+.bg-emerald-950\/40 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+
+.bg-amber-500\/10,
+.bg-amber-500\/15,
+.bg-amber-500\/20,
+.bg-amber-500\/25,
+.bg-amber-500\/30,
+.bg-amber-950,
+.bg-amber-950\/60,
+.bg-amber-950\/50,
+.bg-amber-950\/40 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+
+.bg-yellow-950,
+.bg-yellow-950\/60,
+.bg-yellow-950\/50,
+.bg-yellow-950\/40 {
+  background-color: #fefce8 !important;
+  border-color: #fef08a !important;
+  color: #854d0e !important;
+}
+
+.bg-rose-500\/10,
+.bg-rose-500\/15,
+.bg-rose-500\/20,
+.bg-rose-500\/25,
+.bg-rose-500\/30,
+.bg-rose-950,
+.bg-rose-950\/60,
+.bg-rose-950\/70,
+.bg-rose-950\/80,
+.bg-rose-950\/40 {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #9f1239 !important;
+}
+
+.bg-indigo-500\/10,
+.bg-indigo-500\/15,
+.bg-indigo-500\/20,
+.bg-indigo-500\/25,
+.bg-indigo-500\/30 {
+  background-color: #eef2ff !important;
+  border: 1px solid #c7d2fe !important;
+  color: #3730a3 !important;
+}
+
+.bg-purple-500\/10,
+.bg-purple-500\/15,
+.bg-purple-500\/20,
+.bg-purple-500\/25,
+.bg-purple-500\/30 {
+  background-color: #faf5ff !important;
+  border: 1px solid #e9d5ff !important;
+  color: #6b21a8 !important;
+}
+
+.bg-teal-500\/10,
+.bg-teal-500\/15,
+.bg-teal-500\/20,
+.bg-teal-500\/25,
+.bg-teal-500\/30 {
+  background-color: #f0fdfa !important;
+  border: 1px solid #99f6e4 !important;
+  color: #115e59 !important;
+}
+
+/* Subtle Colored Accent Borders */
+.border-cyan-500\/20,
+.border-cyan-500\/30,
+.border-cyan-400\/20,
+.border-cyan-400\/30,
+.border-cyan-400\/40 {
+  border-color: #a5f3fc !important;
+}
+
+.border-blue-500\/20,
+.border-blue-500\/30,
+.border-blue-400\/20,
+.border-blue-400\/30 {
+  border-color: #bfdbfe !important;
+}
+
+.border-emerald-500\/20,
+.border-emerald-500\/30,
+.border-emerald-800 {
+  border-color: #a7f3d0 !important;
+}
+
+.border-amber-500\/20,
+.border-amber-500\/30,
+.border-amber-800 {
+  border-color: #fde68a !important;
+}
+
+.border-rose-500\/20,
+.border-rose-500\/30,
+.border-rose-800 {
+  border-color: #fecdd3 !important;
+}
+
+/* Quick Action Buttons inside Table Cells & Cards */
+button.bg-slate-800:not([disabled]),
+a.bg-slate-800:not([disabled]) {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0e7490 !important;
+}
+
+button.bg-slate-800:hover:not([disabled]),
+a.bg-slate-800:hover:not([disabled]) {
+  background-color: #ecfeff !important;
+  border-color: #a5f3fc !important;
+  color: #155e75 !important;
+}
+
+/* Gradient Action Pills */
+button[class*="from-cyan-500/20"][class*="to-blue-500/20"],
+a[class*="from-cyan-500/20"][class*="to-blue-500/20"] {
+  background-image: none !important;
+  background-color: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+button[class*="from-cyan-500/20"][class*="to-blue-500/20"]:hover,
+a[class*="from-cyan-500/20"][class*="to-blue-500/20"]:hover {
+  background-color: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+}

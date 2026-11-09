@@ -1187,17 +1187,17 @@ export const AppointmentsPage: React.FC = () => {
       )}
 
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
-              <Stethoscope className="w-6 h-6 text-cyan-400" />
+            <div className="p-2 rounded-xl bg-cyan-50 border border-cyan-200">
+              <Stethoscope className="w-6 h-6 text-cyan-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                 {t('navigation.appointments', 'Outpatient Department (OPD) & Appointments')}
               </h1>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 {t('appointments.subtitle', 'Multi-Specialty Clinic Management • Collision Prevention • Walk-in Tokens • Integrated EMR & Rx')}
               </p>
             </div>
@@ -1214,7 +1214,7 @@ export const AppointmentsPage: React.FC = () => {
                   resetPaymentState();
                   setShowWalkInModal(true);
                 }}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-xs hover:bg-amber-500/25 transition shadow-sm"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 font-semibold text-xs hover:bg-amber-100 transition shadow-sm"
               >
                 <UserPlus className="w-4 h-4" />
                 {t('appointments.walkInToken', 'Walk-in Token')}
@@ -1225,7 +1225,7 @@ export const AppointmentsPage: React.FC = () => {
                   resetPaymentState();
                   setShowBookModal(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-xs hover:brightness-105 shadow-md shadow-cyan-600/20 transition"
               >
                 <Plus className="w-4 h-4" />
                 {t('appointments.bookAppointment', 'Book Appointment')}
@@ -1234,24 +1234,24 @@ export const AppointmentsPage: React.FC = () => {
           )}
           <button
             onClick={() => setShowLoungeTVModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold shadow-sm transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold shadow-sm transition"
             title="Launch Real-Time Lounge TV with Interactive Doctor Filters"
           >
-            <Tv className="w-4 h-4 text-amber-400" />
+            <Tv className="w-4 h-4 text-amber-600" />
             <span>Lounge TV</span>
           </button>
           <a
             href="/lounge-tv"
             target="_blank"
             rel="noreferrer"
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 transition"
             title="Open Lounge TV in Dedicated Window / TV Display"
           >
-            <Tv className="w-4 h-4 text-cyan-400" />
+            <Tv className="w-4 h-4 text-cyan-700" />
           </a>
           <button
             onClick={fetchOPDData}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
+            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition shadow-sm"
             title={t('appointments.refreshQueue', 'Refresh OPD Queue')}
           >
             <RefreshCw className="w-4 h-4" />
@@ -1260,12 +1260,12 @@ export const AppointmentsPage: React.FC = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto custom-scrollbar whitespace-nowrap">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto custom-scrollbar whitespace-nowrap">
         <button
           onClick={() => setActiveTab('queue')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${activeTab === 'queue'
-              ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm font-bold'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
         >
           <Activity className="w-4 h-4" />
@@ -1274,8 +1274,8 @@ export const AppointmentsPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('schedules')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${activeTab === 'schedules'
-              ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm font-bold'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
         >
           <CalendarCheck className="w-4 h-4" />
@@ -1284,8 +1284,8 @@ export const AppointmentsPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('reports')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${activeTab === 'reports'
-              ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm font-bold'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
         >
           <TrendingUp className="w-4 h-4" />
@@ -1331,7 +1331,7 @@ export const AppointmentsPage: React.FC = () => {
           </div>
 
           {/* OPD Queue Filters Bar */}
-          <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap flex-1">
               {/* Date Selector & Quick Filters */}
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -1339,14 +1339,14 @@ export const AppointmentsPage: React.FC = () => {
                   type="date"
                   value={selectedDate === 'UPCOMING' ? '' : selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-36 px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-36 px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20"
                 />
                 <button
                   type="button"
                   onClick={() => setSelectedDate(getLocalTodayDateString())}
                   className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition ${selectedDate === getLocalTodayDateString()
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 font-semibold'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                      ? 'bg-cyan-100 text-cyan-800 border-cyan-300 font-semibold shadow-sm'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                 >
                   Today
@@ -1357,8 +1357,8 @@ export const AppointmentsPage: React.FC = () => {
                     setSelectedDate(getLocalTodayDateString(1));
                   }}
                   className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition ${selectedDate === getLocalTodayDateString(1)
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 font-semibold'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                      ? 'bg-cyan-100 text-cyan-800 border-cyan-300 font-semibold shadow-sm'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                 >
                   Tomorrow
@@ -1367,8 +1367,8 @@ export const AppointmentsPage: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedDate('UPCOMING')}
                   className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition ${selectedDate === 'UPCOMING'
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 font-semibold shadow-sm'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                      ? 'bg-cyan-100 text-cyan-800 border-cyan-300 font-semibold shadow-sm'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                 >
                   All Upcoming
@@ -1380,7 +1380,7 @@ export const AppointmentsPage: React.FC = () => {
                 <select
                   value={selectedDoctorFilter}
                   onChange={(e) => setSelectedDoctorFilter(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20"
                 >
                   <option value="">All Doctors & Clinics</option>
                   {doctors.map((d) => (
@@ -1396,7 +1396,7 @@ export const AppointmentsPage: React.FC = () => {
                 <select
                   value={selectedStatusFilter}
                   onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20"
                 >
                   <option value="">All Statuses</option>
                   <option value="CHECKED_IN">Waiting (Checked In)</option>
@@ -1411,13 +1411,13 @@ export const AppointmentsPage: React.FC = () => {
 
             {/* Patient Search */}
             <div className="w-64 relative">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search patient, MRN, token..."
-                className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20"
               />
             </div>
           </div>
@@ -2818,21 +2818,15 @@ export const AppointmentsPage: React.FC = () => {
                               }}
                               className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
                             >
-                              {(encounterData?.medicines && encounterData.medicines.length > 0
-                                ? encounterData.medicines
-                                : [
-                                  { id: 'fb3ef1cc-4d06-4f95-a9f5-6aaef3c50aa5', brand_name: 'Augmentin Duo / Amoxycillin', generic_name: 'Amoxicillin Trihydrate', strength: '500mg' },
-                                  { id: '644061a7-7d9f-480e-87be-a828852ee472', brand_name: 'Atorva 20', generic_name: 'Atorvastatin Calcium', strength: '20mg' },
-                                  { id: 'fe0a1f1b-d43c-4b31-919b-49da25beba11', brand_name: 'Monocef 1g', generic_name: 'Ceftriaxone Sodium Injection', strength: '1g Vial' },
-                                  { id: '6082f368-ed54-4181-9470-25535950820a', brand_name: 'Glycomet 500', generic_name: 'Metformin Hydrochloride', strength: '500mg' },
-                                  { id: '471b13da-2842-489e-8001-577def17ec4d', brand_name: 'Dolo 650', generic_name: 'Paracetamol', strength: '650mg' },
-                                  { id: '95fffc76-f447-467f-ab46-dbc55fcd3f7d', brand_name: 'Pan 40', generic_name: 'Pantoprazole Sodium', strength: '40mg' },
-                                ]
-                              ).map((m: any) => (
+                              <option value="">Select Medicine</option>
+                              {(encounterData?.medicines || []).map((m: any) => (
                                 <option key={m.id} value={m.id}>
                                   {m.brand_name} ({m.generic_name} • {m.strength})
                                 </option>
                               ))}
+                              {(!encounterData?.medicines || encounterData.medicines.length === 0) && (
+                                <option value="" disabled>No medicines found in formulary</option>
+                              )}
                             </select>
                           </div>
                           <div className="sm:col-span-2">

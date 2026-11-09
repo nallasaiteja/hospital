@@ -966,19 +966,53 @@ class CashierShiftViewSet(viewsets.ModelViewSet):
 class BillingDashboardStatsView(views.APIView):
     """
     Executive & Cashier Real-Time Billing Summaries, Revenue by Service Category, and Outstanding Aging.
+    Derived dynamically from live database records and synchronized with Reports & Analytics.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        invoices = Invoice.objects.all()
+        import zoneinfo
+        from datetime import datetime
+        from apps.core.models import Hospital
 
+        branch_id = request.query_params.get('branch_id')
+
+        # Resolve hospital timezone and today's boundaries
+        hospital = Hospital.objects.first()
+        tz_name = hospital.timezone if hospital and hospital.timezone else 'Asia/Kolkata'
+        try:
+            tz = zoneinfo.ZoneInfo(tz_name)
+        except Exception:
+            tz = zoneinfo.ZoneInfo('Asia/Kolkata')
+
+        now = timezone.now().astimezone(tz)
+        today = now.date()
+        today_start = datetime.combine(today, datetime.min.time(), tzinfo=tz)
+        today_end = datetime.combine(today, datetime.max.time(), tzinfo=tz)
+
+        invoices = Invoice.objects.exclude(status=InvoiceStatus.CANCELLED)
+        payments = Payment.objects.all()
+        deposits = PatientDeposit.objects.all()
+        items = InvoiceItem.objects.exclude(invoice__status=InvoiceStatus.CANCELLED)
+
+        if branch_id:
+            invoices = invoices.filter(branch_id=branch_id)
+            payments = payments.filter(branch_id=branch_id)
+            deposits = deposits.filter(branch_id=branch_id)
+            items = items.filter(invoice__branch_id=branch_id)
+
+        # Today's live metrics (strictly match Reports & Analytics today)
+        today_billed = invoices.filter(invoice_date=today).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        today_collected = payments.filter(payment_date__range=[today_start, today_end]).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        today_deposits = deposits.filter(created_at__range=[today_start, today_end]).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        # All-time / cumulative metrics
         total_billed = invoices.aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
-        total_collected = Payment.objects.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-        total_outstanding = invoices.aggregate(total=Sum('balance_amount'))['total'] or Decimal('0.00')
-        total_deposits_avail = PatientDeposit.objects.filter(status__in=[DepositStatus.AVAILABLE, DepositStatus.PARTIALLY_UTILIZED]).aggregate(total=Sum('available_balance'))['total'] or Decimal('0.00')
+        total_collected = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        total_outstanding = invoices.filter(status__in=[InvoiceStatus.ISSUED, InvoiceStatus.PARTIALLY_PAID]).aggregate(total=Sum('balance_amount'))['total'] or Decimal('0.00')
+        total_deposits_avail = deposits.filter(status__in=[DepositStatus.AVAILABLE, DepositStatus.PARTIALLY_UTILIZED]).aggregate(total=Sum('available_balance'))['total'] or Decimal('0.00')
 
-        # Departmental / Service Revenue Breakdown
-        items = InvoiceItem.objects.all()
+        # Departmental / Service Revenue Breakdown (from non-cancelled items)
         opd_rev = items.filter(item_type=ChargeItemType.CONSULTATION).aggregate(total=Sum('subtotal'))['total'] or Decimal('0.00')
         ipd_rev = items.filter(item_type=ChargeItemType.BED_CHARGE).aggregate(total=Sum('subtotal'))['total'] or Decimal('0.00')
         lab_rev = items.filter(item_type=ChargeItemType.LAB_TEST).aggregate(total=Sum('subtotal'))['total'] or Decimal('0.00')
@@ -989,13 +1023,18 @@ class BillingDashboardStatsView(views.APIView):
         er_rev = items.filter(item_type=ChargeItemType.EMERGENCY).aggregate(total=Sum('subtotal'))['total'] or Decimal('0.00')
 
         # Payment Methods Distribution
-        pay_methods = Payment.objects.values('payment_method').annotate(total=Sum('amount'), count=Count('id')).order_by('-total')
+        pay_methods = payments.values('payment_method').annotate(total=Sum('amount'), count=Count('id')).order_by('-total')
 
         return Response({
+            'today_billed': str(today_billed),
+            'today_collected': str(today_collected),
+            'today_deposits': str(today_deposits),
             'total_billed': str(total_billed),
             'total_collected': str(total_collected),
             'total_outstanding': str(total_outstanding),
             'total_deposits_available': str(total_deposits_avail),
+            'hospital_timezone': tz_name,
+            'today_date': str(today),
             'revenue_by_category': {
                 'OPD': str(opd_rev),
                 'IPD_BEDS': str(ipd_rev),

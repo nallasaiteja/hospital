@@ -211,7 +211,7 @@ export const BillingPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const [stats, invs, svcs, trfs, pkgs, deps, rcpts, discs, cns, rfs, sfts, stls, pts, adms] = await Promise.all([
-        billingFinanceService.getDashboardStats().catch(() => null),
+        billingFinanceService.getDashboardStats({ branch_id: currentBranch?.id }).catch(() => null),
         billingFinanceService.getInvoices({ branch_id: currentBranch?.id }).catch(() => []),
         billingFinanceService.getServices().catch(() => []),
         billingFinanceService.getTariffs().catch(() => []),
@@ -414,13 +414,13 @@ export const BillingPage: React.FC = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Top Banner Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <DollarSign className="w-7 h-7 text-emerald-400" />
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <DollarSign className="w-7 h-7 text-emerald-600" />
             {t('billing.title', 'Billing & Payment Gateway Management')}
           </h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             {t('dashboard.billingCardDesc', 'Section 11: Centralized Hospital Invoicing, Service Tariffs, Deposits, Shifts & Online Gateway.')}
           </p>
         </div>
@@ -429,19 +429,19 @@ export const BillingPage: React.FC = () => {
             <>
               <button
                 onClick={() => setIsOpenShiftOpen(true)}
-                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
               >
                 <Clock className="w-4 h-4" /> {t('common.clinicalShift', 'Open Shift')}
               </button>
               <button
                 onClick={() => setIsCreateDepositOpen(true)}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
               >
                 <Wallet className="w-4 h-4" /> {t('billing.settleBill', 'Collect Deposit')}
               </button>
               <button
                 onClick={() => setIsCreateInvoiceOpen(true)}
-                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
               >
                 <Plus className="w-4 h-4" /> {t('dashboard.createBill', 'New Bill')}
               </button>
@@ -449,7 +449,7 @@ export const BillingPage: React.FC = () => {
           )}
           <button
             onClick={loadData}
-            className="p-2 border border-slate-700 hover:bg-slate-800 rounded-lg text-slate-300 transition-colors"
+            className="p-2 border border-slate-200 hover:bg-slate-100 rounded-xl text-slate-600 transition-colors shadow-sm"
             title={t('common.refresh', 'Refresh Datasets')}
           >
             <RefreshCw className="w-4 h-4" />
@@ -461,7 +461,7 @@ export const BillingPage: React.FC = () => {
       {successMsg && <AlertBanner type="success" message={successMsg} onClose={() => setSuccessMsg(null)} />}
 
       {/* Navigation Tabs */}
-      <div className="flex flex-wrap border-b border-slate-800 gap-1 text-sm font-medium">
+      <div className="flex flex-wrap border-b border-slate-200 gap-1 text-sm font-medium">
         {[
           { key: 'dashboard', label: t('navigation.dashboard', 'Overview'), icon: TrendingUp },
           { key: 'invoices', label: t('navigation.billing', 'Bills & Invoices'), icon: FileText },
@@ -482,10 +482,10 @@ export const BillingPage: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as TabType)}
-              className={`flex items-center gap-2 px-3.5 py-2.5 border-b-2 font-medium transition-colors ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 border-b-2 font-semibold transition-colors ${
                 activeTab === tab.key
-                  ? 'border-cyan-400 text-cyan-400 bg-slate-900/60'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                  ? 'border-cyan-600 text-cyan-800 bg-cyan-50/70 rounded-t-lg'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -499,37 +499,49 @@ export const BillingPage: React.FC = () => {
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('billing.totalAmount', 'Gross Billed')}</span>
-              <p className="text-2xl font-bold text-white mt-1">₹{dashboardStats?.total_billed || '0.00'}</p>
-              <span className="text-xs text-slate-500">{t('patient.itemizedBills', 'Total hospital patient billings')}</span>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Today's Invoiced Revenue</span>
+              <p className="text-2xl font-bold text-slate-900 mt-1">₹{dashboardStats?.today_billed || '0.00'}</p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
+                <span>All-Time Billed:</span>
+                <span className="font-semibold text-slate-700">₹{dashboardStats?.total_billed || '0.00'}</span>
+              </div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('billing.paidAmount', 'Total Collected')}</span>
-              <p className="text-2xl font-bold text-emerald-400 mt-1">₹{dashboardStats?.total_collected || '0.00'}</p>
-              <span className="text-xs text-slate-500">{t('billing.paymentMethod', 'Cleared through cash, cards, UPI & gateway')}</span>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Today's Collections</span>
+              <p className="text-2xl font-bold text-emerald-600 mt-1">₹{dashboardStats?.today_collected || '0.00'}</p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
+                <span>All-Time Collected:</span>
+                <span className="font-semibold text-emerald-700">₹{dashboardStats?.total_collected || '0.00'}</span>
+              </div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('billing.balanceDue', 'Outstanding Dues')}</span>
-              <p className="text-2xl font-bold text-amber-400 mt-1">₹{dashboardStats?.total_outstanding || '0.00'}</p>
-              <span className="text-xs text-slate-500">{t('patient.outstandingDue', 'Unsettled patient balances')}</span>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Outstanding Dues</span>
+              <p className="text-2xl font-bold text-amber-600 mt-1">₹{dashboardStats?.total_outstanding || '0.00'}</p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
+                <span>Unsettled Balances</span>
+                <span className="font-semibold text-amber-700">Active Invoices</span>
+              </div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('dashboard.revenueToday', 'Available Deposits')}</span>
-              <p className="text-2xl font-bold text-cyan-400 mt-1">₹{dashboardStats?.total_deposits_available || '0.00'}</p>
-              <span className="text-xs text-slate-500">{t('common.details', 'Advance balances ready for bill allocation')}</span>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Available Advance Deposits</span>
+              <p className="text-2xl font-bold text-cyan-700 mt-1">₹{dashboardStats?.total_deposits_available || '0.00'}</p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
+                <span>Today's Deposits:</span>
+                <span className="font-semibold text-cyan-800">₹{dashboardStats?.today_deposits || '0.00'}</span>
+              </div>
             </div>
           </div>
 
           {/* Departmental Revenue Breakdown */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-            <h3 className="text-base font-semibold text-white mb-4">Revenue Breakdown by Clinical Care Stream</h3>
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">Revenue Breakdown by Clinical Care Stream</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {dashboardStats?.revenue_by_category &&
                 Object.entries(dashboardStats.revenue_by_category).map(([cat, val]: any) => (
-                  <div key={cat} className="p-3 bg-slate-800/40 border border-slate-800 rounded-lg">
-                    <span className="text-xs text-slate-400 uppercase font-mono">{cat.replace('_', ' ')}</span>
-                    <p className="text-lg font-bold text-cyan-300 mt-0.5">₹{val}</p>
+                  <div key={cat} className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <span className="text-xs text-slate-600 uppercase font-mono">{cat.replace('_', ' ')}</span>
+                    <p className="text-lg font-bold text-cyan-700 mt-0.5">₹{val}</p>
                   </div>
                 ))}
             </div>
@@ -548,14 +560,14 @@ export const BillingPage: React.FC = () => {
                 placeholder="Search by Invoice #, Patient Name, MRN..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15"
               />
             </div>
             <div className="flex gap-2">
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300"
+                className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-cyan-600"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="ISSUED">Outstanding (Issued)</option>
@@ -565,9 +577,9 @@ export const BillingPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-800/60 text-slate-400 uppercase text-xs font-semibold">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <table className="w-full text-left text-sm text-slate-700">
+              <thead className="bg-slate-50 text-slate-600 uppercase text-xs font-semibold border-b border-slate-200">
                 <tr>
                   <th className="p-3">Invoice #</th>
                   <th className="p-3">Patient / MRN</th>
@@ -579,7 +591,7 @@ export const BillingPage: React.FC = () => {
                   <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-100">
                 {invoices
                   .filter(inv => {
                     if (statusFilter !== 'ALL' && inv.status !== statusFilter) return false;
@@ -594,18 +606,18 @@ export const BillingPage: React.FC = () => {
                     return true;
                   })
                   .map(inv => (
-                    <tr key={inv.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="p-3 font-mono font-bold text-cyan-400">{inv.invoice_number}</td>
+                    <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3 font-mono font-bold text-cyan-700">{inv.invoice_number}</td>
                       <td className="p-3">
-                        <div className="font-semibold text-white">{inv.patient_name}</div>
-                        <div className="text-xs font-mono text-slate-400">{inv.patient_mrn}</div>
+                        <div className="font-semibold text-slate-900">{inv.patient_name}</div>
+                        <div className="text-xs font-mono text-slate-500">{inv.patient_mrn}</div>
                       </td>
                       <td className="p-3">
                         <Badge variant="neutral">{inv.encounter_type}</Badge>
                       </td>
-                      <td className="p-3 font-mono text-white">₹{inv.total_amount}</td>
-                      <td className="p-3 font-mono text-emerald-400">₹{inv.paid_amount}</td>
-                      <td className="p-3 font-mono text-rose-400 font-bold">₹{inv.balance_amount}</td>
+                      <td className="p-3 font-mono text-slate-900">₹{inv.total_amount}</td>
+                      <td className="p-3 font-mono text-emerald-700">₹{inv.paid_amount}</td>
+                      <td className="p-3 font-mono text-rose-700 font-bold">₹{inv.balance_amount}</td>
                       <td className="p-3">
                         <Badge variant={inv.status === 'PAID' ? 'success' : inv.status === 'PARTIALLY_PAID' ? 'warning' : 'neutral'}>
                           {inv.status}
@@ -622,13 +634,13 @@ export const BillingPage: React.FC = () => {
                                     setPaymentForm({ amount: inv.balance_amount, payment_method: 'UPI', transaction_reference: '' });
                                     setIsRecordPaymentOpen(true);
                                   }}
-                                  className="px-2.5 py-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/40 rounded text-xs font-semibold"
+                                  className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-xs font-semibold"
                                 >
                                   Collect
                                 </button>
                                 <button
                                   onClick={() => handleInitiateGatewayOrder(inv)}
-                                  className="px-2.5 py-1 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/40 rounded text-xs font-semibold"
+                                  className="px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 rounded-lg text-xs font-semibold"
                                 >
                                   Razorpay
                                 </button>
@@ -640,7 +652,7 @@ export const BillingPage: React.FC = () => {
                                 setDiscountForm({ invoice_id: inv.id, discount_type: 'FIXED_AMOUNT', discount_value: '', reason: '' });
                                 setIsRequestDiscountOpen(true);
                               }}
-                              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"
+                              className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium"
                               title="Request Discount"
                             >
                               Discount

@@ -38,32 +38,32 @@ export const PatientLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col selection:bg-teal-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col selection:bg-teal-600 selection:text-white">
       {/* Emergency Helpline Banner */}
-      <div className="bg-gradient-to-r from-teal-950/90 via-slate-900 to-teal-950/90 border-b border-teal-500/20 py-2 px-3 sm:px-4 text-center text-xs text-slate-300 flex flex-wrap items-center justify-center gap-2 sm:gap-4">
-        <span className="flex items-center gap-1.5 text-teal-400 font-medium text-[11px] sm:text-xs">
-          <PhoneCall className="w-3.5 h-3.5 shrink-0" />
-          <span>{t('common.emergencyHelpline', '24x7 Emergency Helpline')}: <strong>+91 22 2654 0100 / 108</strong></span>
+      <div className="bg-teal-50 border-b border-teal-200 py-2 px-3 sm:px-4 text-center text-xs text-teal-900 flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+        <span className="flex items-center gap-1.5 text-teal-800 font-medium text-[11px] sm:text-xs">
+          <PhoneCall className="w-3.5 h-3.5 shrink-0 text-teal-600" />
+          <span>{t('common.emergencyHelpline', '24x7 Emergency Helpline')}: <strong className="text-teal-950">+91 22 2654 0100 / 108</strong></span>
         </span>
-        <span className="hidden md:inline text-slate-500">&bull;</span>
-        <span className="hidden md:inline text-slate-400 text-xs">
+        <span className="hidden md:inline text-teal-300">&bull;</span>
+        <span className="hidden md:inline text-teal-700 text-xs">
           {t('common.ambulanceAvailable', 'Ambulance & Critical Care Trauma Available 24x7')}
         </span>
       </div>
 
       {/* Main Patient Header */}
-      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-30">
+      <header className="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
           {/* Brand */}
           <Link to="/patient/dashboard" className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-slate-950 flex items-center justify-center font-bold shadow-lg shadow-teal-500/20 shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-cyan-500 text-white flex items-center justify-center font-bold shadow-md shadow-teal-500/20 shrink-0">
               <Activity className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
-              <span className="font-extrabold tracking-tight text-white block text-sm sm:text-base leading-tight">
+              <span className="font-extrabold tracking-tight text-slate-900 block text-sm sm:text-base leading-tight">
                 AURA Care
               </span>
-              <span className="text-[10px] uppercase font-semibold tracking-wider text-teal-400 leading-tight block">
+              <span className="text-[10px] uppercase font-semibold tracking-wider text-teal-700 leading-tight block">
                 {t('navigation.patientPortal', 'Patient Portal')}
               </span>
             </div>
@@ -74,13 +74,13 @@ export const PatientLayout: React.FC = () => {
             {/* Global Language Selector */}
             <LanguageSelector variant="compact" />
 
-            <div className="hidden sm:flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/80 max-w-[200px] truncate">
-              <UserCheck className="w-4 h-4 text-teal-400 shrink-0" />
+            <div className="hidden sm:flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 max-w-[200px] truncate shadow-sm">
+              <UserCheck className="w-4 h-4 text-teal-600 shrink-0" />
               <div className="truncate">
-                <span className="text-white font-medium block truncate text-xs">
+                <span className="text-slate-900 font-medium block truncate text-xs">
                   {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name}` : t('auth.patient', 'Patient')}
                 </span>
-                <span className="text-[10px] text-teal-400 font-mono block truncate">
+                <span className="text-[10px] text-teal-700 font-mono block truncate font-medium">
                   {patientProfile?.medical_record_number || 'UHID: Registered'}
                 </span>
               </div>
@@ -88,7 +88,7 @@ export const PatientLayout: React.FC = () => {
 
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition shrink-0 border border-slate-200 font-medium"
               title={t('auth.signOut', 'Sign Out')}
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -98,7 +98,7 @@ export const PatientLayout: React.FC = () => {
         </div>
 
         {/* Horizontal Navigation Bar for Patient Tabs */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 border-t border-slate-800/60 overflow-x-auto custom-scrollbar">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 border-t border-slate-200 overflow-x-auto custom-scrollbar">
           <nav className="flex space-x-1.5 py-2 min-w-max">
             {navLinks.map((tab) => {
               const Icon = tab.icon;
@@ -112,11 +112,11 @@ export const PatientLayout: React.FC = () => {
                   className={clsx(
                     'flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0',
                     isActive
-                      ? 'bg-teal-500/15 text-teal-300 border border-teal-500/30'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-teal-50 text-teal-800 border border-teal-200 shadow-sm font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   )}
                 >
-                  <Icon className={clsx('w-4 h-4 shrink-0', isActive ? 'text-teal-400' : 'text-slate-500')} />
+                  <Icon className={clsx('w-4 h-4 shrink-0', isActive ? 'text-teal-700' : 'text-slate-400')} />
                   <span>{displayLabel}</span>
                 </Link>
               );
@@ -131,13 +131,13 @@ export const PatientLayout: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 py-6 bg-slate-950 text-xs text-slate-500">
+      <footer className="border-t border-slate-200 py-6 bg-white text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <p>&copy; {new Date().getFullYear()} AURA Multi-Specialty Healthcare Systems. All medical data encrypted.</p>
           <div className="flex items-center gap-3 text-[11px] sm:text-xs">
-            <span className="text-teal-400">Asia/Kolkata</span>
+            <span className="text-teal-700 font-medium">Asia/Kolkata</span>
             <span>&bull;</span>
-            <span className="text-slate-400">{t('common.currencyINR', 'Currency: INR (₹)')}</span>
+            <span className="text-slate-500">{t('common.currencyINR', 'Currency: INR (₹)')}</span>
           </div>
         </div>
       </footer>

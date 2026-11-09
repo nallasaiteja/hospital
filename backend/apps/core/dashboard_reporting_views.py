@@ -137,6 +137,26 @@ class DiagnosticsDashboardView(BaseDashboardView):
         return Response(data)
 
 
+class RadiologyDashboardView(BaseDashboardView):
+    allowed_roles = [
+        RoleEnum.SUPER_ADMIN, RoleEnum.HOSPITAL_ADMIN, RoleEnum.BRANCH_MANAGER,
+        RoleEnum.RADIOLOGY_TECHNICIAN, RoleEnum.LAB_TECHNICIAN, RoleEnum.DOCTOR, RoleEnum.MEDICAL_DIRECTOR
+    ]
+
+    def get(self, request):
+        has_access, err = self.check_role_access(request)
+        if not has_access:
+            return Response({'error': err}, status=status.HTTP_403_FORBIDDEN)
+
+        filters = self.get_filter_params(request)
+        data = DashboardReportingService.get_radiology_dashboard(
+            branch_id=filters['branch_id'],
+            from_date=filters['from_date'],
+            to_date=filters['to_date']
+        )
+        return Response(data)
+
+
 class InventoryDashboardView(BaseDashboardView):
     allowed_roles = [
         RoleEnum.SUPER_ADMIN, RoleEnum.HOSPITAL_ADMIN, RoleEnum.BRANCH_MANAGER,

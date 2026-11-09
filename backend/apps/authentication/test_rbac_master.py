@@ -363,8 +363,9 @@ class MasterOrganizationalRBACTestSuite(TestCase):
         self.assertNotIn('DASHBOARD', ROLE_MODULE_ACTIONS[RoleEnum.INVENTORY_MANAGER])
         self.assertIn('INVENTORY', ROLE_MODULE_ACTIONS[RoleEnum.INVENTORY_MANAGER])
 
-        # 2. Procurement Officer must NOT have DASHBOARD
+        # 2. Procurement Officer must NOT have DASHBOARD or REPORTS
         self.assertNotIn('DASHBOARD', ROLE_MODULE_ACTIONS[RoleEnum.PROCUREMENT_OFFICER])
+        self.assertNotIn('REPORTS', ROLE_MODULE_ACTIONS[RoleEnum.PROCUREMENT_OFFICER])
         self.assertIn('INVENTORY', ROLE_MODULE_ACTIONS[RoleEnum.PROCUREMENT_OFFICER])
 
         # 3. Insurance Coordinator must NOT have PATIENTS

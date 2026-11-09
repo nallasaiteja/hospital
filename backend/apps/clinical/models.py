@@ -912,3 +912,233 @@ class DoctorNotification(BaseUUIDModel):
     def __str__(self):
         return f"[{self.notification_type}] {self.title} -> {self.recipient_doctor or self.recipient_role}"
 
+
+# =============================================================================
+# NURSE DASHBOARD & INPATIENT WORKFLOW EXTENSIONS (SECTIONS A, B, C, D)
+# =============================================================================
+
+class VitalSignObservation(BaseUUIDModel):
+    """
+    Standardized Vital Signs Recordings with automated clinical threshold alert detection.
+    """
+    patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name='vital_observations')
+    admission = models.ForeignKey(InpatientAdmission, on_delete=models.SET_NULL, null=True, blank=True, related_name='vital_observations')
+    recorded_by = models.ForeignKey(StaffProfile, on_delete=models.PROTECT, related_name='recorded_vitals')
+    recorded_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    systolic_bp = models.IntegerField(null=True, blank=True, help_text="Systolic BP (mmHg)")
+    diastolic_bp = models.IntegerField(null=True, blank=True, help_text="Diastolic BP (mmHg)")
+    pulse_rate = models.IntegerField(null=True, blank=True, help_text="Heart rate (bpm)")
+    body_temperature = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Temperature (°F)")
+    respiratory_rate = models.IntegerField(null=True, blank=True, help_text="Breaths per minute")
+    spo2 = models.IntegerField(null=True, blank=True, help_text="Oxygen Saturation (%)")
+    blood_glucose = models.IntegerField(null=True, blank=True, help_text="Blood Sugar (mg/dL)")
+    pain_score = models.IntegerField(default=0, help_text="Visual Analog Scale (0-10)")
+
+    consciousness_level = models.CharField(max_length=30, blank=True, default='ALERT')
+    clinical_alert = models.BooleanField(default=False, db_index=True)
+    alert_severity = models.CharField(max_length=20, default='NORMAL')
+    alert_message = models.TextField(blank=True)
+
+    is_escalated = models.BooleanField(default=False)
+    escalated_to = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='escalated_vitals')
+    escalation_notes = models.TextField(blank=True)
+    escalated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'hms_vital_sign_observations'
+        ordering = ['-recorded_at']
+
+    def calculate_alerts(self):
+        alerts = []
+        severity = 'NORMAL'
+
+        if self.systolic_bp is not None:
+            if self.systolic_bp >= 160 or self.systolic_bp <= 85:
+                alerts.append(f"Critical BP: {self.systolic_bp}/{self.diastolic_bp} mmHg")
+                severity = 'CRITICAL'
+            elif self.systolic_bp >= 140 or self.systolic_bp < 90:
+                alerts.append(f"Abnormal BP: {self.systolic_bp}/{self.diastolic_bp} mmHg")
+                if severity != 'CRITICAL': severity = 'WARNING'
+
+        if self.pulse_rate is not None:
+            if self.pulse_rate > 120 or self.pulse_rate < 50:
+                alerts.append(f"Severe Pulse: {self.pulse_rate} bpm")
+                severity = 'CRITICAL'
+            elif self.pulse_rate > 100:
+                alerts.append(f"Tachycardia: {self.pulse_rate} bpm")
+                if severity != 'CRITICAL': severity = 'WARNING'
+            elif self.pulse_rate < 60:
+                alerts.append(f"Bradycardia: {self.pulse_rate} bpm")
+                if severity != 'CRITICAL': severity = 'WARNING'
+
+        if self.spo2 is not None:
+            if self.spo2 < 90:
+                alerts.append(f"Critical Hypoxemia: SpO2 {self.spo2}%")
+                severity = 'CRITICAL'
+            elif self.spo2 < 95:
+                alerts.append(f"Low Oxygen: SpO2 {self.spo2}%")
+                if severity != 'CRITICAL': severity = 'WARNING'
+
+        if self.body_temperature is not None:
+            try:
+                temp = float(self.body_temperature)
+                if temp >= 102.5:
+                    alerts.append(f"High Fever: {temp:.1f}°F")
+                    severity = 'CRITICAL'
+                elif temp >= 100.4:
+                    alerts.append(f"Fever: {temp:.1f}°F")
+                    if severity != 'CRITICAL': severity = 'WARNING'
+                elif temp <= 95.0:
+                    alerts.append(f"Hypothermia: {temp:.1f}°F")
+                    severity = 'CRITICAL'
+            except (ValueError, TypeError):
+                pass
+
+        if self.blood_glucose is not None:
+            if self.blood_glucose < 60 or self.blood_glucose > 300:
+                alerts.append(f"Critical Glucose: {self.blood_glucose} mg/dL")
+                severity = 'CRITICAL'
+            elif self.blood_glucose < 70 or self.blood_glucose > 200:
+                alerts.append(f"Abnormal Glucose: {self.blood_glucose} mg/dL")
+                if severity != 'CRITICAL': severity = 'WARNING'
+
+        if self.pain_score is not None and self.pain_score >= 8:
+            alerts.append(f"Severe Pain: {self.pain_score}/10")
+            if severity != 'CRITICAL': severity = 'WARNING'
+
+        self.clinical_alert = len(alerts) > 0
+        self.alert_severity = severity
+        self.alert_message = "; ".join(alerts)
+
+    def save(self, *args, **kwargs):
+        self.calculate_alerts()
+        super().save(*args, **kwargs)
+
+
+class MedicationAdministrationRecord(BaseUUIDModel):
+    """
+    Electronic Medication Administration Record (eMAR) for nursing staff.
+    """
+    STATUS_CHOICES = [
+        ('UPCOMING', 'Upcoming'),
+        ('DUE', 'Due'),
+        ('ADMINISTERED', 'Administered'),
+        ('MISSED', 'Missed'),
+        ('REFUSED', 'Refused'),
+        ('OVERDUE', 'Overdue'),
+    ]
+
+    prescription = models.ForeignKey('pharmacy_inventory.Prescription', on_delete=models.CASCADE, related_name='administration_records', null=True, blank=True)
+    prescription_item = models.ForeignKey('pharmacy_inventory.PrescriptionItem', on_delete=models.CASCADE, related_name='administration_records', null=True, blank=True)
+    patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name='medication_administrations')
+    admission = models.ForeignKey(InpatientAdmission, on_delete=models.SET_NULL, null=True, blank=True, related_name='medication_administrations')
+    administered_by = models.ForeignKey(StaffProfile, on_delete=models.PROTECT, related_name='administered_medications', null=True, blank=True)
+
+    medication_name = models.CharField(max_length=200)
+    dosage = models.CharField(max_length=60)
+    route = models.CharField(max_length=50, default='ORAL')
+    frequency = models.CharField(max_length=50, default='1-0-1')
+    scheduled_time = models.DateTimeField(db_index=True)
+    administered_time = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='DUE', db_index=True)
+    food_instructions = models.CharField(max_length=100, blank=True, default='AFTER_FOOD')
+    remarks = models.TextField(blank=True)
+    missed_or_refused_reason = models.TextField(blank=True, help_text="Mandatory if missed or refused")
+
+    has_adverse_reaction = models.BooleanField(default=False)
+    adverse_reaction_notes = models.TextField(blank=True)
+    is_escalated = models.BooleanField(default=False)
+    escalated_to = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='escalated_medications')
+    escalation_notes = models.TextField(blank=True)
+    escalated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'hms_medication_administrations'
+        ordering = ['-scheduled_time']
+
+
+class NursingTask(BaseUUIDModel):
+    """
+    Care plan and doctor-ordered nursing tasks for inpatients.
+    """
+    PRIORITY_CHOICES = [
+        ('ROUTINE', 'Routine'),
+        ('URGENT', 'Urgent'),
+        ('STAT', 'STAT (Immediate)'),
+    ]
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('COMPLETED', 'Completed'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+
+    title = models.CharField(max_length=200)
+    patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name='nursing_tasks')
+    admission = models.ForeignKey(InpatientAdmission, on_delete=models.SET_NULL, null=True, blank=True, related_name='nursing_tasks')
+    assigned_nurse = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_nursing_tasks')
+    ordered_by = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='ordered_nursing_tasks')
+    task_type = models.CharField(max_length=50, default='CARE_PLAN')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='ROUTINE', db_index=True)
+    instructions = models.TextField(blank=True)
+    due_time = models.DateTimeField(db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING', db_index=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    completed_by = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='completed_nursing_tasks')
+    documentation = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'hms_nursing_tasks'
+        ordering = ['-due_time']
+
+
+class ShiftHandoverRecord(BaseUUIDModel):
+    """
+    Structured Nurse Shift Handover with acknowledgment workflow.
+    """
+    STATUS_CHOICES = [
+        ('SUBMITTED', 'Submitted (Awaiting Acknowledgment)'),
+        ('ACKNOWLEDGED', 'Acknowledged & Completed'),
+    ]
+
+    branch = models.ForeignKey(Branch, on_delete=models.PROTECT, related_name='shift_handovers')
+    ward = models.ForeignKey(Ward, on_delete=models.SET_NULL, null=True, blank=True, related_name='shift_handovers')
+    shift = models.CharField(max_length=20, choices=DutyRoster.SHIFT_CHOICES)
+    handover_date = models.DateField(default=timezone.now, db_index=True)
+
+    outgoing_nurse = models.ForeignKey(StaffProfile, on_delete=models.PROTECT, related_name='outgoing_handovers')
+    incoming_nurse = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='incoming_handovers')
+
+    patient_condition_updates = models.JSONField(default=list, blank=True)
+    important_observations = models.TextField(blank=True)
+    pending_medications_summary = models.TextField(blank=True)
+    pending_tasks_summary = models.TextField(blank=True)
+    critical_alerts_summary = models.TextField(blank=True)
+    follow_up_procedures = models.TextField(blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SUBMITTED', db_index=True)
+    submitted_at = models.DateTimeField(default=timezone.now)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    acknowledgment_notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'hms_shift_handovers'
+        ordering = ['-submitted_at']
+
+
+class NursingNote(BaseUUIDModel):
+    """
+    Nursing Progress Notes, Shift Observations, and Care Plan Notes.
+    """
+    patient = models.ForeignKey(PatientProfile, on_delete=models.CASCADE, related_name='nursing_notes')
+    admission = models.ForeignKey(InpatientAdmission, on_delete=models.SET_NULL, null=True, blank=True, related_name='nursing_notes')
+    nurse = models.ForeignKey(StaffProfile, on_delete=models.PROTECT, related_name='authored_nursing_notes')
+    note_type = models.CharField(max_length=50, default='SHIFT_ASSESSMENT')
+    notes = models.TextField()
+    recorded_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = 'hms_nursing_notes'
+        ordering = ['-recorded_at']
+

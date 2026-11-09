@@ -248,7 +248,7 @@ export const DoctorsNursingPage: React.FC = () => {
         />
         <StatCard
           title="Medical Credentials"
-          value="100% Verified"
+          value={staffList.length > 0 ? `${staffList.filter((s) => s.medical_license_number).length} / ${staffList.length} Licensed` : '0 Licensed'}
           icon={Award}
         />
       </div>

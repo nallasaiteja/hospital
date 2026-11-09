@@ -15,6 +15,12 @@ from .opd_views import (
     OPDConsultationEncounterView, OPDReportsView, OPDLoungeTVView
 )
 from .voice_views import VoicePrescriptionExtractView
+from .nurse_workspace_views import (
+    NurseDashboardOverviewView, NursePatientsView, NursePatientUpdateView,
+    NursePatientNotesView, NurseMedicationsView, NurseMedicationActionView,
+    NurseTasksView, NurseTaskActionView, NurseVitalsView,
+    NurseVitalEscalateView, NurseShiftHandoverView, NurseShiftHandoverAcknowledgeView
+)
 from .doctor_workspace_views import (
     DoctorDashboardOverviewView, DoctorAppointmentsView, DoctorPatientsView,
     DoctorPatientEMRView, DoctorConsultationDetailView, DoctorConsultationAddendumView,
@@ -138,6 +144,20 @@ urlpatterns = [
     path('doctor-workspace/leaves/<uuid:leave_id>/coordinate-approval/', DoctorLeaveCoordinationApprovalView.as_view(), name='doctor-leave-coordinate-approval'),
     path('doctor-workspace/notifications/', DoctorNotificationsView.as_view(), name='doctor-notifications'),
     path('doctor-workspace/profile/', DoctorProfileView.as_view(), name='doctor-profile'),
+
+    # Nurse Workspace Endpoints
+    path('nurse-workspace/overview/', NurseDashboardOverviewView.as_view(), name='nurse-overview'),
+    path('nurse-workspace/patients/', NursePatientsView.as_view(), name='nurse-patients'),
+    path('nurse-workspace/patients/<uuid:patient_id>/update/', NursePatientUpdateView.as_view(), name='nurse-patient-update'),
+    path('nurse-workspace/patients/<uuid:patient_id>/notes/', NursePatientNotesView.as_view(), name='nurse-patient-notes'),
+    path('nurse-workspace/medications/', NurseMedicationsView.as_view(), name='nurse-medications'),
+    path('nurse-workspace/medications/<uuid:record_id>/action/', NurseMedicationActionView.as_view(), name='nurse-medication-action'),
+    path('nurse-workspace/tasks/', NurseTasksView.as_view(), name='nurse-tasks'),
+    path('nurse-workspace/tasks/<uuid:task_id>/action/', NurseTaskActionView.as_view(), name='nurse-task-action'),
+    path('nurse-workspace/vitals/', NurseVitalsView.as_view(), name='nurse-vitals'),
+    path('nurse-workspace/vitals/<uuid:vital_id>/escalate/', NurseVitalEscalateView.as_view(), name='nurse-vital-escalate'),
+    path('nurse-workspace/shift-handover/', NurseShiftHandoverView.as_view(), name='nurse-shift-handover'),
+    path('nurse-workspace/shift-handover/<uuid:handover_id>/acknowledge/', NurseShiftHandoverAcknowledgeView.as_view(), name='nurse-shift-handover-acknowledge'),
 
     # General Clinical Endpoints
     path('', include(router.urls)),

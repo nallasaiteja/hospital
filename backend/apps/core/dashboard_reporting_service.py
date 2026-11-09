@@ -13,6 +13,7 @@ from apps.clinical.models import (
     EmergencyEncounter, EmergencyStatus, TriageAcuity,
     Bed, BedStatus, Ward,
     LabOrder, LabOrderStatus, LabOrderItem,
+    RadiologyOrder, RadiologyStatus, ModalityEnum,
 )
 from apps.billing_finance.models import (
     Invoice, InvoiceStatus,
@@ -545,6 +546,109 @@ class DashboardReportingService:
         }
 
     # =========================================================================
+    # 5B. RADIOLOGY & IMAGING DASHBOARD
+    # =========================================================================
+
+    @classmethod
+    def get_radiology_dashboard(cls, branch_id=None, from_date=None, to_date=None):
+        today = cls.get_hospital_today(branch_id)
+        start_date, end_date, start_dt, end_dt = cls.parse_date_filters(from_date, to_date)
+
+        orders = RadiologyOrder.objects.filter(created_at__range=[start_dt, end_dt])
+        if branch_id:
+            orders = orders.filter(branch_id=branch_id)
+
+        total_orders = orders.count()
+        scheduled = orders.filter(status=RadiologyStatus.SCHEDULED).count()
+        in_progress = orders.filter(status=RadiologyStatus.IN_PROGRESS).count()
+        completed = orders.filter(status__in=[RadiologyStatus.COMPLETED, RadiologyStatus.REPORT_DRAFTED, RadiologyStatus.APPROVED, RadiologyStatus.RELEASED]).count()
+        pending_reports = orders.filter(status__in=[
+            RadiologyStatus.REQUESTED, RadiologyStatus.SCHEDULED, RadiologyStatus.IN_PROGRESS, RadiologyStatus.COMPLETED, RadiologyStatus.REPORT_DRAFTED
+        ]).count()
+        reports_drafted = orders.filter(status=RadiologyStatus.REPORT_DRAFTED).count()
+        approved_reports = orders.filter(status=RadiologyStatus.APPROVED).count()
+        released_reports = orders.filter(status=RadiologyStatus.RELEASED).count()
+        critical_alerts = orders.filter(is_critical=True).count()
+
+        # Financial revenue sum of captured rates for completed / released studies
+        total_revenue = orders.filter(
+            status__in=[RadiologyStatus.COMPLETED, RadiologyStatus.APPROVED, RadiologyStatus.RELEASED]
+        ).aggregate(tot=models.Sum('captured_rate'))['tot'] or Decimal('0.00')
+
+        # Modality Breakdown
+        modality_breakdown = {}
+        for mod in ModalityEnum.choices:
+            mod_code = mod[0]
+            mod_label = mod[1]
+            mod_orders = orders.filter(modality=mod_code)
+            modality_breakdown[mod_code] = {
+                'code': mod_code,
+                'name': mod_label,
+                'total_ordered': mod_orders.count(),
+                'completed': mod_orders.filter(status__in=[RadiologyStatus.COMPLETED, RadiologyStatus.APPROVED, RadiologyStatus.RELEASED]).count(),
+                'pending': mod_orders.exclude(status__in=[RadiologyStatus.RELEASED, RadiologyStatus.CANCELLED]).count(),
+                'revenue': float(mod_orders.filter(status__in=[RadiologyStatus.COMPLETED, RadiologyStatus.APPROVED, RadiologyStatus.RELEASED]).aggregate(tot=models.Sum('captured_rate'))['tot'] or Decimal('0.00')),
+            }
+
+        # Priority Breakdown
+        priority_breakdown = {
+            'STAT': orders.filter(priority='STAT').count(),
+            'URGENT': orders.filter(priority='URGENT').count(),
+            'ROUTINE': orders.filter(priority='ROUTINE').count(),
+        }
+
+        # Encounter Breakdown
+        encounter_breakdown = {
+            'OPD': orders.filter(encounter_type='OPD').count(),
+            'IPD': orders.filter(encounter_type='IPD').count(),
+            'EMERGENCY': orders.filter(encounter_type='EMERGENCY').count(),
+        }
+
+        # Recent imaging procedures list
+        recent_scans = []
+        for ro in orders.select_related(
+            'patient__user_profile', 'doctor__user_profile',
+            'performing_technician__user_profile', 'radiologist__user_profile'
+        ).order_by('-created_at')[:8]:
+            recent_scans.append({
+                'id': str(ro.id),
+                'order_number': ro.order_number,
+                'study_name': ro.study_name,
+                'modality': ro.modality,
+                'patient_name': ro.patient.user_profile.full_name if ro.patient else 'Patient',
+                'patient_uhid': ro.patient.medical_record_number if ro.patient else '',
+                'doctor_name': ro.doctor.user_profile.full_name if ro.doctor else 'Attending Doctor',
+                'priority': ro.priority,
+                'status': ro.status,
+                'is_critical': ro.is_critical,
+                'captured_rate': float(ro.captured_rate),
+                'scheduled_date': str(ro.scheduled_date) if ro.scheduled_date else '',
+                'suite_room': ro.suite_room or 'Imaging Bay 1',
+                'technician_name': ro.performing_technician.user_profile.full_name if ro.performing_technician else 'Radiology Staff',
+                'radiologist_name': ro.radiologist.user_profile.full_name if ro.radiologist else 'Chief Radiologist',
+            })
+
+        return {
+            'as_of_date': today,
+            'summary': {
+                'total_imaging_orders': total_orders,
+                'scheduled_scans': scheduled,
+                'in_progress_scans': in_progress,
+                'completed_imaging': completed,
+                'pending_reports': pending_reports,
+                'reports_drafted': reports_drafted,
+                'approved_reports': approved_reports,
+                'released_reports': released_reports,
+                'critical_panic_alerts': critical_alerts,
+                'radiology_revenue': float(total_revenue),
+            },
+            'modality_breakdown': modality_breakdown,
+            'priority_breakdown': priority_breakdown,
+            'encounter_breakdown': encounter_breakdown,
+            'recent_scans': recent_scans,
+        }
+
+    # =========================================================================
     # 6. INVENTORY & PROCUREMENT DASHBOARD (§21.2)
     # =========================================================================
 
@@ -839,6 +943,46 @@ class DashboardReportingService:
                     'status': lo.status,
                     'ordered_at': lo.created_at.strftime('%Y-%m-%d %H:%M'),
                     'is_critical': lo.is_critical
+                })
+
+        elif metric_type in ['RADIOLOGY_ORDERS', 'PENDING_RADIOLOGY', 'COMPLETED_SCANS', 'CRITICAL_RADIOLOGY']:
+            columns = ['Order Number', 'Patient Name', 'Study / Modality', 'Doctor', 'Priority', 'Status', 'Rate (₹)', 'Date', 'Critical']
+            qs = RadiologyOrder.objects.select_related('patient__user_profile', 'doctor__user_profile')
+            if metric_type == 'PENDING_RADIOLOGY':
+                qs = qs.exclude(status__in=[RadiologyStatus.RELEASED, RadiologyStatus.CANCELLED])
+            elif metric_type == 'COMPLETED_SCANS':
+                qs = qs.filter(status__in=[RadiologyStatus.COMPLETED, RadiologyStatus.REPORT_DRAFTED, RadiologyStatus.APPROVED, RadiologyStatus.RELEASED])
+            elif metric_type == 'CRITICAL_RADIOLOGY':
+                qs = qs.filter(is_critical=True)
+            elif from_date and to_date:
+                qs = qs.filter(created_at__range=[start_dt, end_dt])
+
+            if branch_id:
+                qs = qs.filter(branch_id=branch_id)
+            if search:
+                qs = qs.filter(
+                    models.Q(order_number__icontains=search) |
+                    models.Q(study_name__icontains=search) |
+                    models.Q(modality__icontains=search) |
+                    models.Q(patient__user_profile__first_name__icontains=search) |
+                    models.Q(patient__user_profile__last_name__icontains=search)
+                )
+            qs = qs.order_by('-created_at')
+            paginator = Paginator(qs, page_size)
+            page_obj = paginator.get_page(page)
+            total_count = paginator.count
+            for ro in page_obj:
+                records.append({
+                    'id': str(ro.id),
+                    'ref': ro.order_number,
+                    'patient': ro.patient.user_profile.full_name if ro.patient else 'Patient',
+                    'study': f"{ro.study_name} ({ro.modality})",
+                    'doctor': ro.doctor.user_profile.full_name if ro.doctor else 'Doctor',
+                    'priority': ro.priority,
+                    'status': ro.status,
+                    'rate': float(ro.captured_rate),
+                    'date': ro.created_at.strftime('%Y-%m-%d %H:%M'),
+                    'is_critical': 'YES (CRITICAL)' if ro.is_critical else 'No'
                 })
 
         elif metric_type in ['REVENUE_INVOICES', 'OUTSTANDING_RECEIVABLES']:

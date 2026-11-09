@@ -45,6 +45,8 @@ import {
   Briefcase,
   Tag,
   Wallet,
+  ArrowRightLeft,
+  HeartPulse,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -138,9 +140,26 @@ export const StaffLayout: React.FC = () => {
   // Role-based automatic route protection
   useEffect(() => {
     if (!role) return;
-    if (role === 'DOCTOR') {
-      if (!location.pathname.startsWith('/staff/doctor-workspace') && !location.pathname.startsWith('/staff/voice-translation') && !location.pathname.startsWith('/staff/lounge-tv')) {
+    if (
+      role === 'DOCTOR' ||
+      role === 'MEDICAL_DIRECTOR' ||
+      staffProfile?.employee_id === 'EMP-MDR-001' ||
+      userProfile?.email === 'medical.director@aurahospital.com'
+    ) {
+      if (
+        !location.pathname.startsWith('/staff/doctor-workspace') &&
+        !location.pathname.startsWith('/staff/voice-translation') &&
+        !location.pathname.startsWith('/staff/lounge-tv')
+      ) {
         navigate('/staff/doctor-workspace', { replace: true });
+      }
+    } else if (role === 'NURSE') {
+      if (
+        !location.pathname.startsWith('/staff/nurse-workspace') &&
+        !location.pathname.startsWith('/staff/voice-translation') &&
+        !location.pathname.startsWith('/staff/lounge-tv')
+      ) {
+        navigate('/staff/nurse-workspace?tab=patients', { replace: true });
       }
     } else if (role === 'SUPER_ADMIN') {
       if (location.pathname === '/staff/dashboard' || location.pathname === '/staff') {
@@ -158,6 +177,22 @@ export const StaffLayout: React.FC = () => {
       if (location.pathname.startsWith('/staff/patients') || location.pathname === '/staff/dashboard' || location.pathname === '/staff' || location.pathname === '/staff/') {
         navigate('/staff/insurance', { replace: true });
       }
+    } else if (role === 'LAB_TECHNICIAN') {
+      if (location.pathname === '/staff/dashboard' || location.pathname === '/staff' || location.pathname === '/staff/') {
+        navigate('/staff/laboratory', { replace: true });
+      }
+    } else if (role === 'RADIOLOGY_TECHNICIAN') {
+      if (location.pathname === '/staff/dashboard' || location.pathname === '/staff' || location.pathname === '/staff/') {
+        navigate('/staff/radiology', { replace: true });
+      }
+    } else if (role === 'BILLING_EXECUTIVE' || role === 'CASHIER') {
+      if (location.pathname === '/staff/dashboard' || location.pathname === '/staff' || location.pathname === '/staff/') {
+        navigate('/staff/billing', { replace: true });
+      }
+    } else if (role === 'INVESTMENT_MANAGER') {
+      if (location.pathname === '/staff/dashboard' || location.pathname === '/staff' || location.pathname === '/staff/') {
+        navigate('/staff/investments', { replace: true });
+      }
     }
   }, [role, location.pathname, navigate]);
 
@@ -167,7 +202,7 @@ export const StaffLayout: React.FC = () => {
       title: 'Core Operations',
       translationKey: 'navigation.coreOperations',
       items: [
-        { label: '1. Dashboard', translationKey: 'navigation.dashboard', path: '/staff/dashboard', icon: Activity },
+        { label: '1. Dashboard', translationKey: 'navigation.dashboard', path: '/staff/dashboard', icon: Activity, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'RECEPTIONIST'] },
         { label: 'Branch Manager', translationKey: 'navigation.branchManager', path: '/staff/branch-manager', icon: Building2, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN'] },
         { label: '2. Patient Management', translationKey: 'navigation.patients', path: '/staff/patients', icon: Users, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'RECEPTIONIST'] },
         { label: '3. OPD & Appointments', translationKey: 'navigation.appointments', path: '/staff/appointments', icon: Stethoscope, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'RECEPTIONIST'] },
@@ -181,7 +216,7 @@ export const StaffLayout: React.FC = () => {
       translationKey: 'navigation.clinicalDiagnostics',
       items: [
         { label: 'Doctor Clinical Workspace', translationKey: 'navigation.doctorWorkspace', path: '/staff/doctor-workspace', icon: Stethoscope, roles: ['SUPER_ADMIN', 'DOCTOR', 'MEDICAL_DIRECTOR', 'DEPARTMENT_HEAD'] },
-        { label: '6. Doctors & Nursing', translationKey: 'navigation.doctorsNursing', path: '/staff/doctors-nursing', icon: UserCheck, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'MEDICAL_DIRECTOR'] },
+        { label: '6. Doctors & Nursing', translationKey: 'navigation.doctorsNursing', path: '/staff/doctors-nursing', icon: UserCheck, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE'] },
         { label: '7. Laboratory & Diagnostics', translationKey: 'navigation.laboratory', path: '/staff/laboratory', icon: Layers, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'LAB_TECHNICIAN', 'PATHOLOGIST'] },
         { label: '8. Radiology & Imaging', translationKey: 'navigation.radiology', path: '/staff/radiology', icon: Radio, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'RADIOLOGY_TECHNICIAN', 'RADIOLOGIST'] },
         { label: '9. Pharmacy Formulary', translationKey: 'navigation.pharmacy', path: '/staff/pharmacy', icon: Pill, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'PHARMACIST'] },
@@ -212,7 +247,7 @@ export const StaffLayout: React.FC = () => {
         { label: '22. HR & Staff Payroll', translationKey: 'navigation.hrPayroll', path: '/staff/hr-payroll', icon: Clock, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'HR_MANAGER', 'FINANCE_MANAGER'] },
         { label: '23. Equipment & Assets', translationKey: 'navigation.assets', path: '/staff/assets', icon: Wrench, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE'] },
         { label: '24. Patient Portal Gateway', translationKey: 'navigation.patientPortal', path: '/staff/patient-portal', icon: ExternalLink, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'NURSE', 'RECEPTIONIST'] },
-        { label: '25. Reports & Analytics', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'MEDICAL_DIRECTOR', 'FINANCE_MANAGER', 'NURSE', 'PHARMACIST', 'LAB_TECHNICIAN'] },
+        { label: '25. Reports & Analytics', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'NURSE', 'PHARMACIST', 'LAB_TECHNICIAN', 'RADIOLOGY_TECHNICIAN', 'RADIOLOGIST'] },
         { label: '26. Users, Roles & RBAC', translationKey: 'navigation.usersRoles', path: '/staff/users-roles', icon: ShieldAlert, roles: ['SUPER_ADMIN'] },
         { label: '27. Settings & Audit Trail', translationKey: 'navigation.settingsAudit', path: '/staff/settings-audit', icon: Settings, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER'] },
       ],
@@ -288,6 +323,44 @@ export const StaffLayout: React.FC = () => {
     translationKey: 'navigation.clinicalPractice',
     items: [
       { label: 'Doctor Clinical Workspace', translationKey: 'navigation.doctorWorkspace', path: '/staff/doctor-workspace', icon: Stethoscope },
+    ],
+  };
+
+  // Dedicated Nurse Navigation Group strictly containing the 4 primary nursing sections & voice translation
+  const nurseNavGroup: NavGroup = {
+    title: 'Nurse Station',
+    translationKey: 'navigation.nurseStation',
+    items: [
+      {
+        label: 'A. My Patients',
+        translationKey: 'navigation.nursePatients',
+        path: '/staff/nurse-workspace?tab=patients',
+        icon: Users,
+      },
+      {
+        label: 'B. Medication Administration',
+        translationKey: 'navigation.nurseMedications',
+        path: '/staff/nurse-workspace?tab=medications',
+        icon: Pill,
+      },
+      {
+        label: 'C. Nursing Tasks & Vitals',
+        translationKey: 'navigation.nurseTasks',
+        path: '/staff/nurse-workspace?tab=tasks',
+        icon: Activity,
+      },
+      {
+        label: 'D. Shift Handover',
+        translationKey: 'navigation.nurseHandover',
+        path: '/staff/nurse-workspace?tab=handover',
+        icon: ArrowRightLeft,
+      },
+      {
+        label: 'Voice Translation',
+        translationKey: 'navigation.voiceTranslation',
+        path: '/staff/voice-translation',
+        icon: Languages,
+      },
     ],
   };
 
@@ -371,7 +444,6 @@ export const StaffLayout: React.FC = () => {
     items: [
       { label: 'Purchase Orders & Vendor Sourcing', translationKey: 'navigation.inventory', path: '/staff/inventory', icon: ShoppingBag },
       { label: 'Asset Procurement & Capital Goods', translationKey: 'navigation.assets', path: '/staff/assets', icon: Wrench },
-      { label: 'Procurement & PO Reports', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3 },
     ],
   };
 
@@ -380,13 +452,20 @@ export const StaffLayout: React.FC = () => {
     title: 'Billing & Cash Desk Operations',
     translationKey: 'navigation.billingCashierDesk',
     items: [
-      { label: 'Patient Invoicing & Discharge Billing', translationKey: 'navigation.billingInvoices', path: '/staff/billing?tab=invoices', icon: FileText },
-      { label: 'Payment Collection & Receipts', translationKey: 'navigation.cashierReceipts', path: '/staff/billing?tab=receipts', icon: Receipt },
-      { label: 'Advance Deposits & Refunds', translationKey: 'navigation.cashierDeposits', path: '/staff/billing?tab=deposits', icon: Wallet },
-      { label: 'Daily Cash Drawer & Shifts', translationKey: 'navigation.cashierShifts', path: '/staff/billing?tab=cashier_shifts', icon: Clock },
-      { label: 'Tariff Plans & Service Catalogue', translationKey: 'navigation.billingTariffs', path: '/staff/billing?tab=tariffs', icon: Tag },
+      { label: 'Billing & Cashier Desk', translationKey: 'navigation.billing', path: '/staff/billing', icon: DollarSign },
       { label: 'Patient Directory Lookup', translationKey: 'navigation.patients', path: '/staff/patients', icon: Users },
       { label: 'Daily Collection & Billing Reports', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3 },
+    ],
+  };
+
+  // Dedicated Navigation strictly for Investment Manager (Treasury & Yield Management)
+  const investmentManagerNavGroup: NavGroup = {
+    title: 'Investment & Treasury Management',
+    translationKey: 'navigation.investmentManagement',
+    items: [
+      { label: 'Investment Registers', translationKey: 'navigation.investments', path: '/staff/investments', icon: TrendingUp },
+      { label: 'Bank Accounts & Liquidity', translationKey: 'navigation.banking', path: '/staff/banking', icon: Building2 },
+      { label: 'Financial Performance (P&L)', translationKey: 'navigation.profitLoss', path: '/staff/profit-loss', icon: FileText },
     ],
   };
 
@@ -406,6 +485,26 @@ export const StaffLayout: React.FC = () => {
         translationKey: 'navigation.usersRoles',
         path: '/staff/users-roles',
         icon: ShieldAlert,
+      },
+    ],
+  };
+
+  // Dedicated Navigation Group strictly for Medical Director (Dr. Bhaskar Chatterjee): Doctor Workspace & Voice Translation ONLY
+  const medicalDirectorNavGroup: NavGroup = {
+    title: 'Clinical Practice',
+    translationKey: 'navigation.doctorClinicalSuite',
+    items: [
+      {
+        label: 'Doctor Clinical Workspace',
+        translationKey: 'navigation.doctorWorkspace',
+        path: '/staff/doctor-workspace',
+        icon: Stethoscope,
+      },
+      {
+        label: 'Voice Translation',
+        translationKey: 'navigation.voiceTranslation',
+        path: '/staff/voice-translation',
+        icon: Languages,
       },
     ],
   };
@@ -437,10 +536,18 @@ export const StaffLayout: React.FC = () => {
     visibleNavGroups = [superAdminNavGroup];
   } else if (role === 'HOSPITAL_ADMIN') {
     visibleNavGroups = [hospitalAdminNavGroup];
+  } else if (
+    role === 'MEDICAL_DIRECTOR' ||
+    staffProfile?.employee_id === 'EMP-MDR-001' ||
+    userProfile?.email === 'medical.director@aurahospital.com'
+  ) {
+    visibleNavGroups = [medicalDirectorNavGroup];
   } else if (role === 'BRANCH_MANAGER') {
     visibleNavGroups = [branchManagerNavGroup];
   } else if (role === 'DOCTOR') {
     visibleNavGroups = [doctorNavGroup];
+  } else if (role === 'NURSE') {
+    visibleNavGroups = [nurseNavGroup];
   } else if (role === 'DEPARTMENT_HEAD') {
     const isDoctorHead = Boolean(
       staffProfile?.medical_license_number ||
@@ -465,6 +572,8 @@ export const StaffLayout: React.FC = () => {
     visibleNavGroups = [insuranceCoordinatorNavGroup];
   } else if (role === 'BILLING_EXECUTIVE' || role === 'CASHIER') {
     visibleNavGroups = [billingCashierNavGroup];
+  } else if (role === 'INVESTMENT_MANAGER') {
+    visibleNavGroups = [investmentManagerNavGroup];
   } else if (role === 'AUDITOR') {
     visibleNavGroups = [
       {
@@ -498,11 +607,11 @@ export const StaffLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col lg:flex-row relative">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col lg:flex-row relative">
       {/* Mobile Backdrop Overlay */}
       {isMobileDrawerOpen && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-200"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-200"
           onClick={() => setIsMobileDrawerOpen(false)}
           aria-hidden="true"
         />
@@ -511,7 +620,7 @@ export const StaffLayout: React.FC = () => {
       {/* Sidebar (Drawer on mobile, Collapsible on desktop) */}
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-50 bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col',
+          'fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200 transition-all duration-300 flex flex-col shadow-sm',
           // Mobile state: off-canvas drawer
           isMobileDrawerOpen ? 'translate-x-0 w-72 max-w-[85vw]' : '-translate-x-full lg:translate-x-0',
           // Desktop state: collapsible sidebar
@@ -519,15 +628,17 @@ export const StaffLayout: React.FC = () => {
         )}
       >
         {/* Brand Header */}
-        <div className="h-16 border-b border-slate-800 flex items-center justify-between px-4 shrink-0">
+        <div className="h-16 border-b border-slate-200 flex items-center justify-between px-4 shrink-0 bg-white">
           <Link
             to={
               role === 'SUPER_ADMIN' || role === 'BRANCH_MANAGER'
                 ? '/staff/branch-manager'
                 : role === 'HOSPITAL_ADMIN'
                 ? '/staff/reports?tab=FINANCE'
-                : role === 'DOCTOR'
+                : role === 'DOCTOR' || role === 'MEDICAL_DIRECTOR' || staffProfile?.employee_id === 'EMP-MDR-001' || userProfile?.email === 'medical.director@aurahospital.com'
                 ? '/staff/doctor-workspace'
+                : role === 'NURSE'
+                ? '/staff/nurse-workspace?tab=patients'
                 : role === 'DEPARTMENT_HEAD'
                 ? '/staff/department-head'
                 : role === 'HR_MANAGER'
@@ -537,11 +648,15 @@ export const StaffLayout: React.FC = () => {
                 : role === 'INSURANCE_COORDINATOR'
                 ? '/staff/insurance'
                 : role === 'BILLING_EXECUTIVE' || role === 'CASHIER'
-                ? '/staff/billing?tab=invoices'
+                ? '/staff/billing'
+                : role === 'INVESTMENT_MANAGER'
+                ? '/staff/investments'
                 : role === 'AUDITOR'
                 ? '/staff/settings-audit'
                 : role === 'LAB_TECHNICIAN'
                 ? '/staff/laboratory'
+                : role === 'RADIOLOGY_TECHNICIAN'
+                ? '/staff/radiology'
                 : role === 'PHARMACIST'
                 ? '/staff/pharmacy'
                 : role === 'INVENTORY_MANAGER' || role === 'PROCUREMENT_OFFICER'
@@ -551,13 +666,13 @@ export const StaffLayout: React.FC = () => {
             onClick={() => setIsMobileDrawerOpen(false)}
             className="flex items-center gap-3 overflow-hidden"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-500 text-slate-950 flex items-center justify-center font-bold shrink-0 shadow-lg shadow-cyan-500/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white flex items-center justify-center font-bold shrink-0 shadow-md shadow-cyan-500/20">
               <Activity className="w-5 h-5 stroke-[2.5]" />
             </div>
             {(isSidebarOpen || isMobileDrawerOpen) && (
               <div className="leading-tight">
-                <span className="font-extrabold tracking-tight text-white block">AURA HMS</span>
-                <span className="text-[10px] uppercase font-semibold tracking-wider text-cyan-400">
+                <span className="font-extrabold tracking-tight text-slate-900 block">AURA HMS</span>
+                <span className="text-[10px] uppercase font-semibold tracking-wider text-cyan-700">
                   Hospital Suite
                 </span>
               </div>
@@ -567,7 +682,7 @@ export const StaffLayout: React.FC = () => {
           {/* Mobile Close Button */}
           <button
             onClick={() => setIsMobileDrawerOpen(false)}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition lg:hidden"
+            className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition lg:hidden"
             title="Close Menu"
             aria-label="Close Menu"
           >
@@ -577,7 +692,7 @@ export const StaffLayout: React.FC = () => {
           {/* Desktop Toggle Button */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition hidden lg:block"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition hidden lg:block"
             title="Toggle Sidebar"
           >
             <Menu className="w-4 h-4" />
@@ -586,22 +701,22 @@ export const StaffLayout: React.FC = () => {
 
         {/* Role & Section Assignment Badge */}
         {(isSidebarOpen || isMobileDrawerOpen) && role && (
-          <div className="mx-3 mt-3 p-2.5 rounded-xl bg-slate-950/80 border border-cyan-500/25 shrink-0">
+          <div className="mx-3 mt-3 p-2.5 rounded-xl bg-cyan-50/70 border border-cyan-200 shrink-0">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 truncate">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-900 truncate">
                 {role === 'BILLING_EXECUTIVE' || role === 'CASHIER'
                   ? 'Billing & Cashier Executive'
                   : role === 'ACCOUNTANT'
                   ? 'Finance Manager'
                   : role.replace(/_/g, ' ')}
               </span>
-              <span className="px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 text-[9px] font-mono font-bold shrink-0">
+              <span className="px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800 text-[9px] font-mono font-bold shrink-0">
                 {dataScope} SCOPE
               </span>
             </div>
-            <div className="flex items-center justify-between mt-1.5 text-[10px] text-slate-400">
-              <span>Assigned Sections: <strong className="text-white">{totalAuthorizedSections}</strong></span>
-              <span className={isReadOnlySupervisory ? 'text-amber-400 font-semibold' : 'text-emerald-400 font-semibold'}>
+            <div className="flex items-center justify-between mt-1.5 text-[10px] text-slate-600">
+              <span>Assigned Sections: <strong className="text-slate-900">{totalAuthorizedSections}</strong></span>
+              <span className={isReadOnlySupervisory ? 'text-amber-700 font-semibold' : 'text-emerald-700 font-semibold'}>
                 {isReadOnlySupervisory ? 'Read-Only' : 'Authorized'}
               </span>
             </div>
@@ -613,7 +728,7 @@ export const StaffLayout: React.FC = () => {
           {visibleNavGroups.map((group, gIdx) => (
             <div key={gIdx} className="space-y-1">
               {(isSidebarOpen || isMobileDrawerOpen) && (
-                <div className="px-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                <div className="px-3 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                   {group.translationKey ? t(group.translationKey) : group.title}
                 </div>
               )}
@@ -621,7 +736,7 @@ export const StaffLayout: React.FC = () => {
                 const Icon = item.icon;
                 const currentFull = location.pathname + location.search;
                 const isActive = item.path.includes('?')
-                  ? (currentFull === item.path || (location.pathname === '/staff/branch-manager' && item.path.endsWith('?tab=overview') && !location.search))
+                  ? (currentFull === item.path || (location.pathname === '/staff/branch-manager' && item.path.endsWith('?tab=overview') && !location.search) || (location.pathname === '/staff/nurse-workspace' && item.path.endsWith('?tab=patients') && !location.search))
                   : (location.pathname === item.path || (item.path !== '/staff/dashboard' && location.pathname.startsWith(item.path + '/')));
                 const displayLabel = item.translationKey ? t(item.translationKey) : item.label;
 
@@ -633,14 +748,14 @@ export const StaffLayout: React.FC = () => {
                     className={clsx(
                       'flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all group relative',
                       isActive
-                        ? 'bg-gradient-to-r from-cyan-500/15 to-blue-500/10 text-cyan-400 border border-cyan-500/30'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm font-semibold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
                     )}
                   >
                     <Icon
                       className={clsx(
                         'w-4 h-4 shrink-0 transition-colors',
-                        isActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'
+                        isActive ? 'text-cyan-700' : 'text-slate-500 group-hover:text-slate-700'
                       )}
                     />
                     {(isSidebarOpen || isMobileDrawerOpen) && (
@@ -649,7 +764,7 @@ export const StaffLayout: React.FC = () => {
 
                     {/* Tooltip when collapsed on desktop */}
                     {!isSidebarOpen && !isMobileDrawerOpen && (
-                      <div className="absolute left-full ml-2 px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition z-50 shadow-xl hidden lg:block">
+                      <div className="absolute left-full ml-2 px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition z-50 shadow-xl hidden lg:block">
                         {displayLabel}
                       </div>
                     )}
@@ -662,22 +777,22 @@ export const StaffLayout: React.FC = () => {
 
         {/* Clinician Duty Status Badge */}
         {(isSidebarOpen || isMobileDrawerOpen) && (
-          <div className="p-3 border-t border-slate-800 bg-slate-950/40 m-3 rounded-xl border shrink-0">
+          <div className="p-3 border-t border-slate-200 bg-slate-50/80 m-3 rounded-xl border shrink-0">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] font-semibold text-slate-400">{t('common.clinicalShift', 'Clinical Shift')}</span>
+              <span className="text-[11px] font-semibold text-slate-600">{t('common.clinicalShift', 'Clinical Shift')}</span>
               <button
                 onClick={handleToggleDuty}
                 disabled={isTogglingDuty || !staffProfile}
                 title={isOnDuty ? 'Click to set clinical shift to Off Duty' : 'Click to set clinical shift to On Duty'}
                 className={clsx(
-                  'px-2.5 py-0.5 rounded-full text-[10px] font-semibold transition flex items-center gap-1.5',
+                  'px-2.5 py-0.5 rounded-full text-[10px] font-semibold transition flex items-center gap-1.5 shadow-sm',
                   isOnDuty
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
-                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20',
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
+                    : 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100',
                   (isTogglingDuty || !staffProfile) && 'opacity-60 cursor-not-allowed'
                 )}
               >
-                <span className={clsx('w-1.5 h-1.5 rounded-full', isOnDuty ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400')} />
+                <span className={clsx('w-1.5 h-1.5 rounded-full', isOnDuty ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500')} />
                 {isTogglingDuty ? '...' : (isOnDuty ? t('auth.onDuty', 'On Duty') : t('auth.offDuty', 'Off Duty'))}
               </button>
             </div>
@@ -697,13 +812,13 @@ export const StaffLayout: React.FC = () => {
         )}
       >
         {/* Top Header */}
-        <header className="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-3 sm:px-6 shrink-0">
+        <header className="h-16 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-3 sm:px-6 shrink-0">
           {/* Left: Mobile Drawer Trigger + Branch Switcher */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setIsMobileDrawerOpen(true)}
-              className="p-2 -ml-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 lg:hidden flex items-center justify-center shrink-0"
+              className="p-2 -ml-1 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 lg:hidden flex items-center justify-center shrink-0"
               aria-label="Open Navigation Menu"
             >
               <Menu className="w-5 h-5" />
@@ -714,27 +829,27 @@ export const StaffLayout: React.FC = () => {
               <button
                 onClick={() => isMultiBranchRole && setShowBranchMenu(!showBranchMenu)}
                 className={clsx(
-                  'flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 transition max-w-[190px] sm:max-w-xs',
-                  isMultiBranchRole ? 'hover:border-cyan-500/40 cursor-pointer' : 'cursor-default opacity-90'
+                  'flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 transition max-w-[190px] sm:max-w-xs',
+                  isMultiBranchRole ? 'hover:border-cyan-500/50 hover:bg-white cursor-pointer shadow-sm' : 'cursor-default opacity-90'
                 )}
                 title={isMultiBranchRole ? 'Switch Hospital Branch' : `Assigned Branch (${dataScope} Scope)`}
               >
-                <Building2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span className="font-semibold text-white truncate text-xs">
+                <Building2 className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+                <span className="font-semibold text-slate-900 truncate text-xs">
                   {currentBranch?.name || staffProfile?.branch_name || 'AURA Central Multi-Specialty'}
                 </span>
                 {isMultiBranchRole ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                 ) : (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 font-mono shrink-0">
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-cyan-700 font-mono shrink-0">
                     {dataScope}
                   </span>
                 )}
               </button>
 
               {isMultiBranchRole && showBranchMenu && (
-                <div className="absolute top-full left-0 mt-2 w-72 max-w-[90vw] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-3 py-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                <div className="absolute top-full left-0 mt-2 w-72 max-w-[90vw] rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-3 py-2 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                     {t('common.switchBranch')}
                   </div>
                   {branches.map((b) => (
@@ -747,16 +862,16 @@ export const StaffLayout: React.FC = () => {
                       className={clsx(
                         'w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition',
                         b.id === currentBranch?.id
-                          ? 'bg-cyan-500/10 text-cyan-400 font-semibold'
-                          : 'text-slate-300 hover:bg-slate-800'
+                          ? 'bg-cyan-50 text-cyan-800 font-semibold'
+                          : 'text-slate-700 hover:bg-slate-50'
                       )}
                     >
                       <div className="truncate mr-2">
-                        <div className="text-white text-xs font-medium truncate">{b.name}</div>
+                        <div className="text-slate-900 text-xs font-medium truncate">{b.name}</div>
                         <div className="text-[10px] text-slate-500 truncate">{b.city}, {b.state}</div>
                       </div>
                       {b.is_main_branch && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono shrink-0">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono shrink-0">
                           {t('common.hq')}
                         </span>
                       )}
@@ -767,9 +882,9 @@ export const StaffLayout: React.FC = () => {
             </div>
 
             {/* Shift Indicator (Tablet and Desktop) */}
-            <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-slate-700/60 text-[11px] text-slate-300 shrink-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{t('common.clinicalShift', 'Shift')}: <strong>{t('common.liveClinicalRoster', 'Live Clinical Roster')}</strong></span>
+            <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-[11px] text-slate-700 shrink-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>{t('common.clinicalShift', 'Shift')}: <strong className="text-slate-900">{t('common.liveClinicalRoster', 'Live Clinical Roster')}</strong></span>
             </div>
           </div>
 
@@ -782,7 +897,7 @@ export const StaffLayout: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition relative"
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition relative border border-slate-200"
                 title={t('common.notifications', 'Notifications')}
                 aria-label={t('common.notifications', 'Notifications')}
               >
@@ -793,19 +908,19 @@ export const StaffLayout: React.FC = () => {
               </button>
 
               {showNotifications && (
-                <div className="absolute top-full right-0 mt-2 w-72 sm:w-80 max-w-[90vw] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-3 z-50">
-                  <div className="flex items-center justify-between px-2 py-1 mb-2 border-b border-slate-800 pb-2">
-                    <span className="text-xs font-bold text-white">{t('common.liveClinicalAlerts', 'Live Clinical Alerts')}</span>
+                <div className="absolute top-full right-0 mt-2 w-72 sm:w-80 max-w-[90vw] rounded-2xl bg-white border border-slate-200 shadow-xl p-3 z-50">
+                  <div className="flex items-center justify-between px-2 py-1 mb-2 border-b border-slate-200 pb-2">
+                    <span className="text-xs font-bold text-slate-900">{t('common.liveClinicalAlerts', 'Live Clinical Alerts')}</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      notifications.length > 0 ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-800 text-slate-400'
+                      notifications.length > 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-600'
                     }`}>
                       {notifications.length} {notifications.length === 1 ? t('common.alert', 'Alert') : t('common.alerts', 'Alerts')}
                     </span>
                   </div>
                   {notifications.length === 0 ? (
                     <div className="py-6 px-4 text-center">
-                      <Bell className="w-6 h-6 mx-auto mb-2 text-slate-500/40" />
-                      <p className="text-xs font-medium text-slate-300">{t('common.noAlerts', 'No Active Alerts')}</p>
+                      <Bell className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+                      <p className="text-xs font-medium text-slate-700">{t('common.noAlerts', 'No Active Alerts')}</p>
                       <p className="text-[10px] text-slate-500 mt-0.5">{t('common.alertsNormal', 'All department logs and critical orders are normal.')}</p>
                     </div>
                   ) : (
@@ -813,13 +928,13 @@ export const StaffLayout: React.FC = () => {
                       {notifications.map((n) => (
                         <div
                           key={n.id}
-                          className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs hover:border-slate-700 transition"
+                          className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs hover:border-slate-300 transition"
                         >
-                          <div className="flex items-center justify-between font-semibold text-white mb-0.5">
+                          <div className="flex items-center justify-between font-semibold text-slate-900 mb-0.5">
                             <span>{n.title}</span>
                             <span className="text-[10px] text-slate-500 font-normal">{n.time}</span>
                           </div>
-                          <p className="text-[11px] text-slate-400 leading-snug">{n.desc}</p>
+                          <p className="text-[11px] text-slate-600 leading-snug">{n.desc}</p>
                         </div>
                       ))}
                     </div>
@@ -832,37 +947,37 @@ export const StaffLayout: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 p-1.5 sm:pl-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 transition border border-slate-700/60"
+                className="flex items-center gap-2 p-1.5 sm:pl-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition border border-slate-200 shadow-sm"
               >
-                <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-cyan-100 border border-cyan-200 text-cyan-800 flex items-center justify-center font-bold text-xs shrink-0">
                   {userProfile?.first_name ? userProfile.first_name[0] : 'S'}
                 </div>
                 <div className="text-left hidden sm:block max-w-[120px] md:max-w-[160px] truncate">
-                  <div className="text-xs font-semibold text-white leading-tight truncate">
+                  <div className="text-xs font-semibold text-slate-900 leading-tight truncate">
                     {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name}` : t('auth.staffMember', 'Staff Member')}
                   </div>
-                  <div className="text-[10px] text-cyan-400 font-medium leading-tight truncate">
+                  <div className="text-[10px] text-cyan-700 font-medium leading-tight truncate">
                     {role || t('auth.staffSpecialist', 'Staff Specialist')}
                   </div>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               </button>
 
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-2 w-56 sm:w-64 max-w-[90vw] rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50">
-                  <div className="px-3 py-2 border-b border-slate-800 mb-1">
-                    <p className="text-xs font-bold text-white truncate">
+                <div className="absolute top-full right-0 mt-2 w-56 sm:w-64 max-w-[90vw] rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-50">
+                  <div className="px-3 py-2 border-b border-slate-200 mb-1">
+                    <p className="text-xs font-bold text-slate-900 truncate">
                       {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name}` : t('auth.staffMember', 'Staff Member')}
                     </p>
-                    <p className="text-[10px] text-slate-400 truncate">{userProfile?.email}</p>
-                    <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-semibold border border-cyan-500/20">
+                    <p className="text-[10px] text-slate-500 truncate">{userProfile?.email}</p>
+                    <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded bg-cyan-50 text-cyan-800 font-semibold border border-cyan-200">
                       {t('auth.role', 'Role')}: {role || 'Staff'}
                     </span>
                   </div>
 
                   <button
                     onClick={handleSignOut}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 transition"
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition font-medium"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>{t('auth.signOut', 'Sign Out')}</span>
@@ -881,8 +996,10 @@ export const StaffLayout: React.FC = () => {
                 ? '/staff/branch-manager'
                 : role === 'HOSPITAL_ADMIN'
                 ? '/staff/reports?tab=FINANCE'
-                : role === 'DOCTOR'
+                : role === 'DOCTOR' || role === 'MEDICAL_DIRECTOR' || staffProfile?.employee_id === 'EMP-MDR-001' || userProfile?.email === 'medical.director@aurahospital.com'
                 ? '/staff/doctor-workspace'
+                : role === 'NURSE'
+                ? '/staff/nurse-workspace?tab=patients'
                 : role === 'DEPARTMENT_HEAD'
                 ? '/staff/department-head'
                 : role === 'HR_MANAGER'
@@ -892,23 +1009,27 @@ export const StaffLayout: React.FC = () => {
                 : role === 'INSURANCE_COORDINATOR'
                 ? '/staff/insurance'
                 : role === 'BILLING_EXECUTIVE' || role === 'CASHIER'
-                ? '/staff/billing?tab=invoices'
+                ? '/staff/billing'
+                : role === 'INVESTMENT_MANAGER'
+                ? '/staff/investments'
                 : role === 'AUDITOR'
                 ? '/staff/settings-audit'
                 : role === 'LAB_TECHNICIAN'
                 ? '/staff/laboratory'
+                : role === 'RADIOLOGY_TECHNICIAN'
+                ? '/staff/radiology'
                 : role === 'PHARMACIST'
                 ? '/staff/pharmacy'
                 : role === 'INVENTORY_MANAGER' || role === 'PROCUREMENT_OFFICER'
                 ? '/staff/inventory'
                 : '/staff/dashboard'
             }
-            className="hover:text-slate-300 transition shrink-0"
+            className="hover:text-cyan-700 transition shrink-0"
           >
             {t('brand.name', 'AURA Multi-Specialty HMS')}
           </Link>
           <span>/</span>
-          <span className="text-slate-300 font-medium capitalize truncate">
+          <span className="text-slate-800 font-medium capitalize truncate">
             {(() => {
               const allItems = [...visibleNavGroups.flatMap((g) => g.items), ...navGroups.flatMap((g) => g.items)];
               const currentNav = allItems.find((i) => i.path === location.pathname);
@@ -921,9 +1042,9 @@ export const StaffLayout: React.FC = () => {
 
         {/* Read-Only Supervisory / Audit Mode Banner */}
         {isReadOnlySupervisory && role !== 'HOSPITAL_ADMIN' && role !== 'SUPER_ADMIN' && (
-          <div className="mx-3 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2 text-amber-300 font-medium">
-              <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="mx-3 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-amber-900 font-medium">
+              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
               <span>
                 <strong>{role === 'AUDITOR' ? 'Compliance Audit Mode (Read-Only):' : 'Branch Supervisory Monitoring Mode (Read-Only):'}</strong>{' '}
                 {role === 'AUDITOR'
@@ -931,7 +1052,7 @@ export const StaffLayout: React.FC = () => {
                   : 'You have full operational visibility across your assigned branch. Creating, editing, deleting, or approving departmental records is restricted to authorized operational owners.'}
               </span>
             </div>
-            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider shrink-0">
+            <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider shrink-0 border border-amber-200">
               Scope: {dataScope} • Read-Only
             </span>
           </div>

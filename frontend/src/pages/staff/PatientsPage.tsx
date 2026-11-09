@@ -456,13 +456,13 @@ export const PatientsPage: React.FC = () => {
         />
       )}
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-cyan-400" />
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Users className="w-6 h-6 text-cyan-600" />
             {t('patients.title', 'Patient Management & Electronic Medical Records (EMR)')}
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Enterprise Master Patient Index (EMPI), Longitudinal Clinical Records, Duplicate Matching & Merging.
           </p>
         </div>
@@ -470,11 +470,11 @@ export const PatientsPage: React.FC = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <button
               onClick={handleOpenDuplicates}
-              className="px-3 py-2 rounded-xl text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition flex items-center gap-1.5"
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition flex items-center gap-1.5 shadow-sm"
             >
               <GitMerge className="w-4 h-4" /> {t('common.filter', 'Duplicate Review')}
               {stats && stats.potential_duplicates_count > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px]">
+                <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-bold text-[10px]">
                   {stats.potential_duplicates_count}
                 </span>
               )}
@@ -484,7 +484,7 @@ export const PatientsPage: React.FC = () => {
                 setRegStep('IDENTITY');
                 setShowRegisterModal(true);
               }}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20"
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-cyan-600 text-white hover:bg-cyan-700 transition flex items-center gap-1.5 shadow-sm"
             >
               <Plus className="w-4 h-4" /> {t('patients.registerNew', 'Register New Patient')}
             </button>
@@ -497,7 +497,7 @@ export const PatientsPage: React.FC = () => {
         <StatCard
           title={t('dashboard.totalPatients', 'Total Registered')}
           value={stats ? stats.total_registered.toString() : '...'}
-          change="+100% Verified"
+          change={stats?.registered_today ? `+${stats.registered_today} today` : undefined}
           icon={Users}
         />
         <StatCard
@@ -528,7 +528,7 @@ export const PatientsPage: React.FC = () => {
       </div>
 
       {/* Search & Filters Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 flex-1 max-w-md">
           <div className="relative w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -540,7 +540,7 @@ export const PatientsPage: React.FC = () => {
                 setSearchTerm(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15"
             />
           </div>
         </div>
@@ -552,7 +552,7 @@ export const PatientsPage: React.FC = () => {
               setGenderFilter(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-cyan-500"
+            className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15"
           >
             <option value="">All Genders</option>
             <option value="MALE">Male</option>
@@ -566,7 +566,7 @@ export const PatientsPage: React.FC = () => {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-cyan-500"
+            className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15"
           >
             <option value="">Status: Active</option>
             <option value="ACTIVE">Active Records</option>
@@ -583,7 +583,7 @@ export const PatientsPage: React.FC = () => {
               fetchPatients();
               fetchStats();
             }}
-            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
+            className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition"
             title="Refresh Directory"
           >
             <RefreshCw className="w-4 h-4" />
@@ -592,7 +592,7 @@ export const PatientsPage: React.FC = () => {
       </div>
 
       {/* Patient Master Index Table */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
         <DataTable
           data={patients}
           columns={columns}
@@ -602,21 +602,21 @@ export const PatientsPage: React.FC = () => {
           searchable={false}
           pageSize={pageSize}
         />
-        <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-800/60 text-xs text-slate-400">
+        <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-200 text-xs text-slate-500">
           <span>Showing {patients.length} of {totalCount} total patient records</span>
           <div className="flex items-center gap-2">
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 disabled:opacity-50 hover:bg-slate-700"
+              className="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 disabled:opacity-50 hover:bg-slate-200 transition font-medium"
             >
               Previous
             </button>
-            <span className="font-mono text-cyan-400">Page {page}</span>
+            <span className="font-mono text-cyan-700 font-bold">Page {page}</span>
             <button
               disabled={page * pageSize >= totalCount}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 disabled:opacity-50 hover:bg-slate-700"
+              className="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 disabled:opacity-50 hover:bg-slate-200 transition font-medium"
             >
               Next
             </button>
@@ -636,12 +636,12 @@ export const PatientsPage: React.FC = () => {
           {regSuccess && <AlertBanner title="Success" message={regSuccess} variant="success" />}
 
           {/* Registration Step Navigation */}
-          <div className="flex border-b border-slate-800 pb-2 gap-2 overflow-x-auto text-xs">
+          <div className="flex border-b border-slate-200 pb-2 gap-2 overflow-x-auto text-xs">
             <button
               type="button"
               onClick={() => setRegStep('IDENTITY')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                regStep === 'IDENTITY' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+                regStep === 'IDENTITY' ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               1. Demographics
@@ -649,8 +649,8 @@ export const PatientsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setRegStep('CONTACT')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                regStep === 'CONTACT' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+                regStep === 'CONTACT' ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               2. Address & Contact
@@ -658,8 +658,8 @@ export const PatientsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setRegStep('EMERGENCY')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                regStep === 'EMERGENCY' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+                regStep === 'EMERGENCY' ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               3. Emergency Contact
@@ -667,8 +667,8 @@ export const PatientsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setRegStep('CLINICAL')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                regStep === 'CLINICAL' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+                regStep === 'CLINICAL' ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               4. Medical History
@@ -676,8 +676,8 @@ export const PatientsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setRegStep('CONSENT')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                regStep === 'CONSENT' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+                regStep === 'CONSENT' ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               5. Insurance & Consent

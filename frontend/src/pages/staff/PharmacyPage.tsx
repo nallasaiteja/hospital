@@ -533,17 +533,17 @@ export const PharmacyPage: React.FC = () => {
         />
       )}
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <div className="p-2 rounded-xl bg-cyan-50 text-cyan-600 border border-cyan-200">
               <Pill className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                 Pharmacy & Clinical Medication Dispensing
               </h1>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 FEFO-ordered stock batches, electronic prescription verification, IPD ward issues, and barcode scanning.
               </p>
             </div>
@@ -555,23 +555,23 @@ export const PharmacyPage: React.FC = () => {
             <>
               <button
                 onClick={() => setShowCatalogueModal(true)}
-                className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-2 transition"
+                className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center gap-2 transition shadow-sm"
               >
-                <Plus className="w-4 h-4 text-cyan-400" />
+                <Plus className="w-4 h-4 text-cyan-600" />
                 Add Formulary Item
               </button>
               <button
                 onClick={() => setShowReturnModal(true)}
-                className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-2 transition"
+                className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center gap-2 transition shadow-sm"
               >
-                <RotateCcw className="w-4 h-4 text-amber-400" />
+                <RotateCcw className="w-4 h-4 text-amber-600" />
                 Patient Return
               </button>
             </>
           )}
           <button
             onClick={fetchData}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 transition shadow-sm"
             title="Refresh Data"
           >
             <RefreshCw className="w-4 h-4" />
@@ -580,10 +580,10 @@ export const PharmacyPage: React.FC = () => {
       </div>
 
       {/* Barcode Quick Scan Radar */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/40 border border-cyan-500/20 shadow-lg">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
         <form onSubmit={handleBarcodeScan} className="flex flex-col md:flex-row items-center gap-3">
-          <div className="flex items-center gap-2 text-cyan-400 font-semibold text-xs whitespace-nowrap">
-            <Barcode className="w-5 h-5 text-cyan-400 animate-pulse" />
+          <div className="flex items-center gap-2 text-cyan-700 font-semibold text-xs whitespace-nowrap">
+            <Barcode className="w-5 h-5 text-cyan-600 animate-pulse" />
             <span>Barcode Scanner / Item Lookup:</span>
           </div>
           <div className="flex-1 w-full relative">
@@ -592,13 +592,13 @@ export const PharmacyPage: React.FC = () => {
               placeholder="Scan or type Item Code / Batch Barcode (e.g. MED-001 or BATCH-MED001-01)..."
               value={barcodeQuery}
               onChange={(e) => setBarcodeQuery(e.target.value)}
-              className="w-full bg-slate-950/90 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
+              className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/15 font-mono"
             />
           </div>
           <button
             type="submit"
             disabled={barcodeSearching}
-            className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 whitespace-nowrap"
+            className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs transition flex items-center gap-1.5 whitespace-nowrap shadow-sm"
           >
             {barcodeSearching ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
             Lookup Stock
@@ -606,32 +606,32 @@ export const PharmacyPage: React.FC = () => {
         </form>
 
         {barcodeError && (
-          <div className="mt-2 text-xs text-rose-400 flex items-center gap-1.5">
+          <div className="mt-2 text-xs text-rose-600 flex items-center gap-1.5 font-medium">
             <ShieldAlert className="w-3.5 h-3.5" /> {barcodeError}
           </div>
         )}
 
         {barcodeResult && (
-          <div className="mt-3 p-3 bg-slate-950/80 border border-cyan-500/30 rounded-xl flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div className="mt-3 p-3 bg-slate-50 border border-cyan-200 rounded-xl flex flex-wrap items-center justify-between gap-4 text-xs">
             <div>
-              <span className="text-slate-400">Match Found: </span>
-              <strong className="text-white font-mono">{barcodeResult.code}</strong> —{' '}
-              <span className="text-cyan-400 font-bold">{barcodeResult.name}</span>
+              <span className="text-slate-500">Match Found: </span>
+              <strong className="text-slate-900 font-mono">{barcodeResult.code}</strong> —{' '}
+              <span className="text-cyan-700 font-bold">{barcodeResult.name}</span>
             </div>
             <div>
-              <span className="text-slate-400">Category: </span>
-              <span className="text-slate-200">{barcodeResult.category}</span>
+              <span className="text-slate-500">Category: </span>
+              <span className="text-slate-800 font-medium">{barcodeResult.category}</span>
             </div>
             <div>
-              <span className="text-slate-400">Unit Price: </span>
-              <span className="text-emerald-400 font-mono font-bold">₹{barcodeResult.selling_price}</span>
+              <span className="text-slate-500">Unit Price: </span>
+              <span className="text-emerald-700 font-mono font-bold">₹{barcodeResult.selling_price}</span>
             </div>
             <div>
-              <span className="text-slate-400">Available Stock: </span>
-              <span className="text-cyan-300 font-mono font-bold">{barcodeResult.available_stock} units</span>
+              <span className="text-slate-500">Available Stock: </span>
+              <span className="text-cyan-700 font-mono font-bold">{barcodeResult.available_stock} units</span>
             </div>
             {barcodeResult.batch && (
-              <div className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono">
+              <div className="px-2 py-0.5 rounded bg-cyan-50 text-cyan-800 border border-cyan-200 font-mono font-medium">
                 Batch: {barcodeResult.batch.batch_number} (Exp: {barcodeResult.batch.expiry_date})
               </div>
             )}
@@ -668,13 +668,13 @@ export const PharmacyPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-800 gap-2 overflow-x-auto pb-1">
+      <div className="flex border-b border-slate-200 gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => setActiveTab('prescriptions')}
-          className={`px-4 py-2.5 text-xs font-bold transition flex items-center gap-2 rounded-xl ${
+          className={`px-4 py-2.5 text-xs font-semibold transition flex items-center gap-2 rounded-xl ${
             activeTab === 'prescriptions'
-              ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -682,10 +682,10 @@ export const PharmacyPage: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('ipd_issue')}
-          className={`px-4 py-2.5 text-xs font-bold transition flex items-center gap-2 rounded-xl ${
+          className={`px-4 py-2.5 text-xs font-semibold transition flex items-center gap-2 rounded-xl ${
             activeTab === 'ipd_issue'
-              ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <Hospital className="w-4 h-4" />
@@ -693,10 +693,10 @@ export const PharmacyPage: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('formulary')}
-          className={`px-4 py-2.5 text-xs font-bold transition flex items-center gap-2 rounded-xl ${
+          className={`px-4 py-2.5 text-xs font-semibold transition flex items-center gap-2 rounded-xl ${
             activeTab === 'formulary'
-              ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <Pill className="w-4 h-4" />
@@ -704,10 +704,10 @@ export const PharmacyPage: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('returns')}
-          className={`px-4 py-2.5 text-xs font-bold transition flex items-center gap-2 rounded-xl ${
+          className={`px-4 py-2.5 text-xs font-semibold transition flex items-center gap-2 rounded-xl ${
             activeTab === 'returns'
-              ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <RotateCcw className="w-4 h-4" />
@@ -715,13 +715,13 @@ export const PharmacyPage: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('alerts')}
-          className={`px-4 py-2.5 text-xs font-bold transition flex items-center gap-2 rounded-xl ${
+          className={`px-4 py-2.5 text-xs font-semibold transition flex items-center gap-2 rounded-xl ${
             activeTab === 'alerts'
-              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-rose-50 text-rose-800 border border-rose-200 shadow-sm'
+              : 'text-slate-600 hover:text-rose-700 hover:bg-rose-50'
           }`}
         >
-          <ShieldAlert className="w-4 h-4 text-rose-400" />
+          <ShieldAlert className="w-4 h-4 text-rose-600" />
           Stock & Expiry Alerts ({(alertsData?.low_stock_items?.length || 0) + (alertsData?.expiring_batches?.length || 0)})
         </button>
       </div>

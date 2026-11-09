@@ -30,6 +30,7 @@ import { EmergencyPage } from './pages/staff/EmergencyPage'; // 4. Emergency & C
 import { AdmissionsPage } from './pages/staff/AdmissionsPage'; // 5. IPD & Admissions
 import { DoctorsNursingPage } from './pages/staff/DoctorsNursingPage'; // 6. Doctors & Nursing
 import { DoctorWorkspacePage } from './pages/staff/DoctorWorkspacePage'; // Complete Doctor Module Workspace
+import { NurseWorkspacePage } from './pages/staff/NurseWorkspacePage'; // Professional Real-World Nurse Clinical Workspace
 import { LaboratoryPage } from './pages/staff/LaboratoryPage'; // 7. Laboratory & Diagnostics
 import { RadiologyPage } from './pages/staff/RadiologyPage'; // 8. Radiology & Imaging
 import { PharmacyPage } from './pages/staff/PharmacyPage'; // 9. Pharmacy
@@ -150,6 +151,8 @@ export const App: React.FC = () => {
               <Route path="doctors-nursing" element={<DoctorsNursingPage />} />
               <Route path="doctor-workspace" element={<DoctorWorkspacePage />} />
               <Route path="doctor-workspace/:tab" element={<DoctorWorkspacePage />} />
+              <Route path="nurse-workspace" element={<NurseWorkspacePage />} />
+              <Route path="nurse-workspace/:tab" element={<NurseWorkspacePage />} />
 
               {/* 7. Laboratory & Diagnostics */}
               <Route path="laboratory" element={<LaboratoryPage />} />

@@ -425,19 +425,19 @@ export const EmergencyPage: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner Notice: Emergency Treatment Never Blocked */}
-      <div className="bg-gradient-to-r from-rose-950/40 via-slate-900 to-amber-950/30 border border-rose-500/30 rounded-2xl p-4 flex items-center justify-between gap-4">
+      <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400 shrink-0">
+          <div className="p-2.5 rounded-xl bg-rose-100 text-rose-600 shrink-0">
             <ShieldAlert className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <div className="text-white font-semibold text-sm flex items-center gap-2">
+            <div className="text-rose-950 font-bold text-sm flex items-center gap-2">
               {t('emergency.policyTitle', 'Stat Emergency Resuscitation Policy')}
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
                 {t('emergency.policyBadge', 'Non-Blocking Clinical Access')}
               </span>
             </div>
-            <div className="text-xs text-slate-300 mt-0.5">
+            <div className="text-xs text-rose-800 mt-0.5">
               {t('emergency.policyDesc', 'Urgent casualty intake, clinical triage, and resuscitation are never delayed or withheld due to billing, deposit checks, or insurance pre-authorizations.')}
             </div>
           </div>
@@ -448,7 +448,7 @@ export const EmergencyPage: React.FC = () => {
               setTriageError(null);
               setShowTriageModal(true);
             }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-rose-500/20 transition shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-sm transition shrink-0"
           >
             <Ambulance className="w-4 h-4" />
             {t('emergency.btnRapidTriage', 'Rapid Casualty Triage')}
@@ -488,15 +488,15 @@ export const EmergencyPage: React.FC = () => {
       </div>
 
       {/* Filters and Controls */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
-          <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-400">
-            <Filter className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-600">
+            <Filter className="w-3.5 h-3.5 text-cyan-600" />
             <span>Filter Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent text-white font-medium focus:outline-none"
+              className="bg-transparent text-slate-800 font-semibold focus:outline-none"
             >
               <option value="ALL">All Dispositions</option>
               <option value="ARRIVED">Arrived</option>
@@ -507,12 +507,12 @@ export const EmergencyPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-400">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-600">
             <span>Acuity Level:</span>
             <select
               value={acuityFilter}
               onChange={(e) => setAcuityFilter(e.target.value)}
-              className="bg-transparent text-white font-medium focus:outline-none"
+              className="bg-transparent text-slate-800 font-semibold focus:outline-none"
             >
               <option value="ALL">All Acuities</option>
               <option value="RED">🔴 Acuity 1 (Red)</option>
@@ -524,7 +524,7 @@ export const EmergencyPage: React.FC = () => {
 
         <button
           onClick={fetchEmergencyData}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 border border-slate-200 transition shadow-sm"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Refresh
@@ -532,7 +532,7 @@ export const EmergencyPage: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
         <DataTable
           data={encounters}
           columns={columns}

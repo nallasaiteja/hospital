@@ -155,17 +155,15 @@ export const ROLE_MODULE_ACTIONS: Record<UserRole, Partial<Record<RBACModule, RB
     REPORTS: ['view', 'export'],
     SETTINGS_AUDIT: ['view', 'export'],
   },
-  // C. MEDICAL DIRECTOR: Clinical governance, doctor availability, OPD/IPD quality, patient safety, medical protocols & clinical audit (9 sections)
+  // C. MEDICAL DIRECTOR (Dr. Bhaskar Chatterjee): Clinical Practice Suite (Doctor Workspace & Voice Translation ONLY)
   MEDICAL_DIRECTOR: {
-    DASHBOARD: ['view', 'export'],
-    PATIENTS: ['view', 'edit', 'approve'],
-    OPD: ['view', 'edit', 'approve'],
-    EMERGENCY: ['view', 'edit', 'approve'],
-    IPD: ['view', 'edit', 'approve'],
-    DOCTORS_NURSING: ['view', 'edit', 'approve'],
-    OT_ICU: ['view', 'edit', 'approve'],
-    REPORTS: ['view', 'export'],
-    SETTINGS_AUDIT: ['view', 'export'],
+    PATIENTS: ['view', 'edit'],
+    OPD: ['view', 'edit'],
+    EMERGENCY: ['view', 'create', 'edit'],
+    IPD: ['view', 'create', 'edit'],
+    LAB: ['view', 'create'],
+    RADIOLOGY: ['view', 'create'],
+    OT_ICU: ['view', 'create', 'edit'],
   },
   // D. DEPARTMENT HEAD: Supervise assigned department, staff overview, attendance, shifts, workload, approvals, resources & department activity logs (9 sections)
   DEPARTMENT_HEAD: {
@@ -233,7 +231,6 @@ export const ROLE_MODULE_ACTIONS: Record<UserRole, Partial<Record<RBACModule, RB
   PROCUREMENT_OFFICER: {
     INVENTORY: ['view', 'create', 'edit', 'approve', 'export'],
     ASSETS: ['view', 'create', 'edit'],
-    REPORTS: ['view', 'export'],
   },
   BILLING_EXECUTIVE: {
     PATIENTS: ['view'],
@@ -311,6 +308,7 @@ export const ROUTE_TO_MODULE_MAP: { pattern: RegExp; module: RBACModule; label: 
   { pattern: /^\/staff\/department-head(\/.*)?$/, module: 'DASHBOARD', label: 'Department Head Operations Hub' },
   { pattern: /^\/staff\/hr-management(\/.*)?$/, module: 'HR_PAYROLL', label: 'HR Management Command Center' },
   { pattern: /^\/staff\/doctor-workspace(\/.*)?$/, module: 'DOCTORS_NURSING', label: 'Doctor Clinical Workspace' },
+  { pattern: /^\/staff\/nurse-workspace(\/.*)?$/, module: 'DOCTORS_NURSING', label: 'Nurse Clinical Workspace' },
   { pattern: /^\/staff\/dashboard\/?$/, module: 'DASHBOARD', label: '1. Dashboard' },
   { pattern: /^\/staff\/patients(\/.*)?$/, module: 'PATIENTS', label: '2. Patient Management & EMR' },
   { pattern: /^\/staff\/(appointments|consultations)\/?$/, module: 'OPD', label: '3. OPD & Appointments' },
@@ -363,7 +361,7 @@ export function resolveRouteModule(pathname: string): { module: RBACModule; labe
 
 export function canAccessRoute(role: UserRole | null | undefined, pathname: string): boolean {
   if (!role) return false;
-  if (role === 'DOCTOR') {
+  if (role === 'DOCTOR' || role === 'MEDICAL_DIRECTOR') {
     return (
       pathname.startsWith('/staff/doctor-workspace') ||
       pathname.startsWith('/staff/voice-translation') ||
@@ -376,12 +374,14 @@ export function canAccessRoute(role: UserRole | null | undefined, pathname: stri
   if (pathname === '/staff/dashboard' || pathname === '/staff/dashboard/') {
     if (
       role === 'LAB_TECHNICIAN' ||
+      role === 'RADIOLOGY_TECHNICIAN' ||
       role === 'PHARMACIST' ||
       role === 'INSURANCE_COORDINATOR' ||
       role === 'CASHIER' ||
       role === 'BILLING_EXECUTIVE' ||
       role === 'INVENTORY_MANAGER' ||
-      role === 'PROCUREMENT_OFFICER'
+      role === 'PROCUREMENT_OFFICER' ||
+      role === 'INVESTMENT_MANAGER'
     ) return false;
   }
   if (pathname.startsWith('/staff/patients')) {
@@ -396,17 +396,23 @@ export function canAccessRoute(role: UserRole | null | undefined, pathname: stri
   if (pathname.startsWith('/staff/investments')) {
     if (role === 'FINANCE_MANAGER' || role === 'ACCOUNTANT') return false;
   }
+  if (pathname.startsWith('/staff/reports')) {
+    if (role === 'PROCUREMENT_OFFICER') return false;
+  }
   if (pathname.startsWith('/staff/department-head')) {
-    return ['DEPARTMENT_HEAD', 'SUPER_ADMIN', 'MEDICAL_DIRECTOR', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER'].includes(role);
+    return ['DEPARTMENT_HEAD', 'SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER'].includes(role);
   }
   if (pathname.startsWith('/staff/hr-management')) {
     return ['HR_MANAGER', 'SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER'].includes(role);
   }
   if (pathname.startsWith('/staff/doctor-workspace')) {
-    return ['DOCTOR', 'MEDICAL_DIRECTOR', 'DEPARTMENT_HEAD', 'SUPER_ADMIN'].includes(role);
+    return ['DOCTOR', 'DEPARTMENT_HEAD', 'SUPER_ADMIN'].includes(role);
+  }
+  if (pathname.startsWith('/staff/nurse-workspace')) {
+    return ['NURSE', 'SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'MEDICAL_DIRECTOR'].includes(role);
   }
   if (pathname.startsWith('/staff/voice-translation')) {
-    return ['DOCTOR', 'NURSE', 'RECEPTIONIST', 'MEDICAL_DIRECTOR', 'DEPARTMENT_HEAD'].includes(role);
+    return ['DOCTOR', 'NURSE', 'RECEPTIONIST', 'DEPARTMENT_HEAD'].includes(role);
   }
   const matched = resolveRouteModule(pathname);
   if (!matched) return true;
