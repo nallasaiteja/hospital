@@ -853,4 +853,76 @@ export interface LoungeTVData {
   patient_telemetry?: PatientLoungeTelemetry | null;
 }
 
+export interface TariffServiceItem {
+  id: string;
+  service_code: string;
+  name: string;
+  category: string;
+  category_display: string;
+  department_name: string;
+  standard_price: string;
+  current_price: string;
+  pricing_unit: string;
+  pricing_unit_display: string;
+  tax_rate: string;
+  is_active: boolean;
+  effective_from: string;
+  applies_to_all_branches: boolean;
+  has_branch_override?: boolean;
+  last_updated_by_name?: string;
+}
+
+export interface TariffCategoryOption {
+  key: string;
+  label: string;
+}
+
+export interface PricingUnitOption {
+  key: string;
+  label: string;
+}
+
+export interface TariffListResponse {
+  count: number;
+  results: TariffServiceItem[];
+  categories: TariffCategoryOption[];
+  pricing_units: PricingUnitOption[];
+  last_sync_timestamp: string;
+}
+
+export interface PriceHistoryRecord {
+  id: string;
+  service_id: string;
+  service_code: string;
+  service_name: string;
+  category_display: string;
+  pricing_unit_display: string;
+  previous_price: string;
+  new_price: string;
+  difference: string;
+  effective_date: string;
+  reason: string;
+  modified_by: string;
+  timestamp: string;
+  applicable_to_all_branches: boolean;
+  affected_branches: string;
+}
+
+export interface TariffPricePreview {
+  service_id: string;
+  service_name: string;
+  service_code: string;
+  current_price: string;
+  new_price: string;
+  difference: string;
+  percentage_change: string;
+  pricing_unit: string;
+  effective_date: string;
+  applies_to_all_branches: boolean;
+  total_branches_count: number;
+  affected_branches_count: number;
+  affected_branches: Array<{ id: string; name: string }>;
+}
+
+
 

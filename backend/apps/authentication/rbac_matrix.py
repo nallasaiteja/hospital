@@ -47,7 +47,6 @@ ROLE_DATA_SCOPES = {
 # Roles that have strict READ-ONLY supervisory or audit access across operational modules
 STRICT_READ_ONLY_ROLES = {
     RoleEnum.BRANCH_MANAGER,
-    RoleEnum.HOSPITAL_ADMIN,
     RoleEnum.AUDITOR,
 }
 
@@ -80,7 +79,7 @@ ALL_MODULES = [
     'LAB', 'RADIOLOGY', 'PHARMACY', 'INVENTORY', 'OT_ICU', 'BILLING',
     'INSURANCE', 'FIN_ACCOUNTS', 'TRANSACTIONS', 'INVESTMENTS', 'BANKING',
     'LOANS', 'GENERAL_LEDGER', 'BUDGETING', 'PROFIT_LOSS', 'HR_PAYROLL',
-    'ASSETS', 'REPORTS', 'USERS_ROLES', 'SETTINGS_AUDIT', 'PATIENT_PORTAL',
+    'ASSETS', 'REPORTS', 'USERS_ROLES', 'SETTINGS_AUDIT', 'PATIENT_PORTAL', 'PRICING_TARIFFS',
 ]
 
 # 3D Role -> Module -> Allowed Actions Matrix
@@ -91,6 +90,7 @@ ROLE_MODULE_ACTIONS = {
         'REPORTS': ['view', 'export'],
         'USERS_ROLES': ['view', 'create', 'edit', 'delete', 'manage', 'approve'],
         'SETTINGS_AUDIT': ['view', 'create', 'edit', 'export', 'manage'],
+        'PRICING_TARIFFS': ['view', 'create', 'edit', 'delete', 'manage', 'export'],
     },
     # B. BRANCH MANAGER / HOSPITAL ADMIN: Strict read-only branch operations monitoring across all hospital domains
     RoleEnum.BRANCH_MANAGER: {
@@ -119,6 +119,7 @@ ROLE_MODULE_ACTIONS = {
         'ASSETS': ['view', 'export'],
         'REPORTS': ['view', 'export'],
         'SETTINGS_AUDIT': ['view', 'export'],
+        'PRICING_TARIFFS': ['view', 'export'],
     },
     RoleEnum.HOSPITAL_ADMIN: {
         'DASHBOARD': ['view', 'export'],
@@ -146,6 +147,7 @@ ROLE_MODULE_ACTIONS = {
         'ASSETS': ['view', 'export'],
         'REPORTS': ['view', 'export'],
         'SETTINGS_AUDIT': ['view', 'export'],
+        'PRICING_TARIFFS': ['view', 'create', 'edit', 'delete', 'manage', 'approve', 'export'],
     },
     # C. MEDICAL DIRECTOR: Clinical governance, doctor availability, OPD/IPD quality, patient safety, medical protocols & clinical audit (9 sections)
     RoleEnum.MEDICAL_DIRECTOR: {
@@ -231,6 +233,7 @@ ROLE_MODULE_ACTIONS = {
         'BILLING': ['view', 'create', 'edit', 'print', 'export'],
         'TRANSACTIONS': ['view', 'create'],
         'REPORTS': ['view', 'export'],
+        'PRICING_TARIFFS': ['view', 'export'],
     },
     RoleEnum.CASHIER: {
         'PATIENTS': ['view'],
@@ -254,6 +257,7 @@ ROLE_MODULE_ACTIONS = {
         'PROFIT_LOSS': ['view', 'export'],
         'HR_PAYROLL': ['view', 'approve', 'post'],
         'REPORTS': ['view', 'export'],
+        'PRICING_TARIFFS': ['view', 'export'],
     },
     # K. FINANCE MANAGER: Strategic financial controller (Checker) — Executive P&L, voucher approval queue, budgets, loans & payroll release sign-off
     RoleEnum.FINANCE_MANAGER: {
@@ -267,6 +271,7 @@ ROLE_MODULE_ACTIONS = {
         'PROFIT_LOSS': ['view', 'export'],
         'HR_PAYROLL': ['view', 'approve', 'post'],  # Approve & disburse payroll
         'REPORTS': ['view', 'export'],
+        'PRICING_TARIFFS': ['view', 'export'],
     },
     RoleEnum.INVESTMENT_MANAGER: {
         'DASHBOARD': ['view'],

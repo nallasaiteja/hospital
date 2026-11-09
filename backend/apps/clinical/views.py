@@ -436,6 +436,18 @@ class InpatientAdmissionViewSet(viewsets.ModelViewSet):
             branch = bed.ward.branch
 
         adm_number = f"IPD-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+        captured_bed_rate = bed.daily_rate if bed else Decimal('1500.00')
+
+        # Dynamically resolve standard admission fee from Central Tariff Authority
+        captured_adm_fee = Decimal('500.00')
+        try:
+            from apps.billing_finance.tariff_service import CentralTariffService
+            resolved_fee = CentralTariffService.resolve_service_price('ADM-REG-01', branch_id=str(branch.id) if branch else None)
+            if resolved_fee and resolved_fee.get('price'):
+                captured_adm_fee = Decimal(str(resolved_fee['price']))
+        except Exception:
+            pass
+
         admission = InpatientAdmission.objects.create(
             admission_number=adm_number,
             patient=patient,
@@ -447,6 +459,8 @@ class InpatientAdmissionViewSet(viewsets.ModelViewSet):
             requested_ward_type=requested_ward_type,
             initial_diagnosis=diagnosis,
             admission_deposit=deposit,
+            captured_bed_rate=captured_bed_rate,
+            captured_admission_fee=captured_adm_fee,
             status=AdmissionStatus.ADMITTED if bed else AdmissionStatus.REQUESTED
         )
 
@@ -517,19 +531,20 @@ class DischargePatientView(views.APIView):
             bed.status = BedStatus.CLEANING if requires_cleaning else BedStatus.AVAILABLE
             bed.save(update_fields=['status'])
 
-        # Finalize bed charges on invoice if present
+        # Finalize bed charges on invoice if present, strictly respecting captured historical tariff
         if admission.invoice and bed:
             diff_days = max(1, (admission.discharge_date - admission.admission_date).days)
-            bed_cost = Decimal(str(diff_days)) * bed.daily_rate
+            bed_rate = getattr(admission, 'captured_bed_rate', None) or bed.daily_rate
+            bed_cost = Decimal(str(diff_days)) * bed_rate
             existing_bed_item = admission.invoice.items.filter(item_type='BED_CHARGE').first()
             if not existing_bed_item:
                 from apps.billing_finance.models import InvoiceItem, ChargeItemType
                 InvoiceItem.objects.create(
                     invoice=admission.invoice,
                     item_type=ChargeItemType.BED_CHARGE,
-                    description=f"Bed Charges ({diff_days} days @ ₹{bed.daily_rate}/day) - {bed.ward.name} Bed {bed.bed_number}",
+                    description=f"Bed Charges ({diff_days} days @ ₹{bed_rate}/day) - {bed.ward.name} Bed {bed.bed_number}",
                     quantity=diff_days,
-                    unit_price=bed.daily_rate,
+                    unit_price=bed_rate,
                     subtotal=bed_cost
                 )
                 admission.invoice.recalculate_totals()

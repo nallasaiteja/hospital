@@ -27,6 +27,10 @@ import {
   EmergencyIPDDashboardStats,
   InpatientRunningBill,
   LoungeTVData,
+  TariffServiceItem,
+  TariffListResponse,
+  PriceHistoryRecord,
+  TariffPricePreview,
 } from '../types';
 
 const api = axios.create({
@@ -1549,6 +1553,57 @@ export const doctorWorkspaceService = {
 
   extractVoicePrescription: (payload: { audio_transcript?: string; transcript?: string; raw_text?: string }) =>
     api.post('/clinical/voice-prescription/extract/', payload).then((r) => r.data),
+};
+
+export const tariffManagementService = {
+  getHospitalTariffs: (params?: { category?: string; search?: string; branch_id?: string; is_active?: boolean }) =>
+    api.get<TariffListResponse>('/billing-finance/hospital-tariffs/', { params }).then((r) => r.data),
+
+  getServiceDetail: (id: string) =>
+    api.get<TariffServiceItem & { recent_history: PriceHistoryRecord[]; branch_overrides: any[] }>(`/billing-finance/hospital-tariffs/${id}/`).then((r) => r.data),
+
+  createService: (payload: {
+    service_code: string;
+    name: string;
+    category: string;
+    standard_price: number | string;
+    pricing_unit: string;
+    description?: string;
+    department_id?: string;
+    reason?: string;
+    effective_from?: string;
+  }) => api.post('/billing-finance/hospital-tariffs/', payload).then((r) => r.data),
+
+  updateServicePrice: (
+    id: string,
+    payload: {
+      new_price: number | string;
+      reason: string;
+      effective_date?: string;
+      applies_to_all_branches?: boolean;
+      branch_ids?: string[];
+    }
+  ) => api.post(`/billing-finance/hospital-tariffs/${id}/update-price/`, payload).then((r) => r.data),
+
+  toggleServiceStatus: (id: string, is_active: boolean) =>
+    api.post(`/billing-finance/hospital-tariffs/${id}/toggle-status/`, { is_active }).then((r) => r.data),
+
+  previewPriceChange: (payload: {
+    service_id: string;
+    new_price: number | string;
+    effective_date?: string;
+    applies_to_all_branches?: boolean;
+    branch_ids?: string[];
+  }) => api.post<TariffPricePreview>('/billing-finance/hospital-tariffs/preview-changes/', payload).then((r) => r.data),
+
+  getAllPriceHistory: (params?: { limit?: number }) =>
+    api.get<{ count: number; results: PriceHistoryRecord[] }>('/billing-finance/hospital-tariffs/all-history/', { params }).then((r) => r.data),
+
+  getServicePriceHistory: (id: string) =>
+    api.get<{ count: number; results: PriceHistoryRecord[] }>(`/billing-finance/hospital-tariffs/${id}/history/`).then((r) => r.data),
+
+  getActiveTariffSummary: (params?: { branch_id?: string }) =>
+    api.get<{ timestamp: string; tariffs: Record<string, any> }>('/billing-finance/hospital-tariffs/active-tariff-summary/', { params }).then((r) => r.data),
 };
 
 export default api;

@@ -46,24 +46,36 @@ def resolve_consultation_fee(
 ) -> dict:
     """
     Resolves the applicable OPD consultation fee in Indian Rupees (₹) using the hospital's
-    existing fee configuration (TariffPlan overrides -> Doctor consultation_fee -> HospitalService catalogue).
+    centralized tariff authority (CentralTariffService -> TariffPlan overrides -> Doctor consultation_fee).
     """
+    from apps.billing_finance.tariff_service import CentralTariffService
+
     dept = department or getattr(doctor, 'department', None)
+    branch_id = getattr(doctor, 'branch_id', None)
     matched_service = None
     fee = None
-    fee_source = 'DOCTOR_PROFILE'
+    fee_source = 'CENTRAL_TARIFF'
 
-    # 1. Look up active OPD Consultation service in HospitalService catalogue
+    # Check whether doctor is a specialist
+    desig = (getattr(doctor, 'designation', '') or '').lower() if doctor else ''
+    spec = (getattr(doctor, 'specialization', '') or '').lower() if doctor else ''
+    is_specialist = bool('specialist' in desig or 'surgeon' in desig or 'consultant' in desig or 'chief' in desig or spec)
+
+    # 1. Look up central HospitalService for OPD consultation
     service_qs = HospitalService.objects.filter(
         category=ServiceCategory.OPD_CONSULTATION,
         is_active=True
     )
-    if dept:
+    if is_specialist:
+        matched_service = service_qs.filter(service_code='SRV-APPT-SPEC').first()
+    if not matched_service:
+        matched_service = service_qs.filter(service_code='SRV-APPT-GEN').first()
+    if not matched_service and dept:
         matched_service = service_qs.filter(department=dept).first()
     if not matched_service:
         matched_service = service_qs.first()
 
-    # 2. Check patient-specific active TariffPlan override if service exists
+    # 2. Check patient-specific active TariffPlan override (e.g. corporate/insurance concession)
     if patient and matched_service:
         tariff_plan = TariffPlan.objects.filter(patient=patient, is_active=True).first()
         if tariff_plan:
@@ -72,17 +84,19 @@ def resolve_consultation_fee(
                 fee = rate_override.rate
                 fee_source = f"TARIFF_PLAN:{tariff_plan.code}"
 
-    # 3. Use doctor's configured consultation_fee on StaffProfile
+    # 3. Dynamic resolution from CentralTariffService (evaluates branch override or central standard price)
+    if fee is None and matched_service:
+        resolved = CentralTariffService.resolve_service_price(matched_service.service_code, branch_id=branch_id)
+        if resolved.get('amount') and resolved['amount'] > Decimal('0.00'):
+            fee = Decimal(str(resolved['amount'])).quantize(Decimal('0.01'))
+            fee_source = f"BRANCH_OVERRIDE:{matched_service.service_code}" if resolved.get('is_override') else f"CENTRAL_TARIFF:{matched_service.service_code}"
+
+    # 4. Fallback to Doctor StaffProfile custom consultation_fee if explicitly set
     if fee is None and getattr(doctor, 'consultation_fee', None) and doctor.consultation_fee > Decimal('0.00'):
         fee = Decimal(str(doctor.consultation_fee)).quantize(Decimal('0.01'))
         fee_source = 'DOCTOR_PROFILE'
 
-    # 4. Fallback to HospitalService standard_price if doctor fee is 0/unset
-    if fee is None and matched_service and matched_service.standard_price > Decimal('0.00'):
-        fee = Decimal(str(matched_service.standard_price)).quantize(Decimal('0.01'))
-        fee_source = f"SERVICE_CATALOGUE:{matched_service.service_code}"
-
-    # 5. Final institutional default if neither is set
+    # 5. Final institutional fallback
     if fee is None or fee <= Decimal('0.00'):
         fee = Decimal('500.00')
         fee_source = 'HOSPITAL_DEFAULT_TARIFF'

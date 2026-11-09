@@ -32,6 +32,7 @@ from .loan_liability_views import (
     LoanViewSet, HospitalLiabilityViewSet,
     LoanLiabilityDashboardView, LoanLiabilityReportExportView
 )
+from .tariff_views import HospitalTariffViewSet
 from .billing_views import (
     CentralBillingViewSet, HospitalServiceViewSet, TariffPlanViewSet,
     HospitalPackageViewSet, PackageSubscriptionViewSet,
@@ -61,6 +62,7 @@ from .financial_transaction_views import FinancialTransactionViewSet
 app_name = 'billing_finance'
 
 router = DefaultRouter()
+router.register(r'hospital-tariffs', HospitalTariffViewSet, basename='hospital-tariffs')
 router.register(r'invoices', CentralBillingViewSet, basename='invoice')
 router.register(r'services', HospitalServiceViewSet, basename='hospital-service')
 router.register(r'tariffs', TariffPlanViewSet, basename='tariff-plan')

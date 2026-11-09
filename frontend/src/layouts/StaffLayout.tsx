@@ -166,8 +166,8 @@ export const StaffLayout: React.FC = () => {
         navigate('/staff/branch-manager', { replace: true });
       }
     } else if (role === 'HOSPITAL_ADMIN') {
-      if (location.pathname === '/staff/dashboard' || location.pathname === '/staff') {
-        navigate('/staff/reports?tab=FINANCE', { replace: true });
+      if (location.pathname === '/staff/dashboard' || location.pathname === '/staff' || location.pathname === '/staff/') {
+        navigate('/staff/pricing-tariffs', { replace: true });
       }
     } else if (role === 'INVENTORY_MANAGER' || role === 'PROCUREMENT_OFFICER') {
       if (location.pathname === '/staff/dashboard' || location.pathname === '/staff' || location.pathname === '/staff/') {
@@ -228,6 +228,7 @@ export const StaffLayout: React.FC = () => {
       title: 'Financial Management',
       translationKey: 'navigation.financialManagement',
       items: [
+        { label: 'Hospital Pricing & Tariff Management', translationKey: 'navigation.pricingTariffs', path: '/staff/pricing-tariffs', icon: Tag, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'BILLING_EXECUTIVE', 'FINANCE_MANAGER'] },
         { label: '12. Billing & Cashier', translationKey: 'navigation.billing', path: '/staff/billing', icon: DollarSign, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'BILLING_EXECUTIVE'] },
         { label: '13. Insurance & TPA Claims', translationKey: 'navigation.insurance', path: '/staff/insurance', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER', 'INSURANCE_COORDINATOR', 'BILLING_EXECUTIVE'] },
         { label: '14. Financial Accounts', translationKey: 'navigation.financialAccounts', path: '/staff/financial-accounts', icon: Landmark, roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER'] },
@@ -454,6 +455,7 @@ export const StaffLayout: React.FC = () => {
     items: [
       { label: 'Billing & Cashier Desk', translationKey: 'navigation.billing', path: '/staff/billing', icon: DollarSign },
       { label: 'Patient Directory Lookup', translationKey: 'navigation.patients', path: '/staff/patients', icon: Users },
+      { label: 'Hospital Pricing & Tariffs', translationKey: 'navigation.pricingTariffs', path: '/staff/pricing-tariffs', icon: Tag },
       { label: 'Daily Collection & Billing Reports', translationKey: 'navigation.reports', path: '/staff/reports', icon: BarChart3 },
     ],
   };
@@ -469,7 +471,7 @@ export const StaffLayout: React.FC = () => {
     ],
   };
 
-  // Dedicated Ultra-Clean 2-Section Navigation strictly for Super Admin (Admin of all hospital branches)
+  // Dedicated Ultra-Clean Navigation strictly for Super Admin (Admin of all hospital branches)
   const superAdminNavGroup: NavGroup = {
     title: 'Enterprise Administration',
     translationKey: 'navigation.enterpriseAdmin',
@@ -479,6 +481,12 @@ export const StaffLayout: React.FC = () => {
         translationKey: 'navigation.branchManager',
         path: '/staff/branch-manager',
         icon: Building2,
+      },
+      {
+        label: 'Hospital Pricing & Tariff Management',
+        translationKey: 'navigation.pricingTariffs',
+        path: '/staff/pricing-tariffs',
+        icon: Tag,
       },
       {
         label: 'System Access & Security Governance',
@@ -509,11 +517,17 @@ export const StaffLayout: React.FC = () => {
     ],
   };
 
-  // Dedicated Multi-Branch Navigation strictly for Hospital Administrator (Finances & Staff Details in detail)
+  // Dedicated Multi-Branch Navigation strictly for Hospital Administrator (Central Pricing & Tariff Authority)
   const hospitalAdminNavGroup: NavGroup = {
     title: 'Hospital Administration',
     translationKey: 'navigation.hospitalAdminNetwork',
     items: [
+      {
+        label: 'Hospital Pricing & Tariff Management',
+        translationKey: 'navigation.pricingTariffs',
+        path: '/staff/pricing-tariffs',
+        icon: Tag,
+      },
       {
         label: 'Financial Reports & Analytics',
         translationKey: 'navigation.reportsFinance',
@@ -729,7 +743,7 @@ export const StaffLayout: React.FC = () => {
             <div key={gIdx} className="space-y-1">
               {(isSidebarOpen || isMobileDrawerOpen) && (
                 <div className="px-3 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                  {group.translationKey ? t(group.translationKey) : group.title}
+                  {group.translationKey ? t(group.translationKey, group.title) : group.title}
                 </div>
               )}
               {group.items.map((item) => {
@@ -738,7 +752,7 @@ export const StaffLayout: React.FC = () => {
                 const isActive = item.path.includes('?')
                   ? (currentFull === item.path || (location.pathname === '/staff/branch-manager' && item.path.endsWith('?tab=overview') && !location.search) || (location.pathname === '/staff/nurse-workspace' && item.path.endsWith('?tab=patients') && !location.search))
                   : (location.pathname === item.path || (item.path !== '/staff/dashboard' && location.pathname.startsWith(item.path + '/')));
-                const displayLabel = item.translationKey ? t(item.translationKey) : item.label;
+                const displayLabel = item.translationKey ? t(item.translationKey, item.label) : item.label;
 
                 return (
                   <Link
@@ -1034,7 +1048,7 @@ export const StaffLayout: React.FC = () => {
               const allItems = [...visibleNavGroups.flatMap((g) => g.items), ...navGroups.flatMap((g) => g.items)];
               const currentNav = allItems.find((i) => i.path === location.pathname);
               return currentNav?.translationKey
-                ? t(currentNav.translationKey)
+                ? t(currentNav.translationKey, currentNav.label)
                 : location.pathname.split('/').pop()?.replace('-', ' ') || t('navigation.dashboard', 'Dashboard');
             })()}
           </span>

@@ -103,6 +103,7 @@ class Appointment(BaseUUIDModel):
     icd10_code = models.CharField(max_length=50, blank=True)
     general_examination = models.TextField(blank=True)
     systemic_examination = models.TextField(blank=True)
+    captured_consultation_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     invoice = models.ForeignKey('billing_finance.Invoice', on_delete=models.SET_NULL, null=True, blank=True, related_name='appointment_records')
 
     class Meta:
@@ -243,6 +244,8 @@ class InpatientAdmission(BaseUUIDModel):
     initial_diagnosis = models.TextField()
     status = models.CharField(max_length=25, choices=AdmissionStatus.choices, default=AdmissionStatus.ADMITTED)
     admission_deposit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    captured_bed_rate = models.DecimalField(max_digits=10, decimal_places=2, default=1500.00)
+    captured_admission_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     # 4-point Discharge Clearance Checklist
     clinical_clearance = models.BooleanField(default=False)

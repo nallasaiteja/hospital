@@ -9,15 +9,28 @@ from apps.authentication.models import PatientProfile, StaffProfile
 
 class ServiceCategory(models.TextChoices):
     OPD_CONSULTATION = 'OPD_CONSULTATION', 'Doctor Consultation (OPD)'
+    TOKEN_REGISTRATION = 'TOKEN_REGISTRATION', 'OPD Token & Registration Charges'
+    ADMISSION_CHARGES = 'ADMISSION_CHARGES', 'Inpatient Admission & Registration'
     IPD_ROOM_BED = 'IPD_ROOM_BED', 'Inpatient Room & Bed Charges'
+    ICU_CARE = 'ICU_CARE', 'Intensive Care Unit (ICU/NICU/PICU)'
     DIAGNOSTIC_LAB = 'DIAGNOSTIC_LAB', 'Clinical Diagnostic Laboratory'
     RADIOLOGY_IMAGING = 'RADIOLOGY_IMAGING', 'Radiology & Medical Imaging'
-    PHARMACY = 'PHARMACY', 'Pharmacy Dispensation'
-    SURGERY_PROCEDURE = 'SURGERY_PROCEDURE', 'Surgical OT & Clinical Procedure'
-    ICU_CARE = 'ICU_CARE', 'Intensive Care Unit (ICU)'
-    EMERGENCY = 'EMERGENCY', 'Emergency Casualty & Triage'
     NURSING = 'NURSING', 'Nursing & Clinical Care'
+    SURGERY_PROCEDURE = 'SURGERY_PROCEDURE', 'Surgical OT & Clinical Procedure'
+    PHARMACY = 'PHARMACY', 'Pharmacy Dispensation'
+    AMBULANCE = 'AMBULANCE', 'Ambulance & Transport Services'
+    EMERGENCY = 'EMERGENCY', 'Emergency Casualty & Triage'
     GENERAL_SERVICE = 'GENERAL_SERVICE', 'General Hospital Materials & Services'
+
+
+class PricingUnit(models.TextChoices):
+    PER_DAY = 'PER_DAY', 'Per Day'
+    PER_NIGHT = 'PER_NIGHT', 'Per Night'
+    PER_HOUR = 'PER_HOUR', 'Per Hour'
+    PER_VISIT = 'PER_VISIT', 'Per Visit / Consultation'
+    ONE_TIME = 'ONE_TIME', 'One-Time Charge'
+    PER_TEST = 'PER_TEST', 'Per Test / Investigation'
+    PER_UNIT = 'PER_UNIT', 'Per Unit'
 
 
 class HospitalService(BaseUUIDModel):
@@ -30,16 +43,66 @@ class HospitalService(BaseUUIDModel):
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='hospital_services')
     description = models.TextField(blank=True)
     standard_price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    pricing_unit = models.CharField(max_length=30, choices=PricingUnit.choices, default=PricingUnit.ONE_TIME)
     tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))  # GST/Tax percentage
     is_active = models.BooleanField(default=True)
     effective_from = models.DateField(default=timezone.localdate)
+    applies_to_all_branches = models.BooleanField(default=True)
+    applicable_branches = models.ManyToManyField(Branch, blank=True, related_name='hospital_services')
+    last_updated_by = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_services')
+    last_updated_by_name = models.CharField(max_length=150, blank=True)
 
     class Meta:
         db_table = 'hms_hospital_services'
         ordering = ['category', 'name']
 
     def __str__(self):
-        return f"[{self.service_code}] {self.name} - ₹{self.standard_price}"
+        return f"[{self.service_code}] {self.name} - ₹{self.standard_price} ({self.get_pricing_unit_display()})"
+
+
+class PriceChangeHistory(BaseUUIDModel):
+    """
+    Immutable audit history for every hospital tariff and service price modification.
+    """
+    service = models.ForeignKey(HospitalService, on_delete=models.CASCADE, related_name='price_history')
+    previous_price = models.DecimalField(max_digits=12, decimal_places=2)
+    new_price = models.DecimalField(max_digits=12, decimal_places=2)
+    effective_date = models.DateField(default=timezone.localdate)
+    reason = models.TextField(blank=True, default="Tariff revision")
+    modified_by = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='price_changes')
+    modified_by_name = models.CharField(max_length=150, blank=True)
+    applicable_to_all_branches = models.BooleanField(default=True)
+    applicable_branches = models.ManyToManyField(Branch, blank=True, related_name='price_changes')
+    affected_branches_summary = models.CharField(max_length=255, default="All Branches")
+
+    class Meta:
+        db_table = 'hms_price_change_history'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.service.name}: ₹{self.previous_price} -> ₹{self.new_price} ({self.effective_date})"
+
+
+class BranchTariffOverride(BaseUUIDModel):
+    """
+    Optional branch-specific pricing override explicitly authorized by Hospital Admin.
+    By default, central pricing (HospitalService.standard_price) applies to every branch.
+    """
+    service = models.ForeignKey(HospitalService, on_delete=models.CASCADE, related_name='branch_overrides')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='tariff_overrides')
+    override_price = models.DecimalField(max_digits=12, decimal_places=2)
+    effective_from = models.DateField(default=timezone.localdate)
+    effective_to = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    authorized_by = models.ForeignKey(StaffProfile, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        db_table = 'hms_branch_tariff_overrides'
+        unique_together = ('service', 'branch')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.service.name} @ {self.branch.name}: ₹{self.override_price}"
 
 
 class TariffType(models.TextChoices):

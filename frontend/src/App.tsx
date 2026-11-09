@@ -56,6 +56,7 @@ import { VoiceTranslationPage } from './pages/VoiceTranslationPage'; // Voice La
 import { BranchManagerDashboard } from './pages/staff/BranchManagerDashboard'; // Dedicated Branch Manager Command Center (14 Sections)
 import { HRDashboardPage } from './pages/staff/HRDashboardPage'; // Dedicated HR Management Command Center (13 Modules)
 import { DepartmentHeadDashboardPage } from './pages/staff/DepartmentHeadDashboardPage'; // Dedicated Department Head Operations Hub (12 Modules)
+import { HospitalPricingTariffPage } from './pages/staff/HospitalPricingTariffPage'; // Centralized Hospital Pricing & Tariff Management
 
 export const App: React.FC = () => {
   return (
@@ -171,6 +172,7 @@ export const App: React.FC = () => {
 
               {/* 12. Billing & Payments */}
               <Route path="billing" element={<BillingPage />} />
+              <Route path="pricing-tariffs" element={<HospitalPricingTariffPage />} />
 
               {/* 13. Insurance & Corporate Billing */}
               <Route path="insurance" element={<InsurancePage />} />

@@ -29,7 +29,8 @@ export type RBACModule =
   | 'PATIENT_PORTAL'
   | 'REPORTS'
   | 'USERS_ROLES'
-  | 'SETTINGS_AUDIT';
+  | 'SETTINGS_AUDIT'
+  | 'PRICING_TARIFFS';
 
 export type RBACAction =
   | 'view'
@@ -99,6 +100,7 @@ export const ROLE_MODULE_ACTIONS: Record<UserRole, Partial<Record<RBACModule, RB
     REPORTS: ['view', 'export'],
     USERS_ROLES: ['view', 'create', 'edit', 'delete', 'manage', 'approve'],
     SETTINGS_AUDIT: ['view', 'create', 'edit', 'export', 'manage'],
+    PRICING_TARIFFS: ['view', 'create', 'edit', 'delete', 'manage', 'export'],
   },
   // B. BRANCH MANAGER / HOSPITAL ADMIN: Strict read-only branch operations monitoring across all hospital domains
   BRANCH_MANAGER: {
@@ -127,6 +129,7 @@ export const ROLE_MODULE_ACTIONS: Record<UserRole, Partial<Record<RBACModule, RB
     ASSETS: ['view', 'export'],
     REPORTS: ['view', 'export'],
     SETTINGS_AUDIT: ['view', 'export'],
+    PRICING_TARIFFS: ['view', 'export'],
   },
   HOSPITAL_ADMIN: {
     DASHBOARD: ['view', 'export'],
@@ -154,6 +157,7 @@ export const ROLE_MODULE_ACTIONS: Record<UserRole, Partial<Record<RBACModule, RB
     ASSETS: ['view', 'export'],
     REPORTS: ['view', 'export'],
     SETTINGS_AUDIT: ['view', 'export'],
+    PRICING_TARIFFS: ['view', 'create', 'edit', 'delete', 'manage', 'approve', 'export'],
   },
   // C. MEDICAL DIRECTOR (Dr. Bhaskar Chatterjee): Clinical Practice Suite (Doctor Workspace & Voice Translation ONLY)
   MEDICAL_DIRECTOR: {
@@ -237,6 +241,7 @@ export const ROLE_MODULE_ACTIONS: Record<UserRole, Partial<Record<RBACModule, RB
     BILLING: ['view', 'create', 'edit', 'print', 'export'],
     TRANSACTIONS: ['view', 'create'],
     REPORTS: ['view', 'export'],
+    PRICING_TARIFFS: ['view', 'export'],
   },
   CASHIER: {
     PATIENTS: ['view'],
@@ -260,6 +265,7 @@ export const ROLE_MODULE_ACTIONS: Record<UserRole, Partial<Record<RBACModule, RB
     PROFIT_LOSS: ['view', 'export'],
     HR_PAYROLL: ['view', 'approve', 'post'],
     REPORTS: ['view', 'export'],
+    PRICING_TARIFFS: ['view', 'export'],
   },
   // K. FINANCE MANAGER: Strategic financial controller (Checker) — Executive P&L, voucher approval queue, budgets, loans & payroll release sign-off
   FINANCE_MANAGER: {
@@ -273,6 +279,7 @@ export const ROLE_MODULE_ACTIONS: Record<UserRole, Partial<Record<RBACModule, RB
     PROFIT_LOSS: ['view', 'export'],
     HR_PAYROLL: ['view', 'approve', 'post'],
     REPORTS: ['view', 'export'],
+    PRICING_TARIFFS: ['view', 'export'],
   },
   INVESTMENT_MANAGER: {
     DASHBOARD: ['view'],
@@ -336,6 +343,7 @@ export const ROUTE_TO_MODULE_MAP: { pattern: RegExp; module: RBACModule; label: 
   { pattern: /^\/staff\/reports\/?$/, module: 'REPORTS', label: '25. Reports & Analytics' },
   { pattern: /^\/staff\/(users-roles|staff-management)\/?$/, module: 'USERS_ROLES', label: '26. Users, Roles & RBAC' },
   { pattern: /^\/staff\/(settings-audit|audit)\/?$/, module: 'SETTINGS_AUDIT', label: '27. Settings & Audit Trail' },
+  { pattern: /^\/staff\/pricing-tariffs\/?$/, module: 'PRICING_TARIFFS', label: 'Hospital Pricing & Tariff Management' },
 ];
 
 export function canPerformModuleAction(
