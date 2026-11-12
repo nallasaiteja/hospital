@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
@@ -48,6 +49,7 @@ type TabType =
   | 'receivables';
 
 export const InsurancePage: React.FC = () => {
+  const { t } = useTranslation();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -280,7 +282,7 @@ export const InsurancePage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             <ShieldCheck className="w-7 h-7 text-cyan-400" />
-            Insurance & Corporate Billing
+            {t('insurance.title', 'Insurance & Corporate Billing')}
           </h1>
           <p className="text-sm text-slate-400">
             Cashless hospitalization dossiers, TPA adjudication, pre-auths, corporate credit billing, and settlement reconciliation.

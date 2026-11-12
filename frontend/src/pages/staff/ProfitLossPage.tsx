@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
@@ -42,6 +43,7 @@ interface MetricComparison {
 }
 
 export const ProfitLossPage: React.FC = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [periodType, setPeriodType] = useState<PeriodType>('ANNUAL');
   const [startDate, setStartDate] = useState<string>('');
@@ -218,7 +220,7 @@ export const ProfitLossPage: React.FC = () => {
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2.5">
             <TrendingUp className="w-7 h-7 text-emerald-400" />
-            Hospital Profit & Loss (P&L) Management
+            {t('finances.profitLossStatement', 'Hospital Profit & Loss (P&L) Management')}
           </h1>
           <p className="text-sm text-slate-400 mt-0.5">
             Real-time operating income, clinical department revenues, healthcare expenses, and bottom-line surplus.

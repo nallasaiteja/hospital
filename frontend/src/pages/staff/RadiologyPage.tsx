@@ -25,6 +25,7 @@ import { Input } from '../../components/common/Input';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface RadiologyRecord {
   id: string;
@@ -54,6 +55,7 @@ interface RadiologyRecord {
 }
 
 export const RadiologyPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
@@ -349,10 +351,10 @@ export const RadiologyPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Camera className="w-6 h-6 text-cyan-700" />
-            Radiology & Diagnostic Medical Imaging (RIS)
+            {t('radiology.title', 'Radiology & Diagnostic Medical Imaging (RIS)')}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Integrated RIS/PACS engine: appointment scheduling, exam completion, radiologist diagnostic reporting, and DICOM 3.0 image linkage.
+            {t('radiology.subtitle', 'Digital PACS/DICOM worklist, scan scheduling, technologist execution, and radiologist structured reporting.')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -362,13 +364,13 @@ export const RadiologyPage: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 text-white font-semibold text-xs hover:from-cyan-700 hover:to-teal-700 shadow-sm transition self-start md:self-auto"
             >
               <Plus className="w-4 h-4" />
-              Request Imaging Study
+              {t('radiology.imagingWorklist', 'Request Imaging Study')}
             </button>
           )}
           <button
             onClick={fetchOrders}
             className="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-600 shadow-xs transition"
-            title="Refresh Orders"
+            title={t('common.refresh', 'Refresh Orders')}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -386,25 +388,25 @@ export const RadiologyPage: React.FC = () => {
       {/* KPI Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Imaging Requests"
+          title={t('radiology.imagingWorklist', 'Imaging Requests')}
           value={orders.length.toString()}
           icon={Camera}
           accent="cyan"
         />
         <StatCard
-          title="Awaiting Scheduling"
+          title={t('radiology.scheduledScans', 'Awaiting Scheduling')}
           value={orders.filter((r) => r.status === 'REQUESTED').length.toString()}
           icon={Clock}
           accent="amber"
         />
         <StatCard
-          title="Pending Radiologist Report"
+          title={t('radiology.pendingReporting', 'Pending Radiologist Report')}
           value={orders.filter((r) => r.status === 'COMPLETED').length.toString()}
           icon={Activity}
           accent="indigo"
         />
         <StatCard
-          title="Diagnostic Reports Finalized"
+          title={t('radiology.completedStudies', 'Diagnostic Reports Finalized')}
           value={orders.filter((r) => r.status === 'RELEASED' || r.status === 'REPORTED').length.toString()}
           icon={CheckCircle}
           accent="emerald"

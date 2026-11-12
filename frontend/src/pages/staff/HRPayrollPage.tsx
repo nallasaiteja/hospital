@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   Users,
@@ -35,6 +36,7 @@ import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
 
 export const HRPayrollPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
@@ -119,10 +121,10 @@ export const HRPayrollPage: React.FC = () => {
 
   const [correctionForm, setCorrectionForm] = useState({
     correction_reason: '',
-    clock_in: '09:00:00',
-    clock_out: '18:00:00',
+    clock_in: '',
+    clock_out: '',
     status: 'PRESENT',
-    total_hours: '9.00'
+    total_hours: ''
   });
 
   const loadData = async () => {
@@ -361,7 +363,7 @@ export const HRPayrollPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
             <Users className="w-7 h-7 text-indigo-400" />
-            Human Resources (HR) & Staff Payroll
+            {t('hrManagement.payrollTab', 'Human Resources (HR) & Staff Payroll')}
           </h1>
           <p className="text-sm text-slate-400">
             Section 20: Employee lifecycle, biometric shift rosters, leave quotas, 5-stage payroll approval, and General Ledger integration.
@@ -612,10 +614,10 @@ export const HRPayrollPage: React.FC = () => {
                             setSelectedAttendance(att);
                             setCorrectionForm({
                               correction_reason: '',
-                              clock_in: att.clock_in || '09:00:00',
-                              clock_out: att.clock_out || '18:00:00',
+                              clock_in: att.clock_in ? String(att.clock_in).slice(0, 8) : '',
+                              clock_out: att.clock_out ? String(att.clock_out).slice(0, 8) : '',
                               status: att.status || 'PRESENT',
-                              total_hours: att.total_hours_worked || '9.00'
+                              total_hours: att.total_hours_worked !== undefined && att.total_hours_worked !== null ? String(att.total_hours_worked) : ''
                             });
                             setIsCorrectionModalOpen(true);
                           }}
@@ -1270,7 +1272,7 @@ export const HRPayrollPage: React.FC = () => {
               </div>
               <div className="p-3 bg-slate-900/40 rounded-lg border border-slate-800">
                 <span className="text-slate-400 block mb-1">Phone Number</span>
-                <span className="text-slate-200">{selectedStaffProfile.phone_number || '+91 98765 43210'}</span>
+                <span className="text-slate-200">{selectedStaffProfile.phone_number || '—'}</span>
               </div>
             </div>
 

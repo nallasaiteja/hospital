@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useBranch } from '../../context/BranchContext';
+import { useTranslation } from 'react-i18next';
 import { doctorWorkspaceService, pharmacyService, diagnosticsService, opdService } from '../../services/api';
 import { downloadOrPrintReport } from '../../utils/printReport';
 import { DoctorDashboardView } from '../../components/doctor/DoctorDashboardView';
@@ -54,6 +55,7 @@ type WorkspaceTab =
   | 'profile';
 
 export const DoctorWorkspacePage: React.FC = () => {
+  const { t } = useTranslation();
   const { userProfile, staffProfile } = useAuth();
   const { currentBranch } = useBranch();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -566,18 +568,18 @@ const handleTabChange = (tab: string, context?: any) => {
 
   // Navigation Items
   const navTabs = [
-    { id: 'overview', label: '1. Overview', icon: Activity },
-    { id: 'appointments', label: '2. My Appointments', icon: Calendar, badge: todaysAppointmentsCount },
-    { id: 'patients', label: '3. My Patients', icon: Users, badge: patientsCount },
-    { id: 'consultation', label: '4. Examination', icon: Stethoscope, badge: waitingPatientsCount },
-    { id: 'prescriptions', label: '5. Prescriptions', icon: Pill, badge: prescriptionsCount },
-    { id: 'investigations', label: '6. Lab & Radiology', icon: FileText, badge: activeLabOrdersCount },
-    { id: 'reports', label: '7. Diagnostic Reports', icon: Radio, badge: reportsCount },
-    { id: 'inpatients', label: '8. Inpatient Rounds', icon: Bed, badge: inpatientsCount },
-    { id: 'referrals', label: '9. Referrals', icon: Share2, badge: totalReferralsCount },
-    { id: 'documents', label: '10. Certificates', icon: FileCheck, badge: documentsCount },
-    { id: 'leaves', label: '11. Leave Management', icon: Clock, badge: pendingLeavesCount },
-    { id: 'profile', label: '12. My Profile & Duty', icon: UserCheck },
+    { id: 'overview', label: '1. Overview', translationKey: 'doctorWorkspace.clinicalOverview', icon: Activity },
+    { id: 'appointments', label: '2. My Appointments', translationKey: 'doctorWorkspace.opdQueueAppointments', icon: Calendar, badge: todaysAppointmentsCount },
+    { id: 'patients', label: '3. My Patients', translationKey: 'doctorWorkspace.assignedPatients', icon: Users, badge: patientsCount },
+    { id: 'consultation', label: '4. Examination', translationKey: 'doctorWorkspace.consultationDesk', icon: Stethoscope, badge: waitingPatientsCount },
+    { id: 'prescriptions', label: '5. Prescriptions', translationKey: 'doctorWorkspace.prescriptionWriter', icon: Pill, badge: prescriptionsCount },
+    { id: 'investigations', label: '6. Lab & Radiology', translationKey: 'doctorWorkspace.diagnosticOrders', icon: FileText, badge: activeLabOrdersCount },
+    { id: 'reports', label: '7. Diagnostic Reports', translationKey: 'doctorWorkspace.reportsImaging', icon: Radio, badge: reportsCount },
+    { id: 'inpatients', label: '8. Inpatient Rounds', translationKey: 'doctorWorkspace.inpatientRounds', icon: Bed, badge: inpatientsCount },
+    { id: 'referrals', label: '9. Referrals', translationKey: 'doctorWorkspace.clinicalReferrals', icon: Share2, badge: totalReferralsCount },
+    { id: 'documents', label: '10. Certificates', translationKey: 'doctorWorkspace.medicalDocuments', icon: FileCheck, badge: documentsCount },
+    { id: 'leaves', label: '11. Leave Management', translationKey: 'doctorWorkspace.leaveCoverage', icon: Clock, badge: pendingLeavesCount },
+    { id: 'profile', label: '12. My Profile & Duty', translationKey: 'doctorWorkspace.doctorProfile', icon: UserCheck },
   ];
 
   return (
@@ -662,7 +664,7 @@ const handleTabChange = (tab: string, context?: any) => {
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
+              <span>{tab.translationKey ? t(tab.translationKey, tab.label) : tab.label}</span>
               {Boolean(tab.badge !== undefined && tab.badge > 0) && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-200">
                   {tab.badge}

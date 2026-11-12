@@ -36,8 +36,10 @@ import { Input } from '../../components/common/Input';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export const LaboratoryPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
@@ -514,10 +516,10 @@ export const LaboratoryPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
             <FlaskConical className="w-7 h-7 text-teal-600" />
-            Laboratory & Diagnostic Management
+            {t('laboratory.title', 'Laboratory & Diagnostic Management')}
           </h1>
           <p className="text-sm text-slate-500">
-            End-to-end LIS/RIS engine: barcode accessioning, analyzer telemetry, panic alerts, NABL verified reporting & HL7/FHIR interoperability.
+            {t('laboratory.subtitle', 'End-to-end LIS/RIS engine: barcode accessioning, analyzer telemetry, panic alerts, NABL verified reporting & HL7/FHIR interoperability.')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -724,10 +726,10 @@ export const LaboratoryPage: React.FC = () => {
       {/* Tabs */}
       <div className="flex border-b border-slate-200 gap-1 overflow-x-auto text-sm font-medium">
         {[
-          { key: 'orders', label: 'Investigation Orders' },
-          { key: 'results', label: 'Worklist & Result Entry' },
-          { key: 'critical', label: `Critical Alerts (${criticalAlerts.length})` },
-          { key: 'catalogue', label: 'Test Catalogue & Pricing' },
+          { key: 'orders', label: t('laboratory.testOrdersQueue', 'Investigation Orders') },
+          { key: 'results', label: t('laboratory.inProgressProcessing', 'Worklist & Result Entry') },
+          { key: 'critical', label: `${t('laboratory.criticalAlerts', 'Critical Alerts')} (${criticalAlerts.length})` },
+          { key: 'catalogue', label: t('pricingTariffs.laboratoryServices', 'Test Catalogue & Pricing') },
           { key: 'outsourced', label: 'Outsourced Investigations' },
           { key: 'equipment', label: 'Analyzers & Ingestion' },
           { key: 'financials', label: 'Revenue & Margins' },

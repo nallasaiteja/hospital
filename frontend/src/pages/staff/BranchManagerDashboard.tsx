@@ -193,18 +193,18 @@ export const BranchManagerDashboard: React.FC = () => {
                 </span>
                 <span className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-amber-600" />
-                  Strict Read-Only Permission Model
+                  {t('branchManager.readOnlyBadge', 'Strict Read-Only Permission Model')}
                 </span>
                 <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  Branch Manager Command Center
+                  {t('navigation.branchManager', 'Branch Manager Command Center')}
                 </span>
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                {t('navigation.branchManager', 'Branch Manager Command Center')}
+                {t('branchManager.title', 'Branch Manager Command Center')}
               </h1>
               <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                Real-time operational monitoring, multi-department telemetry, patient flow, and supervisory compliance auditing strictly isolated to your assigned branch.
+                {t('branchManager.subtitle', 'Real-time operational monitoring, multi-department telemetry, patient flow, and supervisory compliance auditing strictly isolated to your assigned branch.')}
               </p>
             </div>
 
@@ -215,14 +215,14 @@ export const BranchManagerDashboard: React.FC = () => {
                 className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-medium flex items-center gap-2 transition disabled:opacity-50"
               >
                 <RefreshCw className={clsx('w-3.5 h-3.5', refreshing && 'animate-spin text-cyan-600')} />
-                <span>{refreshing ? 'Refreshing...' : 'Refresh Telemetry'}</span>
+                <span>{refreshing ? t('common.refreshing', 'Refreshing...') : t('branchManager.refreshTelemetry', 'Refresh Telemetry')}</span>
               </button>
               <button
                 onClick={() => handleExportData('Branch_Operations_Executive_Summary')}
                 className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold text-xs flex items-center gap-2 transition shadow-md shadow-cyan-600/20"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export Executive Brief</span>
+                <span>{t('branchManager.exportBrief', 'Export Executive Brief')}</span>
               </button>
             </div>
           </div>
@@ -238,18 +238,21 @@ export const BranchManagerDashboard: React.FC = () => {
                 onClick={() => setTab('overview')}
                 className="text-xs text-slate-500 hover:text-cyan-700 transition flex items-center gap-1 font-semibold cursor-pointer"
               >
-                ← Overview
+                ← {t('branchManager.overviewTab', 'Overview')}
               </button>
               <span className="text-slate-300">•</span>
               <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold flex items-center gap-1">
-                <Lock className="w-3 h-3 text-amber-600" /> Strict Read-Only
+                <Lock className="w-3 h-3 text-amber-600" /> {t('common.readOnly', 'Strict Read-Only')}
               </span>
               <span className="text-slate-600 text-xs font-mono font-medium">
                 {branchName}
               </span>
             </div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-              {BRANCH_MANAGER_TABS.find(t => t.id === activeTab)?.label}
+              {(() => {
+                const tabDef = BRANCH_MANAGER_TABS.find(t => t.id === activeTab);
+                return tabDef ? t(tabDef.translationKey, tabDef.label) : activeTab;
+              })()}
             </h1>
           </div>
 

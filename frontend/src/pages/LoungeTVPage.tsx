@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
@@ -42,6 +43,7 @@ export const LoungeTVPage: React.FC<LoungeTVPageProps> = ({
   preselectedDoctorId,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { currentBranch } = useBranch();
@@ -232,7 +234,7 @@ export const LoungeTVPage: React.FC<LoungeTVPageProps> = ({
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 flex items-center gap-2.5">
-              <span>OPD Patient Lounge TV</span>
+              <span>{t('loungeDisplay.title', 'OPD Patient Lounge TV')}</span>
               <span className="text-cyan-400 font-mono text-xl sm:text-2xl font-light">| Cabin Queue</span>
             </h1>
           </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Receipt,
@@ -129,6 +130,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 export const TransactionsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { userProfile } = useAuth();
 
   // State
@@ -411,7 +413,7 @@ export const TransactionsPage: React.FC = () => {
               <Receipt className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Financial Transaction Management</h1>
+              <h1 className="text-2xl font-bold text-white tracking-tight">{t('finances.cashBankBook', 'Financial Transaction Management')}</h1>
               <p className="text-xs text-slate-400 mt-0.5">
                 Section 14: Double-entry cashbook, approval workflows, transfers, reversals, and audit logs
               </p>

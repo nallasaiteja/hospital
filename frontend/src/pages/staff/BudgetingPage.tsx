@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   Target,
@@ -32,6 +33,7 @@ type ObligationsSubTab = 'suppliers' | 'payroll_tax' | 'loans' | 'investments';
 type BudgetsSubTab = 'variance' | 'capex' | 'thresholds';
 
 export const BudgetingPage: React.FC = () => {
+  const { t } = useTranslation();
   // Navigation & Sub-navigation
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [collectionsSubTab, setCollectionsSubTab] = useState<CollectionsSubTab>('patients');
@@ -356,7 +358,7 @@ export const BudgetingPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-                Cash Flow & Financial Planning
+                {t('finances.budgetAnalysis', 'Cash Flow & Financial Planning')}
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
                   Section 19 Treasury Engine
                 </span>

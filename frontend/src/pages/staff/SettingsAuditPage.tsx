@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   Settings,
@@ -26,6 +27,7 @@ import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
 
 export const SettingsAuditPage: React.FC = () => {
+  const { t } = useTranslation();
   const { role } = useAuth();
   const { currentBranch } = useBranch();
   const isSuperAdmin = role === 'SUPER_ADMIN';

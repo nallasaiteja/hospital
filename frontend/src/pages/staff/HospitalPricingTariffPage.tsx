@@ -25,6 +25,7 @@ import {
   Stethoscope,
   Info
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { tariffManagementService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useBranch } from '../../context/BranchContext';
@@ -44,21 +45,22 @@ import {
 
 // Tab categories mapped to backend ServiceCategory choices
 const CATEGORY_TABS = [
-  { key: 'ALL', label: 'All Services', icon: Layers },
-  { key: 'OPD_CONSULTATION', label: 'Appointment Charges', icon: Stethoscope },
-  { key: 'TOKEN_REGISTRATION', label: 'Token Charges', icon: Tag },
-  { key: 'ADMISSION_CHARGES', label: 'Admission Charges', icon: Activity },
-  { key: 'IPD_ROOM_BED', label: 'Bed & Room Charges', icon: Bed },
-  { key: 'ICU_CARE', label: 'ICU & Critical Care', icon: Activity },
-  { key: 'DIAGNOSTIC_LAB', label: 'Laboratory Services', icon: Layers },
-  { key: 'RADIOLOGY_IMAGING', label: 'Radiology & Imaging', icon: Layers },
-  { key: 'NURSING', label: 'Nursing Services', icon: Activity },
-  { key: 'SURGERY_PROCEDURE', label: 'Procedures & Surgery', icon: Activity },
-  { key: 'PHARMACY', label: 'Pharmacy & Dispensing', icon: Tag },
-  { key: 'AMBULANCE', label: 'Ambulance Services', icon: Activity },
+  { key: 'ALL', label: 'All Services', translationKey: 'pricingTariffs.allServices', icon: Layers },
+  { key: 'OPD_CONSULTATION', label: 'Appointment Charges', translationKey: 'pricingTariffs.appointmentCharges', icon: Stethoscope },
+  { key: 'TOKEN_REGISTRATION', label: 'Token Charges', translationKey: 'pricingTariffs.tokenCharges', icon: Tag },
+  { key: 'ADMISSION_CHARGES', label: 'Admission Charges', translationKey: 'pricingTariffs.admissionCharges', icon: Activity },
+  { key: 'IPD_ROOM_BED', label: 'Bed & Room Charges', translationKey: 'pricingTariffs.bedRoomCharges', icon: Bed },
+  { key: 'ICU_CARE', label: 'ICU & Critical Care', translationKey: 'pricingTariffs.icuCriticalCare', icon: Activity },
+  { key: 'DIAGNOSTIC_LAB', label: 'Laboratory Services', translationKey: 'pricingTariffs.laboratoryServices', icon: Layers },
+  { key: 'RADIOLOGY_IMAGING', label: 'Radiology & Imaging', translationKey: 'pricingTariffs.radiologyImaging', icon: Layers },
+  { key: 'NURSING', label: 'Nursing Services', translationKey: 'pricingTariffs.nursingServices', icon: Activity },
+  { key: 'SURGERY_PROCEDURE', label: 'Procedures & Surgery', translationKey: 'pricingTariffs.proceduresSurgery', icon: Activity },
+  { key: 'PHARMACY', label: 'Pharmacy & Dispensing', translationKey: 'pricingTariffs.pharmacyDispensing', icon: Tag },
+  { key: 'AMBULANCE', label: 'Ambulance Services', translationKey: 'pricingTariffs.ambulanceServices', icon: Activity },
 ];
 
 export const HospitalPricingTariffPage: React.FC = () => {
+  const { t } = useTranslation();
   const { userProfile, role } = useAuth();
   const { branches } = useBranch();
 
@@ -350,10 +352,10 @@ export const HospitalPricingTariffPage: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                  Hospital Pricing & Tariff Management
+                  {t('pricingTariffs.title', 'Hospital Pricing & Tariff Management')}
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Centralized Pricing Authority • Multi-Branch Automatic Sync • Non-Destructive Historic Safeguard
+                  {t('pricingTariffs.subtitle', 'Centralized Pricing Authority • Multi-Branch Automatic Sync • Non-Destructive Historic Safeguard')}
                 </p>
               </div>
             </div>
@@ -369,7 +371,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
                 onChange={(e) => setSelectedBranchId(e.target.value)}
                 className="bg-transparent text-gray-700 font-medium focus:outline-none cursor-pointer"
               >
-                <option value="">All Branches (Central Master)</option>
+                <option value="">{t('common.allBranches', 'All Branches (Central Master)')}</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
@@ -386,7 +388,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
               className="inline-flex items-center space-x-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
-              <span>{lastSyncTime ? `Synced ${lastSyncTime}` : 'Sync'}</span>
+              <span>{lastSyncTime ? `${t('common.synced', 'Synced')} ${lastSyncTime}` : t('common.sync', 'Sync')}</span>
             </button>
 
             {/* Full Audit Log */}
@@ -395,7 +397,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
               className="inline-flex items-center space-x-1.5 px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-medium rounded-lg transition-colors"
             >
               <History className="w-3.5 h-3.5 text-gray-500" />
-              <span>Pricing Audit Trail</span>
+              <span>{t('pricingTariffs.pricingAuditTrail', 'Pricing Audit Trail')}</span>
             </button>
 
             {/* Add Service Button (Authorized Admins Only) */}
@@ -405,7 +407,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
                 className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg shadow-sm transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Tariff Service</span>
+                <span>{t('pricingTariffs.addTariffService', 'Add Tariff Service')}</span>
               </button>
             )}
           </div>
@@ -416,7 +418,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
           <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center space-x-2 text-xs text-amber-800">
             <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
             <span>
-              <strong>Supervisory Read-Only View:</strong> Pricing configuration is centrally managed by the authorized Hospital Administrator. Any modifications made at the central level instantly propagate to your branch.
+              {t('pricingTariffs.supervisoryBanner', 'Supervisory Read-Only View: Pricing configuration is centrally managed by the authorized Hospital Administrator. Any modifications made at the central level instantly propagate to your branch.')}
             </span>
           </div>
         )}
@@ -426,7 +428,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Catalogue Items</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('pricingTariffs.catalogueItems', 'Catalogue Items')}</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{totalCount}</p>
             <span className="text-xs text-gray-500">Across 11 categories</span>
           </div>
@@ -437,9 +439,9 @@ export const HospitalPricingTariffPage: React.FC = () => {
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Active Tariffs</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('pricingTariffs.activeTariffs', 'Active Tariffs')}</p>
             <p className="text-2xl font-bold text-emerald-600 mt-1">{activeCount}</p>
-            <span className="text-xs text-emerald-700 font-medium">Ready for billing & booking</span>
+            <span className="text-xs text-emerald-700 font-medium">{t('pricingTariffs.readyForBilling', 'Ready for billing & booking')}</span>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
             <CheckCircle2 className="w-5 h-5" />
@@ -448,9 +450,9 @@ export const HospitalPricingTariffPage: React.FC = () => {
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Multi-Branch Sync</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('pricingTariffs.multiBranchSync', 'Multi-Branch Sync')}</p>
             <p className="text-2xl font-bold text-indigo-600 mt-1">{branches.length || 3} Branches</p>
-            <span className="text-xs text-indigo-700 font-medium">Centralized Single Source</span>
+            <span className="text-xs text-indigo-700 font-medium">{t('pricingTariffs.centralSingleSource', 'Centralized Single Source')}</span>
           </div>
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
             <Globe className="w-5 h-5" />
@@ -459,9 +461,9 @@ export const HospitalPricingTariffPage: React.FC = () => {
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Historic Integrity</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('pricingTariffs.historicIntegrity', 'Historic Integrity')}</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">Preserved</p>
-            <span className="text-xs text-gray-500">Past invoices & visits immutable</span>
+            <span className="text-xs text-gray-500">{t('pricingTariffs.pastInvoicesImmutable', 'Past invoices & visits immutable')}</span>
           </div>
           <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
             <ShieldCheck className="w-5 h-5" />
@@ -486,7 +488,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
                 }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-gray-400'}`} />
-                <span>{tab.label}</span>
+                <span>{tab.translationKey ? t(tab.translationKey, tab.label) : tab.label}</span>
               </button>
             );
           })}
@@ -547,14 +549,14 @@ export const HospitalPricingTariffPage: React.FC = () => {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-4">Service Code & Name</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4 text-right">Standard Tariff</th>
-                  <th className="py-3 px-4">Pricing Unit</th>
-                  <th className="py-3 px-4">Branch Applicability</th>
-                  <th className="py-3 px-4">Effective Date</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4">{t('pricingTariffs.serviceCodeName', 'Service Code & Name')}</th>
+                  <th className="py-3 px-4">{t('common.category', 'Category')}</th>
+                  <th className="py-3 px-4 text-right">{t('pricingTariffs.standardTariff', 'Standard Tariff')}</th>
+                  <th className="py-3 px-4">{t('pricingTariffs.pricingUnit', 'Pricing Unit')}</th>
+                  <th className="py-3 px-4">{t('pricingTariffs.branchApplicability', 'Branch Applicability')}</th>
+                  <th className="py-3 px-4">{t('pricingTariffs.effectiveDate', 'Effective Date')}</th>
+                  <th className="py-3 px-4 text-center">{t('common.status', 'Status')}</th>
+                  <th className="py-3 px-4 text-right">{t('common.actions', 'Actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -706,7 +708,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
                 <span className="text-xs text-gray-500 block">{editingService.category_display}</span>
               </div>
               <div className="text-right">
-                <span className="text-xs text-gray-500 block">Current Standard Price</span>
+                <span className="text-xs text-gray-500 block">{t('pricingTariffs.standardTariff', 'Current Standard Price')}</span>
                 <span className="text-lg font-bold text-gray-900 font-mono">
                   ₹{parseFloat(editingService.standard_price).toFixed(2)}
                 </span>
@@ -718,7 +720,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  New Standard Price (₹) <span className="text-red-500">*</span>
+                  {t('pricingTariffs.newRate', 'New Standard Price')} (₹) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-mono">₹</span>
@@ -737,7 +739,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Effective Date <span className="text-red-500">*</span>
+                  {t('pricingTariffs.effectiveDate', 'Effective Date')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -755,7 +757,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
                 <div className="flex items-center justify-between text-xs font-semibold text-blue-900">
                   <span className="flex items-center space-x-1">
                     <Activity className="w-4 h-4 text-blue-600" />
-                    <span>Price Change Impact Preview</span>
+                    <span>{t('pricingTariffs.priceImpactPreview', 'Price Change Impact Preview')}</span>
                   </span>
                   <span
                     className={`inline-flex items-center space-x-0.5 font-bold ${
@@ -780,16 +782,16 @@ export const HospitalPricingTariffPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-blue-200/60">
                   <div>
-                    <span className="text-gray-500">Old Rate:</span>{' '}
+                    <span className="text-gray-500">{t('pricingTariffs.oldRate', 'Old Rate')}:</span>{' '}
                     <span className="font-mono font-medium text-gray-800">₹{parseFloat(pricePreview.current_price).toFixed(2)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">New Rate:</span>{' '}
+                    <span className="text-gray-500">{t('pricingTariffs.newRate', 'New Rate')}:</span>{' '}
                     <span className="font-mono font-bold text-blue-800">₹{parseFloat(pricePreview.new_price).toFixed(2)}</span>
                   </div>
                   <div className="col-span-2 text-gray-600">
                     <span className="font-medium text-gray-800">
-                      Propagation Target: {pricePreview.affected_branches_count} of {pricePreview.total_branches_count} Active Branches
+                      {t('pricingTariffs.propagationTarget', 'Propagation Target')}: {pricePreview.affected_branches_count} of {pricePreview.total_branches_count} Active Branches
                     </span>{' '}
                     ({pricePreview.affected_branches.map((b) => b.name).join(', ')})
                   </div>
@@ -807,7 +809,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
                   className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 />
                 <span className="text-xs font-semibold text-gray-900">
-                  Apply centrally across all hospital branches automatically (Recommended)
+                  {t('pricingTariffs.applyCentrallyAllBranches', 'Apply centrally across all hospital branches automatically (Recommended)')}
                 </span>
               </label>
               <p className="text-[11px] text-gray-500 pl-6">
@@ -842,7 +844,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
             {/* Mandatory Reason for Change */}
             <div className="border-t border-gray-100 pt-3">
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Reason / Administrative Justification <span className="text-red-500">*</span>
+                {t('pricingTariffs.reasonJustification', 'Reason / Administrative Justification')} <span className="text-red-500">*</span>
               </label>
               <textarea
                 required
@@ -861,7 +863,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
             <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 flex items-start space-x-2 text-[11px] text-gray-600">
               <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
               <span>
-                <strong>Zero Disruption Guarantee:</strong> This change applies strictly to future appointments, tokens, and new inpatient admissions. Existing running admissions, finalized invoices, and completed receipts remain protected and unchanged.
+                {t('pricingTariffs.nonDestructiveNotice')}
               </span>
             </div>
 
@@ -875,7 +877,7 @@ export const HospitalPricingTariffPage: React.FC = () => {
                 }}
                 className="px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 rounded-lg font-medium"
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </button>
               <button
                 type="submit"
@@ -885,10 +887,10 @@ export const HospitalPricingTariffPage: React.FC = () => {
                 {updatingPrice ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Synchronizing Branches...</span>
+                    <span>{t('common.synchronizing', 'Synchronizing Branches...')}</span>
                   </>
                 ) : (
-                  <span>Commit Price Across Branches</span>
+                  <span>{t('pricingTariffs.commitPriceAcrossBranches', 'Commit Price Across Branches')}</span>
                 )}
               </button>
             </div>

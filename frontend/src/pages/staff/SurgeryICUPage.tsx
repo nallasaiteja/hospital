@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   Scissors,
@@ -32,6 +33,7 @@ import { AlertBanner } from '../../components/common/AlertBanner';
 import { parseApiError } from '../../utils/errorHandler';
 
 export const SurgeryICUPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
@@ -268,7 +270,7 @@ export const SurgeryICUPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
             <Activity className="w-7 h-7 text-indigo-400" />
-            Hospital Operations: Surgery, ICU, Fleet & Safety
+            {t('surgeryIcu.title', 'Hospital Operations: Surgery, ICU, Fleet & Safety')}
           </h1>
           <p className="text-sm text-slate-400">
             Section 20: Operation Theatre scheduling with conflict checks, ICU hemodynamic vitals, ambulance dispatch, blood bank, housekeeping, and biomedical waste manifests.

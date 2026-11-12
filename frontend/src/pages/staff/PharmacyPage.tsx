@@ -29,6 +29,7 @@ import { Input } from '../../components/common/Input';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface MedicineRecord {
   id: string;
@@ -94,6 +95,7 @@ interface ReturnRecord {
 }
 
 export const PharmacyPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
@@ -541,10 +543,10 @@ export const PharmacyPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                Pharmacy & Clinical Medication Dispensing
+                {t('pharmacy.title', 'Pharmacy & Clinical Medication Dispensing')}
               </h1>
               <p className="text-xs text-slate-500">
-                FEFO-ordered stock batches, electronic prescription verification, IPD ward issues, and barcode scanning.
+                {t('pharmacy.subtitle', 'FEFO-ordered stock batches, electronic prescription verification, IPD ward issues, and barcode scanning.')}
               </p>
             </div>
           </div>
@@ -678,7 +680,7 @@ export const PharmacyPage: React.FC = () => {
           }`}
         >
           <FileText className="w-4 h-4" />
-          Prescription Dispensing ({prescriptions.filter((p) => !p.is_dispensed).length})
+          {t('pharmacy.prescriptionQueue', 'Prescription Dispensing')} ({prescriptions.filter((p) => !p.is_dispensed).length})
         </button>
         <button
           onClick={() => setActiveTab('ipd_issue')}
@@ -700,7 +702,7 @@ export const PharmacyPage: React.FC = () => {
           }`}
         >
           <Pill className="w-4 h-4" />
-          Drug Formulary & Catalogue ({medicines.length})
+          {t('pharmacy.medicineStock', 'Drug Formulary & Catalogue')} ({medicines.length})
         </button>
         <button
           onClick={() => setActiveTab('returns')}

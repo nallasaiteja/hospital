@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   Activity, 
@@ -28,6 +29,7 @@ interface QueueItem {
 }
 
 export const WaitingLoungeDisplayPage: React.FC = () => {
+  const { t } = useTranslation();
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -128,7 +130,7 @@ export const WaitingLoungeDisplayPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              <span>AURA SUPERSPECIALITY HOSPITAL</span>
+              <span>{t('loungeDisplay.title', 'AURA SUPERSPECIALITY HOSPITAL')}</span>
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                 OPD LOUNGE SIGNAGE
               </span>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Landmark,
@@ -202,6 +203,7 @@ interface Liability {
 }
 
 export const LoansPage: React.FC = () => {
+  const { t } = useTranslation();
   const { userProfile, role } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'loans' | 'liabilities' | 'schedules' | 'reports'>('dashboard');
 
@@ -568,7 +570,7 @@ export const LoansPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                Section 16: Loan & Liability Management
+                {t('finances.loanRegister', 'Section 16: Loan & Liability Management')}
               </h1>
               <p className="text-xs text-slate-400">
                 Institutional debt facilities, equipment financing, monthly EMI schedules, supplier payables, and dual-entry ledger reconciliation.

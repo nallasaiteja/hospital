@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   BarChart3,
@@ -57,6 +58,7 @@ type DashboardTab =
   | 'INVESTMENTS';
 
 export const ReportsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch, branches } = useBranch();
   const { role, userProfile } = useAuth();
 
@@ -368,7 +370,7 @@ export const ReportsPage: React.FC = () => {
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
             <BarChart3 className="w-8 h-8 text-cyan-600" />
-            Dashboards & Centralized Reporting Engine
+            {t('reports.title', 'Dashboards & Centralized Reporting Engine')}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Real-time, audited database metrics, financial reconciliation, and exportable data dossiers across all 9 hospital divisions.

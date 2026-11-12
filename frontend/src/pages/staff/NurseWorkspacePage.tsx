@@ -43,10 +43,12 @@ import {
   NursingNoteItem
 } from '../../services/nurseService';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 type TabKey = 'patients' | 'medications' | 'tasks' | 'handover';
 
 export const NurseWorkspacePage: React.FC = () => {
+  const { t } = useTranslation();
   const { userProfile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = (searchParams.get('tab') as TabKey) || 'patients';
@@ -480,7 +482,7 @@ export const NurseWorkspacePage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                    Nurse Clinical Workspace
+                    {t('nurseWorkspace.title', 'Nurse Clinical Workspace')}
                   </h1>
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-cyan-100 text-cyan-800 border border-cyan-300">
                     24/7 Inpatient Care
@@ -496,13 +498,13 @@ export const NurseWorkspacePage: React.FC = () => {
           {/* Quick Shift Badges & Refresh */}
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <div className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-              <span className="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Nurse On Duty</span>
+              <span className="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">{t('nurseWorkspace.nurseOnDuty', 'Nurse On Duty')}</span>
               <span className="font-bold text-slate-900">{overview?.nurse_info?.name || userProfile?.full_name || 'Staff Nurse'}</span>
               <span className="text-slate-500 text-[10px] ml-1.5 font-mono">({overview?.nurse_info?.employee_id || 'NUR-01'})</span>
             </div>
 
             <div className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-              <span className="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Shift Remaining</span>
+              <span className="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">{t('nurseWorkspace.shiftRemaining', 'Shift Remaining')}</span>
               <span className="font-bold text-cyan-800 flex items-center gap-1 font-mono">
                 <Clock className="w-3.5 h-3.5 text-cyan-700" />
                 {overview?.shift_info?.hours_remaining || 'Active Shift'}
@@ -661,7 +663,7 @@ export const NurseWorkspacePage: React.FC = () => {
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>A. My Patients</span>
+          <span>{t('nurseWorkspace.myPatients', 'A. My Patients')}</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] ${currentTab === 'patients' ? 'bg-cyan-700 text-white' : 'bg-slate-200 text-slate-800'}`}>
             {patients.length}
           </span>
@@ -676,9 +678,9 @@ export const NurseWorkspacePage: React.FC = () => {
           }`}
         >
           <Pill className="w-4 h-4" />
-          <span>B. Medication Administration</span>
+          <span>{t('nurseWorkspace.medicationAdmin', 'B. Medication Administration')}</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] ${currentTab === 'medications' ? 'bg-cyan-700 text-white' : 'bg-slate-200 text-slate-800'}`}>
-            {overview?.summary_metrics?.medications_due_count || 0} Due
+            {overview?.summary_metrics?.medications_due_count || 0} {t('nurseWorkspace.due', 'Due')}
           </span>
         </button>
 
@@ -691,7 +693,7 @@ export const NurseWorkspacePage: React.FC = () => {
           }`}
         >
           <Activity className="w-4 h-4" />
-          <span>C. Nursing Tasks & Vital Signs</span>
+          <span>{t('nurseWorkspace.nursingTasksVitals', 'C. Nursing Tasks & Vital Signs')}</span>
         </button>
 
         <button
@@ -703,7 +705,7 @@ export const NurseWorkspacePage: React.FC = () => {
           }`}
         >
           <ArrowRightLeft className="w-4 h-4" />
-          <span>D. Shift Handover</span>
+          <span>{t('nurseWorkspace.shiftHandoverNotes', 'D. Shift Handover')}</span>
           {overview?.handover_status?.pending_acknowledgment && (
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
           )}

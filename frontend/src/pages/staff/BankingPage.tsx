@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   Building2,
@@ -38,6 +39,7 @@ interface BankAccount {
 }
 
 export const BankingPage: React.FC = () => {
+  const { t } = useTranslation();
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ export const BankingPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
             <Building2 className="w-7 h-7 text-sky-400" />
-            Banking & Bank Reconciliation
+            {t('finances.bankReconciliation', 'Banking & Bank Reconciliation')}
           </h1>
           <p className="text-sm text-slate-400">
             Real bank account registers, statement import verification, and automated transaction matching.

@@ -495,7 +495,25 @@ export const HRDashboardPage: React.FC = () => {
               </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-              {currentSection.title}
+              {(() => {
+                const map: Record<string, string> = {
+                  overview: 'hrManagement.overviewTab',
+                  employees: 'hrManagement.employeesTab',
+                  recruitment: 'hrManagement.recruitmentTab',
+                  onboarding: 'hrManagement.onboardingTab',
+                  attendance: 'hrManagement.attendanceTab',
+                  leaves: 'hrManagement.leavesTab',
+                  payroll: 'hrManagement.payrollTab',
+                  appraisals: 'hrManagement.appraisalsTab',
+                  training: 'hrManagement.trainingTab',
+                  grievances: 'hrManagement.grievancesTab',
+                  documents: 'hrManagement.documentsTab',
+                  exits: 'hrManagement.exitsTab',
+                  reports: 'hrManagement.reportsTab',
+                  notifications: 'hrManagement.notificationsTab',
+                };
+                return t(map[activeTab] || 'hrManagement.title', currentSection.title);
+              })()}
             </h1>
             <p className="text-xs text-slate-500 mt-1 max-w-2xl">
               {currentSection.subtitle}
@@ -1124,37 +1142,66 @@ export const HRDashboardPage: React.FC = () => {
                     <tr className="border-b border-slate-800 text-slate-400 font-semibold">
                       <th className="py-2.5 px-3">Employee</th>
                       <th className="py-2.5 px-3">Department</th>
-                      <th className="py-2.5 px-3">Date</th>
+                      <th className="py-2.5 px-3">Date & Punch</th>
                       <th className="py-2.5 px-3">Status</th>
                       <th className="py-2.5 px-3">Hours Worked</th>
                       <th className="py-2.5 px-3 text-right">Audit History</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
-                    {(data?.employee_directory || []).slice(0, 10).map((emp: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-800/30 transition">
-                        <td className="py-3 px-3 font-semibold text-white">{emp.name} ({emp.employee_id})</td>
-                        <td className="py-3 px-3 text-slate-300">{emp.department}</td>
-                        <td className="py-3 px-3 font-mono text-slate-400">{new Date().toISOString().split('T')[0]}</td>
-                        <td className="py-3 px-3">
-                          <span className={clsx(
-                            'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
-                            emp.is_on_duty ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-slate-800 text-slate-400'
-                          )}>
-                            {emp.is_on_duty ? 'PRESENT ON DUTY' : 'WEEKLY OFF / PENDING'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 font-mono text-cyan-400">8.00 Hrs</td>
-                        <td className="py-3 px-3 text-right">
-                          <button
-                            onClick={() => setSelectedRecord({ title: `Attendance Audit: ${emp.name}`, data: emp })}
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 text-cyan-400 text-xs font-medium"
-                          >
-                            Audit →
-                          </button>
+                    {(data?.attendance_records || []).length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-slate-500">
+                          No attendance punch records found in the database.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      (data?.attendance_records || []).map((att: any) => (
+                        <tr key={att.id} className="hover:bg-slate-800/30 transition">
+                          <td className="py-3 px-3 font-semibold text-white">
+                            <div>{att.name}</div>
+                            <div className="text-[10px] font-mono text-slate-400">{att.employee_id}</div>
+                          </td>
+                          <td className="py-3 px-3 text-slate-300">{att.department}</td>
+                          <td className="py-3 px-3 font-mono text-slate-400">
+                            <div>{att.date}</div>
+                            <div className="text-[10px] text-cyan-500">
+                              {att.clock_in ? att.clock_in.slice(0, 5) : '—'} → {att.clock_out ? att.clock_out.slice(0, 5) : '—'}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className={clsx(
+                              'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
+                              att.status === 'PRESENT' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' :
+                              att.status === 'LATE' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' :
+                              att.status === 'ON_LEAVE' ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20' :
+                              att.status === 'HALF_DAY' ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20' :
+                              'bg-slate-800 text-slate-400'
+                            )}>
+                              {att.status_display || att.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 font-mono text-cyan-400">
+                            {att.total_hours_worked !== undefined && att.total_hours_worked !== null
+                              ? `${Number(att.total_hours_worked).toFixed(2)} Hrs`
+                              : '0.00 Hrs'}
+                            {att.overtime_hours > 0 && (
+                              <span className="block text-[10px] text-amber-400 font-sans font-semibold">
+                                +{Number(att.overtime_hours).toFixed(2)} OT
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              onClick={() => setSelectedRecord({ title: `Attendance Audit: ${att.name} (${att.date})`, data: att })}
+                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-750 text-cyan-400 text-xs font-medium"
+                            >
+                              Audit →
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1581,38 +1628,44 @@ export const HRDashboardPage: React.FC = () => {
               </div>
 
               <div className="space-y-3">
-                {(data?.notifications || []).map((notif: any) => (
-                  <div
-                    key={notif.id}
-                    className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex items-start justify-between gap-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={clsx(
-                        'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
-                        notif.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' :
-                        notif.severity === 'WARNING' ? 'bg-amber-500/20 text-amber-400' :
-                        'bg-cyan-500/20 text-cyan-400'
-                      )}>
-                        <Bell className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white text-xs">{notif.title}</span>
-                          <span className={clsx(
-                            'text-[9px] font-bold px-1.5 py-0.2 rounded uppercase',
-                            notif.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300' :
-                            notif.severity === 'WARNING' ? 'bg-amber-500/20 text-amber-300' :
-                            'bg-cyan-500/20 text-cyan-300'
-                          )}>
-                            {notif.severity}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">{notif.message}</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-slate-500 font-mono shrink-0">{notif.timestamp}</span>
+                {(data?.notifications || []).length === 0 ? (
+                  <div className="p-8 text-center bg-slate-950/40 rounded-xl border border-slate-800 text-slate-500 text-xs">
+                    No active HR operational alerts or pending escalations. All workflows are clear.
                   </div>
-                ))}
+                ) : (
+                  (data?.notifications || []).map((notif: any) => (
+                    <div
+                      key={notif.id}
+                      className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex items-start justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={clsx(
+                          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
+                          notif.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' :
+                          notif.severity === 'WARNING' ? 'bg-amber-500/20 text-amber-400' :
+                          'bg-cyan-500/20 text-cyan-400'
+                        )}>
+                          <Bell className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-xs">{notif.title}</span>
+                            <span className={clsx(
+                              'text-[9px] font-bold px-1.5 py-0.2 rounded uppercase',
+                              notif.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300' :
+                              notif.severity === 'WARNING' ? 'bg-amber-500/20 text-amber-300' :
+                              'bg-cyan-500/20 text-cyan-300'
+                            )}>
+                              {notif.severity}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1 leading-relaxed">{notif.message}</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-mono shrink-0">{notif.timestamp}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

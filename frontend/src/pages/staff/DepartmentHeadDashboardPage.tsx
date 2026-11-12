@@ -529,7 +529,24 @@ export const DepartmentHeadDashboardPage: React.FC = () => {
               )}
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-              {currentSection.title}
+              {(() => {
+                const map: Record<string, string> = {
+                  overview: 'departmentHead.overviewTab',
+                  dept_overview: 'departmentHead.deptProfileTab',
+                  staff: 'departmentHead.staffDirectoryTab',
+                  roster: 'departmentHead.shiftRosterTab',
+                  attendance: 'departmentHead.attendanceTab',
+                  leaves: 'departmentHead.leaveCoverageTab',
+                  staff_requests: 'departmentHead.staffRequisitionsTab',
+                  workload: 'departmentHead.workloadTab',
+                  resources: 'departmentHead.resourcesTab',
+                  performance: 'departmentHead.performanceTab',
+                  issues: 'departmentHead.issuesTab',
+                  reports: 'departmentHead.reportsTab',
+                  notifications: 'departmentHead.alertsTab',
+                };
+                return t(map[activeTab] || 'departmentHead.title', currentSection.title);
+              })()}
             </h1>
             <p className="text-xs text-slate-500 mt-1 max-w-2xl">
               {currentSection.subtitle}

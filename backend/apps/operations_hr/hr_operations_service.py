@@ -238,7 +238,7 @@ class HROperationsService:
                 'employee_id': s.employee_id,
                 'name': u.full_name if u else 'Staff Member',
                 'email': u.email if u else '',
-                'phone': u.phone_number or '+91 98765 43210',
+                'phone': u.phone_number or '—',
                 'role': u.role.display_name if u and u.role else 'Staff',
                 'designation': s.designation or 'Healthcare Worker',
                 'department': s.department.name if s.department else 'General Operations',
@@ -374,14 +374,69 @@ class HROperationsService:
                 'is_processed': p.is_processed,
             })
 
-        # Notifications list
-        hr_notifications = [
-            {'id': 'NT-01', 'title': 'Pending Leave Approvals', 'message': f'{pending_leaves_count} employee leave applications require HR administrative processing.', 'severity': 'WARNING', 'timestamp': '10 mins ago'},
-            {'id': 'NT-02', 'title': 'Upcoming BLS Recertification', 'message': f'{upcoming_training_count} mandatory clinical safety training programs scheduled this month.', 'severity': 'INFO', 'timestamp': '1 hour ago'},
-            {'id': 'NT-03', 'title': 'Recruitment Requisition Active', 'message': f'{open_vacancies_count} open clinical vacancies active with candidate interviews underway.', 'severity': 'INFO', 'timestamp': '3 hours ago'},
-        ]
+        # Real Attendance Records from Database
+        recent_attendance_qs = EmployeeAttendance.objects.select_related(
+            'staff__user_profile', 'staff__department', 'shift'
+        ).order_by('-date', '-created_at')
+        if b_id:
+            recent_attendance_qs = recent_attendance_qs.filter(staff__branch_id=b_id)
+
+        attendance_records_list = []
+        for att in recent_attendance_qs[:50]:
+            staff_u = att.staff.user_profile if att.staff else None
+            dept = att.staff.department if att.staff else None
+            attendance_records_list.append({
+                'id': str(att.id),
+                'employee_id': att.staff.employee_id if att.staff else 'N/A',
+                'name': staff_u.full_name if staff_u else 'Staff Member',
+                'department': dept.name if dept else 'General Administration',
+                'date': str(att.date),
+                'clock_in': str(att.clock_in) if att.clock_in else None,
+                'clock_out': str(att.clock_out) if att.clock_out else None,
+                'status': att.status,
+                'status_display': att.get_status_display(),
+                'total_hours_worked': float(att.total_hours_worked),
+                'overtime_hours': float(att.overtime_hours),
+                'late_minutes': att.late_minutes,
+                'remarks': att.remarks or '',
+                'is_on_duty': att.staff.is_on_duty if att.staff else False,
+            })
+
+        # Real Actionable HR Notifications list
+        now_ts = timezone.now().strftime('%Y-%m-%d %H:%M')
+        hr_notifications = []
         if pending_grievances_count > 0:
-            hr_notifications.insert(0, {'id': 'NT-00', 'title': 'Confidential Grievance Logged', 'message': f'{pending_grievances_count} confidential grievance case(s) currently under HR investigation.', 'severity': 'CRITICAL', 'timestamp': 'Just now'})
+            hr_notifications.append({
+                'id': 'NT-00',
+                'title': 'Confidential Grievance Logged',
+                'message': f'{pending_grievances_count} confidential grievance case(s) currently under HR investigation.',
+                'severity': 'CRITICAL',
+                'timestamp': now_ts,
+            })
+        if pending_leaves_count > 0:
+            hr_notifications.append({
+                'id': 'NT-01',
+                'title': 'Pending Leave Approvals',
+                'message': f'{pending_leaves_count} employee leave application(s) require HR administrative processing.',
+                'severity': 'WARNING',
+                'timestamp': now_ts,
+            })
+        if upcoming_training_count > 0:
+            hr_notifications.append({
+                'id': 'NT-02',
+                'title': 'Upcoming Training Programs',
+                'message': f'{upcoming_training_count} mandatory clinical safety training program(s) scheduled this month.',
+                'severity': 'INFO',
+                'timestamp': now_ts,
+            })
+        if open_vacancies_count > 0:
+            hr_notifications.append({
+                'id': 'NT-03',
+                'title': 'Recruitment Requisition Active',
+                'message': f'{open_vacancies_count} open clinical vacancy(ies) active with candidate interviews underway.',
+                'severity': 'INFO',
+                'timestamp': now_ts,
+            })
 
         # Unverified / inactive documents requiring HR audit
         expiring_docs_qs = EmployeeDocument.objects.filter(is_active=False)
@@ -416,6 +471,7 @@ class HROperationsService:
                 'hired': app_qs.filter(status='HIRED').count(),
             },
             'employee_directory': employee_directory,
+            'attendance_records': attendance_records_list,
             'vacancies': vacancies_list,
             'applications': applications_list,
             'leave_requests': leave_requests_list,
@@ -582,7 +638,7 @@ class HROperationsService:
                 'employee_id': s.employee_id,
                 'name': u.full_name if u else 'Staff Member',
                 'email': u.email if u else '',
-                'phone': u.phone_number or '+91 98765 43210',
+                'phone': u.phone_number or '—',
                 'role': u.role.display_name if u and u.role else 'Staff',
                 'designation': s.designation or 'Specialist',
                 'specialization': s.specialization or '',

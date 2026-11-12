@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert,
@@ -69,6 +70,7 @@ export const PDF_ROLES: { name: string; display_name: string; description: strin
 ];
 
 export const UsersRolesPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch, branches } = useBranch();
   const { userProfile, role } = useAuth();
   const isSuperAdmin = role === 'SUPER_ADMIN';
@@ -414,7 +416,7 @@ export const UsersRolesPage: React.FC = () => {
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
             <ShieldAlert className="w-7 h-7 text-cyan-400" />
-            Authentication, RBAC & Security Administration
+            {t('usersRoles.title', 'Authentication, RBAC & Security Administration')}
           </h1>
           <p className="text-sm text-slate-400">
             Granular role-based access control across all 21 PDF roles, financial approval limits, separation of duties, and security audit log.

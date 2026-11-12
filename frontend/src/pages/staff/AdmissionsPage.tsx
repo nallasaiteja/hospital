@@ -47,8 +47,10 @@ import { Input } from '../../components/common/Input';
 import { AlertBanner } from '../../components/common/AlertBanner';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export const AdmissionsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
@@ -540,10 +542,10 @@ export const AdmissionsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Building2 className="w-6 h-6 text-cyan-400" />
-            Inpatient Department (IPD) & Bed Census Hub
+            {t('admissions.title', 'Inpatient Department (IPD) & Bed Census Hub')}
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Real-time multi-specialty ward bed management, atomic patient transfers, running bills, and 4-point discharge clearance.
+            {t('admissions.subtitle', 'Real-time multi-specialty ward bed management, atomic patient transfers, running bills, and 4-point discharge clearance.')}
           </p>
         </div>
 
@@ -554,13 +556,13 @@ export const AdmissionsPage: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-cyan-500/20 transition"
             >
               <UserPlus className="w-4 h-4" />
-              New Admission Request
+              {t('admissions.admitNewPatient', 'New Admission Request')}
             </button>
           )}
           <button
             onClick={loadAllData}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-            title="Refresh All Data"
+            title={t('common.refresh', 'Refresh All Data')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -581,7 +583,7 @@ export const AdmissionsPage: React.FC = () => {
           }`}
         >
           <Activity className="w-4 h-4" />
-          IPD Overview & Stats
+          {t('admissions.ipdOverview', 'IPD Overview & Stats')}
         </button>
 
         <button
@@ -593,7 +595,7 @@ export const AdmissionsPage: React.FC = () => {
           }`}
         >
           <BedIcon className="w-4 h-4" />
-          Bed Grid & Turnover ({beds.length})
+          {t('admissions.inpatientCensus', 'Bed Grid & Turnover')} ({beds.length})
         </button>
 
         <button
@@ -605,7 +607,7 @@ export const AdmissionsPage: React.FC = () => {
           }`}
         >
           <Building2 className="w-4 h-4" />
-          Admissions & Requests ({admissions.length})
+          {t('admissions.admissionsList', 'Admissions & Requests')} ({admissions.length})
         </button>
 
         <button
@@ -617,7 +619,7 @@ export const AdmissionsPage: React.FC = () => {
           }`}
         >
           <ArrowRightLeft className="w-4 h-4" />
-          Patient Transfers ({transfers.length})
+          {t('admissions.patientTransfers', 'Patient Transfers')} ({transfers.length})
         </button>
 
         <button
@@ -629,7 +631,7 @@ export const AdmissionsPage: React.FC = () => {
           }`}
         >
           <TrendingUp className="w-4 h-4" />
-          Readmission & ALOS Reports
+          {t('admissions.readmissionReports', 'Readmission & ALOS Reports')}
         </button>
       </div>
 
@@ -641,21 +643,21 @@ export const AdmissionsPage: React.FC = () => {
           {/* Main KPI Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Active Inpatient Census"
+              title={t('admissions.activeCensus', 'Active Inpatient Census')}
               value={dashboardStats?.ipd?.active_inpatient_census?.toString() || '0'}
-              subtitle={`${dashboardStats?.ipd?.occupancy_rate || 0}% Bed Occupancy Rate`}
+              subtitle={`${dashboardStats?.ipd?.occupancy_rate || 0}% ${t('admissions.occupancyRate', 'Bed Occupancy Rate')}`}
               icon={Building2}
             />
             <StatCard
-              title="Available Beds"
+              title={t('admissions.availableBeds', 'Available Beds')}
               value={dashboardStats?.ipd?.available_beds?.toString() || '0'}
-              subtitle={`Total Beds: ${dashboardStats?.ipd?.total_beds || beds.length}`}
+              subtitle={`${t('admissions.totalBeds', 'Total Beds')}: ${dashboardStats?.ipd?.total_beds || beds.length}`}
               icon={BedIcon}
             />
             <StatCard
-              title="ICU / CCU Patients"
+              title={t('admissions.icuPatients', 'ICU / CCU Patients')}
               value={dashboardStats?.ipd?.icu_patients?.toString() || '0'}
-              subtitle="Critical Care Census"
+              subtitle={t('admissions.criticalCareCensus', 'Critical Care Census')}
               icon={HeartCrack}
             />
             <StatCard
@@ -668,13 +670,13 @@ export const AdmissionsPage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Occupied Beds"
+              title={t('admissions.occupied', 'Occupied Beds')}
               value={dashboardStats?.ipd?.occupied_beds?.toString() || '0'}
               subtitle="Currently Assigned"
               icon={Activity}
             />
             <StatCard
-              title="Under Cleaning / Turnover"
+              title={t('admissions.cleaning', 'Under Cleaning / Turnover')}
               value={dashboardStats?.ipd?.cleaning_beds?.toString() || '0'}
               subtitle="Sanitizing before reuse"
               icon={Sparkles}
@@ -686,7 +688,7 @@ export const AdmissionsPage: React.FC = () => {
               icon={LogOut}
             />
             <StatCard
-              title="Discharged Today"
+              title={t('admissions.dischargedToday', 'Discharged Today')}
               value={dashboardStats?.ipd?.discharges_today?.toString() || '0'}
               subtitle="Accounts Settled & Beds Released"
               icon={CheckCircle}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   ShoppingBag,
@@ -44,6 +45,7 @@ import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
 
 export const InventoryPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
@@ -470,10 +472,10 @@ export const InventoryPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white tracking-tight">
-                Procurement & Vendor Management (Section 10)
+                {t('inventory.title', 'Procurement & Vendor Management (Section 10)')}
               </h1>
               <p className="text-xs text-slate-400">
-                End-to-end supply chain: multi-category requisitions, quotations & comparative statements, PO approvals, GRNs, vendor returns, credit notes, and AP aging.
+                {t('inventory.subtitle', 'End-to-end supply chain: multi-category requisitions, quotations & comparative statements, PO approvals, GRNs, vendor returns, credit notes, and AP aging.')}
               </p>
             </div>
           </div>

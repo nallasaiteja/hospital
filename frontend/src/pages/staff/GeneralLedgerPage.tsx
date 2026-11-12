@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   BookOpen,
@@ -126,6 +127,7 @@ type TabType =
 type ReportSubTab = 'TRIAL_BALANCE' | 'BALANCE_SHEET' | 'PROFIT_LOSS' | 'CASH_FLOW';
 
 export const GeneralLedgerPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const { user } = useAuth();
 
@@ -559,7 +561,7 @@ export const GeneralLedgerPage: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black text-white tracking-tight">General Ledger & Double-Entry Accounting</h1>
+              <h1 className="text-2xl font-black text-white tracking-tight">{t('finances.generalLedger', 'General Ledger & Double-Entry Accounting')}</h1>
               <Badge variant="cyan">Section 17</Badge>
             </div>
             <p className="text-sm text-slate-400 mt-1">

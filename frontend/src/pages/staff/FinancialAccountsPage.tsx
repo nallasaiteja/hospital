@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import {
   Building2,
@@ -113,6 +114,7 @@ interface DashboardStats {
 }
 
 export const FinancialAccountsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
   const [activeTab, setActiveTab] = useState<'ACCOUNTS' | 'TRANSACTIONS' | 'IMPORT' | 'RECONCILIATION' | 'DOCUMENTS'>('ACCOUNTS');
@@ -598,7 +600,7 @@ export const FinancialAccountsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <Landmark className="w-8 h-8 text-amber-400" />
             <h1 className="text-2xl font-bold tracking-tight text-slate-100">
-              Financial Accounts & Treasury Management
+              {t('finances.chartOfAccounts', 'Financial Accounts & Treasury Management')}
             </h1>
           </div>
           <p className="text-sm text-slate-400 mt-1">

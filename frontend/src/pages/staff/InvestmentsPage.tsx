@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   TrendingUp,
@@ -177,6 +178,7 @@ interface MaturityCalendarData {
 }
 
 export const InvestmentsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   // Primary data states
@@ -697,7 +699,7 @@ export const InvestmentsPage: React.FC = () => {
               <Landmark className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Investment Portfolio Management</h1>
+              <h1 className="text-2xl font-bold text-white tracking-tight">{t('finances.fixedDeposits', 'Investment Portfolio Management')}</h1>
               <p className="text-sm text-slate-500 mt-0.5">
                 Section 15 — Real-time hospital treasury portfolio, yield calculations, fixed deposits & ledger integration
               </p>

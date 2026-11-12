@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Stethoscope, Users, Calendar, Clock, Plus, Shield, Award } from 'lucide-react';
 import { authService, clinicalService } from '../../services/api';
@@ -47,6 +48,7 @@ interface RosterEntry {
 }
 
 export const DoctorsNursingPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentBranch } = useBranch();
   const { role } = useAuth();
   const isReadOnlyRole = ['BRANCH_MANAGER', 'HOSPITAL_ADMIN', 'AUDITOR'].includes(role || '');
@@ -210,7 +212,7 @@ export const DoctorsNursingPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <UserCheck className="w-6 h-6 text-cyan-400" />
-            Doctors, Specialists & Nursing Roster
+            {t('navigation.doctorsNursing', 'Doctors, Specialists & Nursing Roster')}
           </h1>
           <p className="text-sm text-slate-400 mt-1">
             Medical staff credentials, qualifications, consultation fees, and 24x7 clinical duty roster schedules.
