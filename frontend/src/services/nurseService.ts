@@ -1,37 +1,74 @@
 import api from './api';
 
 export interface NurseOverview {
-  nurse_info: {
+  nurse_info?: {
     id: string;
     name: string;
     employee_id: string;
-    email: string;
+    email?: string;
     department: string;
     branch: string;
-    specialization: string;
+    specialization?: string;
+    is_on_duty?: boolean;
   };
-  shift_info: {
+  nurse?: {
     id: string;
-    shift_type: string;
-    shift_name: string;
-    start_time: string;
-    end_time: string;
-    ward: string;
-    ward_id: string;
-    assigned_beds_count: number;
-    hours_remaining: string;
+    name: string;
+    employee_id: string;
+    email?: string;
+    department: string;
+    branch: string;
+    specialization?: string;
+    is_on_duty?: boolean;
   };
-  summary_metrics: {
-    assigned_patients_count: number;
-    medications_due_count: number;
-    pending_tasks_count: number;
-    critical_alerts_count: number;
+  shift_info?: {
+    id?: string;
+    shift_type?: string;
+    shift_name?: string;
+    shift_display?: string;
+    start_time?: string;
+    end_time?: string;
+    ward?: string;
+    ward_id?: string;
+    assigned_beds_count?: number;
+    hours_remaining?: string;
+    working_hours?: string;
+    is_on_duty?: boolean;
+  };
+  shift?: {
+    id?: string;
+    shift_type?: string;
+    shift_name?: string;
+    shift_display?: string;
+    start_time?: string;
+    end_time?: string;
+    ward?: string;
+    ward_id?: string;
+    assigned_beds_count?: number;
+    hours_remaining?: string;
+    working_hours?: string;
+    is_on_duty?: boolean;
+  };
+  summary_metrics?: {
+    assigned_patients_count?: number;
+    medications_due_count?: number;
+    pending_tasks_count?: number;
+    critical_alerts_count?: number;
+  };
+  summary_cards?: {
+    assigned_patients?: number;
+    medications_due?: number;
+    pending_tasks?: number;
+    critical_alerts?: number;
   };
   server_time: string;
   handover_status: {
-    pending_acknowledgment: boolean;
+    pending_acknowledgment?: boolean;
     pending_id?: string;
     last_completed_at?: string;
+    code?: string;
+    label?: string;
+    latest_handover_id?: string | null;
   };
 }
 

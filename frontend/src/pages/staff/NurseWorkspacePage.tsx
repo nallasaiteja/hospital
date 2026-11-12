@@ -49,7 +49,7 @@ type TabKey = 'patients' | 'medications' | 'tasks' | 'handover';
 
 export const NurseWorkspacePage: React.FC = () => {
   const { t } = useTranslation();
-  const { userProfile } = useAuth();
+  const { userProfile, staffProfile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = (searchParams.get('tab') as TabKey) || 'patients';
 
@@ -192,6 +192,15 @@ export const NurseWorkspacePage: React.FC = () => {
   useEffect(() => {
     loadWorkspaceData();
   }, [currentTab, medStatusFilter, taskStatusFilter]);
+
+  // Synchronize workspace immediately whenever nurse toggles On Duty / Off Duty in the sidebar
+  useEffect(() => {
+    const handleDutyChange = () => {
+      loadWorkspaceData(true);
+    };
+    window.addEventListener('hms_staff_duty_changed', handleDutyChange);
+    return () => window.removeEventListener('hms_staff_duty_changed', handleDutyChange);
+  }, []);
 
   // Handle Note view/add
   const handleOpenNotes = async (p: NursePatient) => {
@@ -496,30 +505,32 @@ export const NurseWorkspacePage: React.FC = () => {
           </div>
 
           {/* Quick Shift Badges & Refresh */}
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <div className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-              <span className="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">{t('nurseWorkspace.nurseOnDuty', 'Nurse On Duty')}</span>
-              <span className="font-bold text-slate-900">{overview?.nurse_info?.name || userProfile?.full_name || 'Staff Nurse'}</span>
-              <span className="text-slate-500 text-[10px] ml-1.5 font-mono">({overview?.nurse_info?.employee_id || 'NUR-01'})</span>
-            </div>
+          {(() => {
+            const isNurseOnDuty = staffProfile?.is_on_duty ?? overview?.shift_info?.is_on_duty ?? overview?.shift?.is_on_duty ?? true;
+            return (
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">{t('nurseWorkspace.nurseDutyStatus', 'Duty Status')}</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`w-2 h-2 rounded-full ${isNurseOnDuty ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                    <span className="font-bold text-slate-900">{overview?.nurse_info?.name || overview?.nurse?.name || userProfile?.full_name || 'Staff Nurse'}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${isNurseOnDuty ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                      {isNurseOnDuty ? 'ON DUTY' : 'OFF DUTY'}
+                    </span>
+                  </div>
+                </div>
 
-            <div className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-              <span className="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">{t('nurseWorkspace.shiftRemaining', 'Shift Remaining')}</span>
-              <span className="font-bold text-cyan-800 flex items-center gap-1 font-mono">
-                <Clock className="w-3.5 h-3.5 text-cyan-700" />
-                {overview?.shift_info?.hours_remaining || 'Active Shift'}
-              </span>
-            </div>
-
-            <button
-              onClick={() => loadWorkspaceData(true)}
-              disabled={refreshing}
-              className="p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition"
-              title="Refresh Workspace Data"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-cyan-700' : ''}`} />
-            </button>
-          </div>
+                <button
+                  onClick={() => loadWorkspaceData(true)}
+                  disabled={refreshing}
+                  className="p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition"
+                  title="Refresh Workspace Data"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-cyan-700' : ''}`} />
+                </button>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Shift Handover Pending Warning Banner if applicable */}

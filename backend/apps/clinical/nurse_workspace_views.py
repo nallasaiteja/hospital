@@ -54,10 +54,14 @@ def _get_nurse_profile(request):
 
 def _get_nurse_active_shift(nurse):
     """
-    Finds active duty roster shift for the nurse today or constructs standard operational shift.
+    Finds active duty roster shift for the nurse today or constructs standard operational shift,
+    including hours remaining calculation and on-duty status.
     """
     today = timezone.localdate()
-    now_time = timezone.localtime().time()
+    now_dt = timezone.localtime()
+    now_time = now_dt.time()
+
+    is_on_duty = getattr(nurse, 'is_on_duty', True)
 
     roster = DutyRoster.objects.filter(
         staff=nurse,
@@ -73,39 +77,60 @@ def _get_nurse_active_shift(nurse):
         if datetime.time(8, 0) <= now_time < datetime.time(16, 0):
             shift_key = 'MORNING'
             shift_display = 'Morning Shift (08:00 - 16:00)'
-            working_hours = '08:00 - 16:00'
         elif datetime.time(16, 0) <= now_time < datetime.time(0, 0):
             shift_key = 'EVENING'
             shift_display = 'Evening Shift (16:00 - 00:00)'
-            working_hours = '16:00 - 00:00'
         else:
             shift_key = 'NIGHT'
             shift_display = 'Night Shift (00:00 - 08:00)'
-            working_hours = '00:00 - 08:00'
 
         station = 'General Inpatient Ward & Station A'
-        return {
-            'shift_key': shift_key,
-            'shift_display': shift_display,
-            'working_hours': working_hours,
-            'assigned_station': station,
-            'ward_name': 'Inpatient Care Ward',
-        }
 
-    # Working hours mapped
-    shift_hours = {
-        'MORNING': '08:00 - 16:00',
-        'EVENING': '16:00 - 00:00',
-        'NIGHT': '00:00 - 08:00',
-        'ON_CALL': '24-Hour Coverage',
+    # Shift time boundaries for remaining hours calculation
+    shift_times = {
+        'MORNING': ('08:00', '16:00', datetime.time(16, 0), False),
+        'EVENING': ('16:00', '00:00', datetime.time(0, 0), True),
+        'NIGHT': ('00:00', '08:00', datetime.time(8, 0), False),
+        'ON_CALL': ('08:00', '08:00', datetime.time(8, 0), True),
     }
 
+    start_str, end_str, end_t, is_next_day = shift_times.get(shift_key, ('08:00', '16:00', datetime.time(16, 0), False))
+    working_hours = f"{start_str} - {end_str}"
+
+    if is_next_day:
+        end_dt = timezone.make_aware(datetime.datetime.combine(today + datetime.timedelta(days=1), end_t))
+    else:
+        end_dt = timezone.make_aware(datetime.datetime.combine(today, end_t))
+
+    if not is_on_duty:
+        hours_remaining = "Off Duty"
+    else:
+        diff = end_dt - now_dt
+        total_seconds = int(diff.total_seconds())
+        if total_seconds > 0:
+            rem_hrs = total_seconds // 3600
+            rem_mins = (total_seconds % 3600) // 60
+            if rem_hrs > 0:
+                hours_remaining = f"{rem_hrs}h {rem_mins}m remaining"
+            else:
+                hours_remaining = f"{rem_mins}m remaining"
+        else:
+            hours_remaining = "Shift ended"
+
     return {
+        'id': str(roster.id) if roster else f"shift-{shift_key.lower()}",
         'shift_key': shift_key,
+        'shift_type': shift_key,
+        'shift_name': shift_display,
         'shift_display': shift_display,
-        'working_hours': shift_hours.get(shift_key, '08:00 - 16:00'),
+        'start_time': start_str,
+        'end_time': end_str,
+        'working_hours': working_hours,
         'assigned_station': station,
+        'ward': station,
         'ward_name': station,
+        'hours_remaining': hours_remaining,
+        'is_on_duty': is_on_duty,
     }
 
 
@@ -232,29 +257,41 @@ class NurseDashboardOverviewView(views.APIView):
         if not nurse_name:
             nurse_name = 'Staff Nurse'
 
+        nurse_data = {
+            'id': str(nurse.id),
+            'name': nurse_name,
+            'employee_id': nurse.employee_id or 'NUR-001',
+            'designation': nurse.designation or 'Nursing Officer',
+            'department': nurse.department.name if nurse.department else 'Inpatient Nursing',
+            'branch': branch.name if branch else 'Main Hospital',
+            'avatar_url': nurse.user_profile.avatar_url or '',
+            'is_on_duty': bool(getattr(nurse, 'is_on_duty', True)),
+        }
+
+        summary_data = {
+            'assigned_patients': assigned_patients_count,
+            'assigned_patients_count': assigned_patients_count,
+            'medications_due': medications_due_count,
+            'medications_due_count': medications_due_count,
+            'pending_tasks': pending_tasks_count,
+            'pending_tasks_count': pending_tasks_count,
+            'critical_alerts': critical_alerts_count,
+            'critical_alerts_count': critical_alerts_count,
+        }
+
         return Response({
-            'nurse': {
-                'id': str(nurse.id),
-                'name': nurse_name,
-                'employee_id': nurse.employee_id or 'NUR-001',
-                'designation': nurse.designation or 'Nursing Officer',
-                'department': nurse.department.name if nurse.department else 'Inpatient Nursing',
-                'branch': branch.name if branch else 'Main Hospital',
-                'avatar_url': nurse.user_profile.avatar_url or '',
-            },
+            'nurse': nurse_data,
+            'nurse_info': nurse_data,
             'shift': shift_info,
+            'shift_info': shift_info,
             'server_time': timezone.localtime().isoformat(),
             'handover_status': {
                 'code': handover_status,
                 'label': handover_label,
                 'latest_handover_id': str(latest_handover.id) if latest_handover else None,
             },
-            'summary_cards': {
-                'assigned_patients': assigned_patients_count,
-                'medications_due': medications_due_count,
-                'pending_tasks': pending_tasks_count,
-                'critical_alerts': critical_alerts_count,
-            }
+            'summary_cards': summary_data,
+            'summary_metrics': summary_data,
         })
 
 

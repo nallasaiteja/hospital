@@ -366,17 +366,18 @@ export const VoiceTranslationPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-600/20">
               <Languages className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                 Voice Language Translation
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400">
+              <p className="text-xs sm:text-sm text-slate-500">
                 Gemini-powered real-time speech translation utility for multi-lingual healthcare communication
               </p>
             </div>
@@ -386,20 +387,20 @@ export const VoiceTranslationPage: React.FC = () => {
         {/* Global Controls & Status Pill */}
         <div className="flex items-center gap-3">
           {isGeminiConfigured === false && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
-              <AlertTriangle className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
               Gemini API Key Required
             </span>
           )}
           {isGeminiConfigured === true && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
               Gemini Active ({geminiModel})
             </span>
           )}
           <button
             onClick={handleClearSession}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-xs font-medium border border-slate-700"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition text-xs font-semibold border border-slate-200 shadow-sm"
             title="Clear current translation session"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -409,20 +410,45 @@ export const VoiceTranslationPage: React.FC = () => {
       </div>
 
       {/* Hospital Privacy & Clinical Safety Notice */}
-      <div className="rounded-2xl bg-amber-950/20 border border-amber-500/30 p-4 text-xs sm:text-sm text-amber-200/90 space-y-1.5">
-        <div className="flex items-start gap-2.5 font-semibold text-amber-300">
-          <ShieldAlert className="w-5 h-5 shrink-0 text-amber-400 mt-0.5" />
-          <span>Clinical Safety & Translation Advisory</span>
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 p-4 sm:p-5 shadow-xl relative overflow-hidden">
+        {/* Soft decorative background glows */}
+        <div className="absolute top-0 right-0 w-72 h-32 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="flex items-start gap-3.5 relative z-10">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+            <ShieldAlert className="w-5 h-5 text-amber-400" />
+          </div>
+
+          <div className="flex-1 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm sm:text-base font-bold text-white tracking-tight">
+                  Clinical Safety & Translation Advisory
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                  Clinical Protocol
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+              Machine translation may be inaccurate. Verify important medical instructions with a qualified
+              healthcare professional or interpreter. Do not rely on this tool alone for emergency instructions,
+              diagnoses, prescriptions or medication dosages.
+            </p>
+
+            <div className="pt-2.5 mt-2.5 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center gap-2.5 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 font-bold text-[10px] uppercase tracking-wider border border-cyan-500/30 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                Privacy Safeguard
+              </span>
+              <span className="text-slate-300">
+                Transcripts and audio are processed temporarily in memory for real-time consultation and are never stored into permanent EMR records or hospital databases.
+              </span>
+            </div>
+          </div>
         </div>
-        <p className="text-xs text-amber-200/80 leading-relaxed pl-7">
-          Machine translation may be inaccurate. Verify important medical instructions with a qualified
-          healthcare professional or interpreter. Do not rely on this tool alone for emergency instructions,
-          diagnoses, prescriptions or medication dosages.
-        </p>
-        <p className="text-[11px] text-amber-300/60 pl-7">
-          Privacy Safeguard: Transcripts and audio are processed temporarily in memory for real-time consultation and
-          are never stored into permanent EMR records or hospital databases.
-        </p>
       </div>
 
       {/* Language Selection Card */}
@@ -684,8 +710,8 @@ export const VoiceTranslationPage: React.FC = () => {
 
           {/* Audio Voice Unavailable Notice */}
           {playbackNotice && (
-            <div className="rounded-xl bg-amber-950/30 border border-amber-500/30 p-3 text-xs text-amber-200 flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="rounded-xl bg-amber-50 border border-amber-200/90 p-3 text-xs text-amber-900 flex items-start gap-2.5 shadow-xs font-medium">
+              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <span>{playbackNotice}</span>
             </div>
           )}

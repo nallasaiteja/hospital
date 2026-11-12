@@ -15,7 +15,7 @@ import {
   Loader2,
   ChevronRight
 } from 'lucide-react';
-import { authService, CurrentUserResponse, reportsDashboardService, clinicalService } from '../../services/api';
+import { authService, CurrentUserResponse, reportsDashboardService, clinicalService, ipdService } from '../../services/api';
 import { Modal } from '../../components/common/Modal';
 import { useTranslation } from 'react-i18next';
 
@@ -103,6 +103,32 @@ export const StaffDashboard: React.FC = () => {
               setAdminMetrics(res);
             })
             .catch(() => {});
+        } else if (userRole === 'RECEPTIONIST') {
+          const today = new Date().toISOString().split('T')[0];
+          Promise.all([
+            clinicalService.getAppointments({ date: today }).catch(() => []),
+            ipdService.getBeds().catch(() => [])
+          ]).then(([apptsRes, bedsRes]) => {
+            const apptList = Array.isArray(apptsRes) ? apptsRes : ((apptsRes as any)?.results || []);
+            const bedList = Array.isArray(bedsRes) ? bedsRes : ((bedsRes as any)?.results || []);
+            const totalBeds = bedList.length;
+            const availableBeds = bedList.filter((b: any) => b.status === 'AVAILABLE').length;
+            const occupiedBeds = bedList.filter((b: any) => b.status === 'OCCUPIED').length;
+            const occRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+            const waitingCount = apptList.filter((a: any) => ['SCHEDULED', 'CHECKED_IN'].includes(a.status)).length;
+            const completedCount = apptList.filter((a: any) => a.status === 'COMPLETED').length;
+
+            setAdminMetrics({
+              metrics: {
+                today_opd_registrations: apptList.length,
+                bed_occupancy_rate_pct: occRate,
+                available_beds: availableBeds,
+                waiting_lounge_patients: waitingCount,
+                completed_consultations: completedCount,
+                current_inpatient_census: occupiedBeds,
+              }
+            });
+          }).catch(() => {});
         } else if (['DOCTOR', 'NURSE'].includes(userRole)) {
           reportsDashboardService.getClinicalDashboard()
             .then((res) => {
@@ -172,6 +198,7 @@ export const StaffDashboard: React.FC = () => {
   const user = profileData?.user;
   const userRole = profileData?.role || 'DOCTOR';
   const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'BRANCH_MANAGER' || userRole === 'HOSPITAL_ADMIN';
+  const isReceptionist = userRole === 'RECEPTIONIST';
 
   return (
     <div className="w-full space-y-6">
@@ -230,9 +257,37 @@ export const StaffDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Receptionist Front Desk Quick Launch Banner */}
+      {isReceptionist && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-cyan-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-600 shrink-0">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <span>Front Desk & Outpatient Reception</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 font-semibold uppercase tracking-wider">Reception Desk</span>
+              </h2>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Register walk-in patients, manage appointment doctor queues, collect consultation fees, and issue waiting lounge tokens.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/staff/appointments')}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition shadow-sm shrink-0"
+          >
+            <span>Open Appointments & Queue</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Operational Indicators */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+        {/* Card 1: OPD Registrations Today */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm cursor-pointer hover:border-cyan-400 transition" onClick={() => navigate('/staff/appointments')}>
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-medium">{t('dashboard.opdToday', 'OPD Registrations Today')}</span>
             <Users className="w-4 h-4 text-cyan-600" />
@@ -243,7 +298,8 @@ export const StaffDashboard: React.FC = () => {
           <p className="text-[11px] text-cyan-700 mt-1">{t('dashboard.realtimeCensus', 'Real-time outpatient census')}</p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+        {/* Card 2: Inpatient Bed Occupancy & Available Beds */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm cursor-pointer hover:border-emerald-400 transition" onClick={() => navigate('/staff/admissions')}>
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-medium">{t('dashboard.bedOccupancy', 'Inpatient Bed Occupancy')}</span>
             <Bed className="w-4 h-4 text-emerald-600" />
@@ -256,29 +312,57 @@ export const StaffDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-medium">{t('dashboard.pendingReports', 'Pending Diagnostic Reports')}</span>
-            <Activity className="w-4 h-4 text-amber-600" />
+        {/* Card 3: Role-Tailored (Waiting in Lounge for Receptionist, Pending Diagnostic Reports for Clinicians/Admins) */}
+        {isReceptionist ? (
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm cursor-pointer hover:border-amber-400 transition" onClick={() => navigate('/staff/appointments')}>
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-medium">{t('dashboard.waitingLounge', 'Waiting in Lounge')}</span>
+              <Clock className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900">
+              {adminMetrics?.metrics?.waiting_lounge_patients ?? 0}
+            </div>
+            <p className="text-[11px] text-amber-700 mt-1">{t('dashboard.activeTokensWaiting', 'Tokens waiting to be called')}</p>
           </div>
-          <div className="text-2xl font-bold text-slate-900">
-            {adminMetrics?.metrics?.pending_diagnostic_reports ?? 0}
+        ) : (
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-medium">{t('dashboard.pendingReports', 'Pending Diagnostic Reports')}</span>
+              <Activity className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900">
+              {adminMetrics?.metrics?.pending_diagnostic_reports ?? 0}
+            </div>
+            <p className="text-[11px] text-amber-700 mt-1">{t('dashboard.awaitingVerification', 'Awaiting verification')}</p>
           </div>
-          <p className="text-[11px] text-amber-700 mt-1">{t('dashboard.awaitingVerification', 'Awaiting verification')}</p>
-        </div>
+        )}
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-medium">{t('dashboard.emergencyVisits', 'Emergency Visits')}</span>
-            <AlertTriangle className="w-4 h-4 text-rose-600" />
+        {/* Card 4: Role-Tailored (Completed Consultations for Receptionist, Emergency Visits for Clinicians/Admins) */}
+        {isReceptionist ? (
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm cursor-pointer hover:border-emerald-400 transition" onClick={() => navigate('/staff/appointments')}>
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-medium">{t('dashboard.completedVisits', 'Completed Consultations')}</span>
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900">
+              {adminMetrics?.metrics?.completed_consultations ?? 0}
+            </div>
+            <p className="text-[11px] text-emerald-700 mt-1">{t('dashboard.finishedToday', 'Finished consultations today')}</p>
           </div>
-          <div className="text-2xl font-bold text-slate-900">
-            {adminMetrics?.metrics?.emergency_visits ?? 0}
+        ) : (
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-medium">{t('dashboard.emergencyVisits', 'Emergency Visits')}</span>
+              <AlertTriangle className="w-4 h-4 text-rose-600" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900">
+              {adminMetrics?.metrics?.emergency_visits ?? 0}
+            </div>
+            <p className="text-[11px] text-rose-700 mt-1">
+              {t('dashboard.activeCensus', 'Active census')}: {adminMetrics?.metrics?.current_inpatient_census ?? 0} {t('dashboard.inpatients', 'inpatients')}
+            </p>
           </div>
-          <p className="text-[11px] text-rose-700 mt-1">
-            {t('dashboard.activeCensus', 'Active census')}: {adminMetrics?.metrics?.current_inpatient_census ?? 0} {t('dashboard.inpatients', 'inpatients')}
-          </p>
-        </div>
+        )}
       </div>
 
       {/* Modules Nav Grid */}
@@ -315,63 +399,83 @@ export const StaffDashboard: React.FC = () => {
             <p className="text-xs text-slate-500 mt-1">{t('dashboard.ipdCardDesc')}</p>
           </div>
 
-          <div
-            onClick={() => navigate('/staff/laboratory')}
-            className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 hover:border-indigo-500/50 hover:shadow-md transition cursor-pointer group shadow-sm"
-          >
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
-              <Activity className="w-5 h-5" />
+          {isReceptionist ? (
+            <div
+              onClick={() => navigate('/staff/patients')}
+              className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-500/50 hover:shadow-md transition cursor-pointer group shadow-sm"
+            >
+              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                <Users className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition flex items-center justify-between">
+                <span>{t('dashboard.patientRegCardTitle', 'Patient Registration & Records')}</span>
+                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {t('dashboard.patientRegCardDesc', 'Register new patients, search existing records, and update demographic profiles.')}
+              </p>
             </div>
-            <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition flex items-center justify-between">
-              <span>{t('dashboard.labCardTitle')}</span>
-              <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">{t('dashboard.labCardDesc')}</p>
-          </div>
+          ) : (
+            <>
+              <div
+                onClick={() => navigate('/staff/laboratory')}
+                className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 hover:border-indigo-500/50 hover:shadow-md transition cursor-pointer group shadow-sm"
+              >
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+                  <Activity className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition flex items-center justify-between">
+                  <span>{t('dashboard.labCardTitle')}</span>
+                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">{t('dashboard.labCardDesc')}</p>
+              </div>
 
-          <div
-            onClick={() => navigate('/staff/pharmacy')}
-            className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 hover:border-violet-500/50 hover:shadow-md transition cursor-pointer group shadow-sm"
-          >
-            <div className="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center mb-3">
-              <Pill className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 group-hover:text-violet-600 transition flex items-center justify-between">
-              <span>{t('dashboard.pharmacyCardTitle')}</span>
-              <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">{t('dashboard.pharmacyCardDesc')}</p>
-          </div>
+              <div
+                onClick={() => navigate('/staff/pharmacy')}
+                className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 hover:border-violet-500/50 hover:shadow-md transition cursor-pointer group shadow-sm"
+              >
+                <div className="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center mb-3">
+                  <Pill className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 group-hover:text-violet-600 transition flex items-center justify-between">
+                  <span>{t('dashboard.pharmacyCardTitle')}</span>
+                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">{t('dashboard.pharmacyCardDesc')}</p>
+              </div>
 
-          <div
-            onClick={() => navigate('/staff/billing')}
-            className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 hover:border-teal-500/50 hover:shadow-md transition cursor-pointer group shadow-sm"
-          >
-            <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-3">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 group-hover:text-teal-600 transition flex items-center justify-between">
-              <span>{t('dashboard.billingCardTitle')}</span>
-              <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">{t('dashboard.billingCardDesc')}</p>
-          </div>
+              <div
+                onClick={() => navigate('/staff/billing')}
+                className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 hover:border-teal-500/50 hover:shadow-md transition cursor-pointer group shadow-sm"
+              >
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-3">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 group-hover:text-teal-600 transition flex items-center justify-between">
+                  <span>{t('dashboard.billingCardTitle')}</span>
+                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">{t('dashboard.billingCardDesc')}</p>
+              </div>
 
-          <div
-            onClick={() => navigate(userRole === 'SUPER_ADMIN' ? '/staff/users-roles' : '/staff/settings-audit')}
-            className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 hover:border-amber-500/50 hover:shadow-md transition cursor-pointer group shadow-sm"
-          >
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 group-hover:text-amber-600 transition flex items-center justify-between">
-              <span>{userRole === 'SUPER_ADMIN' ? t('dashboard.adminCardTitle') : 'Hospital Settings & Audit'}</span>
-              <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {userRole === 'SUPER_ADMIN' ? t('dashboard.adminCardDesc') : 'View hospital branch configurations, system parameters, and audit trails.'}
-            </p>
-          </div>
+              <div
+                onClick={() => navigate(userRole === 'SUPER_ADMIN' ? '/staff/users-roles' : '/staff/settings-audit')}
+                className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 hover:border-amber-500/50 hover:shadow-md transition cursor-pointer group shadow-sm"
+              >
+                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 group-hover:text-amber-600 transition flex items-center justify-between">
+                  <span>{userRole === 'SUPER_ADMIN' ? t('dashboard.adminCardTitle') : 'Hospital Settings & Audit'}</span>
+                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition" />
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {userRole === 'SUPER_ADMIN' ? t('dashboard.adminCardDesc') : 'View hospital branch configurations, system parameters, and audit trails.'}
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
